@@ -13,11 +13,13 @@ router = APIRouter()
 @router.get("/kpi")
 async def get_kpi(
     oerdte: str = Query("", description="Order date filter YYYYMMDD (optional)"),
+    from_date: str = Query("", description="From order date filter YYYYMMDD (optional)"),
+    to_date: str = Query("", description="To order date filter YYYYMMDD (optional)"),
     target_db: str = Query("pg_prod", description="Target database")
 ):
     """Return Warehouse Level KPI summary cards for the dashboard, derived from warehouse statistics."""
     from app.warehouse_service import get_warehouse_statistics
-    stats = get_warehouse_statistics(target_db=target_db, limit=1000, offset=0)
+    stats = get_warehouse_statistics(target_db=target_db, oerdte=oerdte, from_date=from_date, to_date=to_date, limit=1000, offset=0)
     summary = stats.get("summary", {})
 
     # Derive unique warehouse count from items

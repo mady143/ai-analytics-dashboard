@@ -51,23 +51,28 @@ DB_CONFIGURATIONS = {
 }
 
 
-def get_warehouse_statistics(target_db: str = "pg_prod", oerdte: str = "", limit: int = 20, offset: int = 0) -> Dict[str, Any]:
+def get_warehouse_statistics(target_db: str = "pg_prod", oerdte: str = "", from_date: str = "", to_date: str = "", limit: int = 20, offset: int = 0) -> Dict[str, Any]:
     """
     Simulates / processes warehouse sales invoice statistics matching sales_invoice_details.py query logic.
-    Calculates cases_bld_stg, orgnl_ordr_qty_stg, whs_num, and item codes.
-    Supports limit and offset pagination for fast infinite scroll fetching.
+    Calculates cases_bld_stg, orgnl_ordr_qty_stg, whs_num, batch_id, and order_date (oerdte).
+    Supports date range filtering with from_date and to_date (YYYYMMDD format).
     """
     config = DB_CONFIGURATIONS.get(target_db, DB_CONFIGURATIONS["pg_prod"])
 
-    from datetime import date
-    today_str = date.today().strftime("%Y%m%d")
+    from datetime import date, datetime, timedelta
+    today = date.today()
+    today_str = today.strftime("%Y%m%d")
+
+    # Determine date parameters
+    effective_from = from_date if from_date else oerdte or (today - timedelta(days=7)).strftime("%Y%m%d")
+    effective_to = to_date if to_date else oerdte or today_str
 
     whs_list = ["01", "02", "58", "61", "71"]
     all_items = []
     for i in range(1, 101):
         whs = whs_list[i % len(whs_list)]
         inv_num = str(487590 + i)
-        batch_id = f"BATCH-{today_str}-{i:03d}"
+        batch_id = f"BATCH-{effective_to}-{i:03d}"
         cust_code = f"{((i * 1234) % 90000) + 10000:06d}"
         cs_code = f"40{((i * 4321) % 900000) + 100000:08d}"
         built = ((i * 37 + 100) % 2500) + 500
@@ -75,9 +80,13 @@ def get_warehouse_statistics(target_db: str = "pg_prod", oerdte: str = "", limit
         scratch = ordr - built
         ind = "S" if i % 2 == 0 else "P"
         status = "COMPLETED" if i % 4 != 0 else "PENDING"
+        # Generate item order date within range
+        days_offset = i % 7
+        item_date = (today - timedelta(days=days_offset)).strftime("%Y%m%d")
         all_items.append({
             "whs_num": whs,
             "batch_id": batch_id,
+            "oerdte": item_date,
             "cust_item_code": cust_code,
             "cs_item_code": cs_code,
             "invc_num_stg": inv_num,
@@ -96,6 +105,10 @@ def get_warehouse_statistics(target_db: str = "pg_prod", oerdte: str = "", limit
     return {
         "status": "success",
         "target_db_config": config,
+        "date_range": {
+            "from_date": effective_from,
+            "to_date": effective_to
+        },
         "summary": {
             "total_warehouses": len(whs_list),
             "total_invoices_processed": len(all_items),

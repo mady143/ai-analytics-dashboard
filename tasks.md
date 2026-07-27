@@ -41,14 +41,12 @@ The system is configured to perform all mandatory tasks autonomously **WITHOUT a
 
 ---
 
-### 3. Automatic Sprint Task Detection & Execution (Tasks + Comments)
-- **Flow:** When a new task OR a new comment is detected on Plane:
-  1. Sets status on Plane to `In Progress`.
-  2. Injects comment text into the task description so the Builder Agent sees the instruction.
-  3. Invokes [`builder_agent.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/builder_agent.py) to write/update component code.
-  4. Generates new test cases automatically.
-  5. Runs full regression test suite.
-  6. Updates status on Plane to `Completed` with execution duration & timestamps.
+### 3. Automatic Sprint Task Detection & Execution (Sprint Updates & New Tasks)
+- **Mandatory Autonomous Directive:** Whenever the sprint is updated or a new task is added/updated in the sprint, the agent MUST automatically execute the full task lifecycle:
+  1. 🛠️ **Work on the Task:** Pick up the task, transition Plane status to `In Progress`, extract all instructions/comments, and write/update the backend & frontend component code.
+  2. 🧪 **Test the Code (Unit Tests):** Automatically generate and run unit tests (`pytest tests/unit/ -v`) to verify core component logic, endpoints, and ensure zero regression.
+  3. 🌐 **Test in Browser (UI Automation):** Execute Playwright browser automation tests (`pytest tests/browser/ -v`) to test live rendering, charts, tables, KPI cards, and user interactions in a real browser environment.
+  4. 🚀 **Deploy & Push:** Commit and push the tested changes to the remote Git repository (`mady143/ai-analytics-dashboard`), deploy the build, and mark the task status as `Done` / `Completed` in Plane.
 - **Fix Applied (2026-07-27):** Sprint Watcher previously **did NOT poll comments** — it only watched task state changes. Added `list_comments()` to `plane_agent.py` and `_check_new_comments()` to `sprint_watcher_agent.py`. Every 60-second poll now also fetches comments on all open tasks and triggers the builder if any **new** (unseen) user comment is found.
 - **Comment Detection Logic:**
   - On each 60s poll: `list_comments(project_id, task_id)` is called for every non-completed task
@@ -116,10 +114,12 @@ These 3 instructions were added as comments by `manikantha.sekhar` in Plane and 
 
 ---
 
-### 7. Continuous Application Runtime & Execution
-- **Mandatory Directive:** Automatically launch and maintain the live application runtime whenever developing, building, or testing:
-  - **Backend Server (FastAPI):** Run `python -m uvicorn main:app --host 127.0.0.1 --port 8000` (Cwd: `backend/`) -> Active on `http://localhost:8000` (Docs: `http://localhost:8000/docs`).
-  - **Frontend Server (React + Vite):** Run `node node_modules/vite/bin/vite.js` or `npx vite` (Cwd: `frontend/`) -> Active on `http://localhost:5173`.
+### 7. Continuous Application Runtime & Auto-Restart Execution
+- **Mandatory Directive (ALWAYS RUNNING & AUTO-RESTART):** The agent MUST continuously maintain the application in a running state. Never stop the backend or frontend servers.
+  - **Auto-Detect & Auto-Reload:** If either server is not in a running state, the agent MUST immediately reload and start both backend and frontend servers.
+  - **Persistent Server Policy (NEVER STOP):** Do not stop the servers. If a server stops automatically (due to error, crash, or timeout) or is stopped manually, restart it automatically without asking for permission.
+  - **Backend Server (FastAPI):** `python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload` (Cwd: `backend/`) -> Active on `http://localhost:8000` (Docs: `http://localhost:8000/docs`).
+  - **Frontend Server (React + Vite):** `node node_modules/vite/bin/vite.js` or `npm run dev` (Cwd: `frontend/`) -> Active on `http://localhost:5173`.
 - **Runtime Verification:** Ensure both servers are operational and accessible prior to running Playwright browser automation suites.
 
 ---

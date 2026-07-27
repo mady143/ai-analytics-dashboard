@@ -1,3 +1,4 @@
+import AiAnalyticsDashboardAddingDateParameter from '../components/AiAnalyticsDashboardAddingDateParameter';
 import AiAnalyticsDahsboardDateParaemeter from '../components/AiAnalyticsDahsboardDateParaemeter';
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
@@ -195,6 +196,7 @@ export default function Dashboard() {
             </BarChart>
           </ResponsiveContainer>
           <AiAnalyticsDahsboardDateParaemeter />
+      <AiAnalyticsDashboardAddingDateParameter />
     </motion.div>
 
         {/* Scatter Chart */}
@@ -215,6 +217,7 @@ export default function Dashboard() {
             </ScatterChart>
           </ResponsiveContainer>
           <AiAnalyticsDahsboardDateParaemeter />
+      <AiAnalyticsDashboardAddingDateParameter />
     </motion.div>
       </div>
 
@@ -229,6 +232,7 @@ export default function Dashboard() {
         <InventoryRiskForecast />
       </div>
       <AiAnalyticsDahsboardDateParaemeter />
+      <AiAnalyticsDashboardAddingDateParameter />
     </motion.div>
   )
 }
