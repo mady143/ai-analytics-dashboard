@@ -1,3 +1,4 @@
+import InventoryRiskForecast from '../components/InventoryRiskForecast';
 import { motion } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import axios from 'axios'
@@ -110,7 +111,8 @@ export default function Dashboard() {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-        </motion.div>
+          <InventoryRiskForecast />
+    </motion.div>
 
         {/* Scatter Chart */}
         <motion.div
@@ -129,7 +131,8 @@ export default function Dashboard() {
               <Scatter data={scatterData} fill="#7C3AED" opacity={0.7} />
             </ScatterChart>
           </ResponsiveContainer>
-        </motion.div>
+          <InventoryRiskForecast />
+    </motion.div>
       </div>
 
       {/* Quick Stats */}
@@ -162,9 +165,11 @@ export default function Dashboard() {
             </div>
           ))}
         </div>
-      </motion.div>
+        <InventoryRiskForecast />
+    </motion.div>
       {/* Warehouse Analytics Component */}
       <WarehouseAnalytics />
+      <InventoryRiskForecast />
     </motion.div>
   )
 }
