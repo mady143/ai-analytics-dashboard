@@ -211,11 +211,13 @@ class SprintWatcherAgent:
         priority   = task.get("priority", "medium")
         desc       = task.get("description_html", "") or task.get("description", "")
 
+        start_time = time.time()
         console.print(Panel(
             f"[bold cyan]🔨 New task detected![/bold cyan]\n\n"
             f"  Title:    {task_title}\n"
             f"  Priority: {priority.upper()}\n"
-            f"  ID:       {task_id}",
+            f"  ID:       {task_id}\n"
+            f"  Start:    {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
             border_style="cyan",
         ))
 
@@ -225,7 +227,7 @@ class SprintWatcherAgent:
             add_comment(
                 self.project_id, task_id,
                 f"🤖 Sprint Watcher picked up this task at "
-                f"{datetime.now().strftime('%Y-%m-%d %H:%M')}. Builder Agent is working on it."
+                f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}. Builder Agent is working on it."
             )
         except Exception as e:
             console.print(f"[yellow]⚠️  Could not update Plane status: {e}[/yellow]")
@@ -242,8 +244,10 @@ class SprintWatcherAgent:
             test_success = False
             test_output  = "Builder agent failed to implement the task."
 
+        duration_seconds = round(time.time() - start_time, 2)
+
         # ── Step 4: Update Plane based on result ──────────────────────────────
-        self._finalize_task(task_id, task_title, test_success, test_output)
+        self._finalize_task(task_id, task_title, test_success, test_output, duration_seconds)
         return test_success
 
     def _run_builder(
@@ -344,15 +348,17 @@ class SprintWatcherAgent:
         task_title: str,
         success: bool,
         test_output: str,
+        duration_seconds: float = 0.0,
     ):
-        """Mark task Done or Failed in Plane and log the result."""
+        """Mark task Done or Failed in Plane and log the result with execution duration."""
         new_state = STATE_DONE if success else STATE_FAILED
         status_label = "completed" if success else "failed"
         icon = "✅" if success else "❌"
 
         comment = (
             f"{icon} Task **{status_label.upper()}** by Sprint Watcher Agent\n\n"
-            f"**Time:** {datetime.now().strftime('%Y-%m-%d %H:%M')}\n\n"
+            f"📅 **Date & Time:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+            f"⏱️ **End-to-End Execution Time:** {duration_seconds}s\n\n"
             f"**Test Output (last 500 chars):**\n```\n{test_output[-500:]}\n```"
         )
 
@@ -364,7 +370,7 @@ class SprintWatcherAgent:
 
         log_task_result(
             task_id, task_title, "sprint_watcher", status_label,
-            test_output, test_results={"passed": success},
+            f"Duration: {duration_seconds}s | {test_output}", test_results={"passed": success, "duration_seconds": duration_seconds},
         )
 
         self._processed_task_ids.add(task_id)
