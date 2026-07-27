@@ -51,33 +51,33 @@ DB_CONFIGURATIONS = {
 }
 
 
-def get_warehouse_statistics(target_db: str = "pg_prod", limit: int = 20, offset: int = 0, oerdte: str = "20260723") -> Dict[str, Any]:
+def get_warehouse_statistics(target_db: str = "pg_prod", oerdte: str = "", limit: int = 20, offset: int = 0) -> Dict[str, Any]:
     """
     Simulates / processes warehouse sales invoice statistics matching sales_invoice_details.py query logic.
-    Calculates cases_bld_stg, orgnl_ordr_qty_stg, whs_num, item codes, batch_id, and oerdte date parameter.
-    Supports limit, offset pagination, and oerdte date filtering.
+    Calculates cases_bld_stg, orgnl_ordr_qty_stg, whs_num, and item codes.
+    Supports limit and offset pagination for fast infinite scroll fetching.
     """
     config = DB_CONFIGURATIONS.get(target_db, DB_CONFIGURATIONS["pg_prod"])
 
+    from datetime import date
+    today_str = date.today().strftime("%Y%m%d")
+
     whs_list = ["01", "02", "58", "61", "71"]
     all_items = []
-    selected_date = oerdte if oerdte else "20260723"
-
     for i in range(1, 101):
         whs = whs_list[i % len(whs_list)]
         inv_num = str(487590 + i)
+        batch_id = f"BATCH-{today_str}-{i:03d}"
         cust_code = f"{((i * 1234) % 90000) + 10000:06d}"
         cs_code = f"40{((i * 4321) % 900000) + 100000:08d}"
-        batch_id = str(278 + (i % 4))
         built = ((i * 37 + 100) % 2500) + 500
         ordr = built + ((i * 13) % 80)
         scratch = ordr - built
         ind = "S" if i % 2 == 0 else "P"
         status = "COMPLETED" if i % 4 != 0 else "PENDING"
         all_items.append({
-            "batch_id": batch_id,
-            "oerdte": selected_date,
             "whs_num": whs,
+            "batch_id": batch_id,
             "cust_item_code": cust_code,
             "cs_item_code": cs_code,
             "invc_num_stg": inv_num,
@@ -96,7 +96,6 @@ def get_warehouse_statistics(target_db: str = "pg_prod", limit: int = 20, offset
     return {
         "status": "success",
         "target_db_config": config,
-        "selected_oerdte": selected_date,
         "summary": {
             "total_warehouses": len(whs_list),
             "total_invoices_processed": len(all_items),

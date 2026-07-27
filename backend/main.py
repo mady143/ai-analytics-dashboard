@@ -42,9 +42,9 @@ app.include_router(charts.router, prefix="/api/charts", tags=["Charts"])
 
 # ── Warehouse Statistics Endpoint (AAD-5 Specification) ─────────────────────────
 @app.get("/api/warehouse/statistics", tags=["Warehouse"])
-async def warehouse_statistics(target_db: str = "pg_prod", limit: int = 20, offset: int = 0, oerdte: str = "20260723"):
+async def warehouse_statistics(target_db: str = "pg_prod", oerdte: str = "", limit: int = 20, offset: int = 0):
     from app.warehouse_service import get_warehouse_statistics
-    return get_warehouse_statistics(target_db=target_db, limit=limit, offset=offset, oerdte=oerdte)
+    return get_warehouse_statistics(target_db=target_db, oerdte=oerdte, limit=limit, offset=offset)
 
 
 # ── Health Check ───────────────────────────────────────────────────────────────

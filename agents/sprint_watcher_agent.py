@@ -58,6 +58,7 @@ from plane_agent import (
     update_task_status,
     add_comment,
     create_task,
+    list_comments,
 )
 from memory_manager import (
     update_agent_status,
@@ -82,18 +83,21 @@ class SprintWatcherAgent:
     Todo → In Progress (Builder writes code) → Tests → Done / Failed
     """
 
-    def __init__(self, poll_interval_seconds: int = 60):
+    def __init__(self, poll_interval_seconds: int = 120):
         """
         Args:
             poll_interval_seconds: How often to poll Plane for task changes.
-                                   Default = 60 seconds.
+                                   Default = 2 minutes.
         """
         self.poll_interval = poll_interval_seconds
         self.project_id: Optional[str] = None
         self.current_sprint_id: Optional[str] = None
         self.state = load_state()
-        # Track which tasks we've already acted on this session
-        self._processed_task_ids: set[str] = set()
+        # Track last-seen state per task ID (not just IDs)
+        # This allows re-picking tasks when they are reset/updated in Plane
+        self._last_seen_state: dict[str, str] = {}   # task_id -> last state string
+        self._last_seen_updated: dict[str, str] = {} # task_id -> last updated_at
+        self._last_seen_comment_ids: dict[str, set] = {}  # task_id -> set of seen comment IDs
 
     # ── Initialisation ────────────────────────────────────────────────────────
 
@@ -158,16 +162,6 @@ class SprintWatcherAgent:
         if isinstance(state_detail, dict) and state_detail.get("name"):
             return state_detail.get("name").lower()
         return str(task.get("state", "")).lower()
-
-    def _is_task_active(self, task: dict) -> bool:
-        """Check if a task is in an active/workable state (unstarted, todo, started, in progress)."""
-        group = str(task.get("state_group", "")).lower()
-        detail = task.get("state_detail") or {}
-        name = str(detail.get("name") if isinstance(detail, dict) else "").lower()
-        raw_state = str(task.get("state", "")).lower()
-
-        active_terms = {"unstarted", "todo", "to do", "to_do", "started", "in progress", "in_progress"}
-        return (group in active_terms) or (name in active_terms) or (raw_state in active_terms)
 
     def _print_sprint_table(self, tasks: list[dict]):
         """Render a Rich table of current sprint tasks."""
@@ -297,7 +291,6 @@ class SprintWatcherAgent:
                 text=True,
                 encoding="utf-8",
                 errors="replace",
-                env={**os.environ, "PYTHONIOENCODING": "utf-8"},
             )
 
             stdout = result.stdout or ""
@@ -389,7 +382,9 @@ class SprintWatcherAgent:
             f"Duration: {duration_seconds}s | {test_output}", test_results={"passed": success, "duration_seconds": duration_seconds},
         )
 
-        self._processed_task_ids.add(task_id)
+        # Update state tracking so this task isn't re-triggered until Plane changes it again
+        self._last_seen_state[task_id] = STATE_DONE if success else STATE_FAILED
+        self._last_seen_updated[task_id] = datetime.now().isoformat()
 
         # ── Step 5: Automatically commit and push code if task passed ──────────
         if success:
@@ -410,8 +405,6 @@ class SprintWatcherAgent:
             border_style="green" if success else "red",
         ))
 
-        # Ensure processed task ID is retained so we don't re-trigger unless state changes on Plane again
-
     # ── Completed Task Sync ───────────────────────────────────────────────────
 
     def _sync_completed_tasks(self, tasks: list[dict]):
@@ -423,7 +416,7 @@ class SprintWatcherAgent:
             task_id = task["id"]
             state   = self._get_task_state(task)
 
-            if "complet" in state and task_id not in self._processed_task_ids:
+            if "complet" in state and self._last_seen_state.get(task_id) != state:
                 log_task_result(
                     task_id,
                     task.get("name", "Unknown"),
@@ -431,10 +424,48 @@ class SprintWatcherAgent:
                     "completed",
                     "Synced from Plane — already marked completed.",
                 )
-                self._processed_task_ids.add(task_id)
+                self._last_seen_state[task_id] = state
                 console.print(
                     f"[dim]🔄 Synced completed task: {task.get('name', task_id)[:50]}[/dim]"
                 )
+
+    # ── Comment Polling ───────────────────────────────────────────────────────
+
+    def _check_new_comments(self, tasks: list[dict]) -> list[tuple[dict, str]]:
+        """
+        Poll comments on every non-completed task.
+        Returns list of (task, new_comment_text) for each newly detected comment.
+        New comments from the bot itself (containing '🤖') are ignored.
+        """
+        new_comment_items = []
+        for task in tasks:
+            task_id    = task["id"]
+            task_state = self._get_task_state(task)
+            # Only watch active / open tasks for new comments
+            if task_state in (STATE_DONE, "completed", "done"):
+                continue
+
+            comments = list_comments(self.project_id, task_id)
+            seen_ids = self._last_seen_comment_ids.get(task_id, set())
+
+            for comment in comments:
+                cid  = comment.get("id", "")
+                text = comment.get("comment_stripped") or comment.get("comment") or ""
+                # Skip bot-generated comments and already-seen ones
+                if cid in seen_ids or "🤖" in text or "Sprint Watcher" in text:
+                    seen_ids.add(cid)
+                    continue
+                if text.strip():
+                    console.print(
+                        f"[bold magenta]💬 New comment on '{task.get('name','?')[:40]}':[/bold magenta]\n"
+                        f"   {text[:200]}"
+                    )
+                    new_comment_items.append((task, text))
+                seen_ids.add(cid)
+
+            self._last_seen_comment_ids[task_id] = seen_ids
+
+        return new_comment_items
 
     # ── Main Loop ─────────────────────────────────────────────────────────────
 
@@ -487,31 +518,71 @@ class SprintWatcherAgent:
                     self._print_sprint_table(tasks)
                     self._sync_completed_tasks(tasks)
 
-                    # Re-evaluate tasks updated on Plane to active state (In Progress / To Do)
-                    for t in tasks:
-                        if self._is_task_active(t) and t["id"] in self._processed_task_ids:
-                            self._processed_task_ids.remove(t["id"])
+                    # ── Comment detection: pick up new user instructions ───────
+                    new_comment_items = self._check_new_comments(tasks)
+                    for (commented_task, comment_text) in new_comment_items:
+                        console.print(
+                            f"[bold magenta]📋 Processing comment instruction for: "
+                            f"{commented_task.get('name','?')[:50]}[/bold magenta]"
+                        )
+                        # Inject comment text into the task description so builder sees it
+                        enriched_task = dict(commented_task)
+                        existing_desc = enriched_task.get("description", "") or ""
+                        enriched_task["description"] = (
+                            existing_desc + f"\n\n---\n**New instruction from comment:**\n{comment_text}"
+                        )
+                        self._handle_new_task(enriched_task)
 
-                    # Identify NEW/UNCOMPLETED tasks
-                    new_tasks = [
-                        t for t in tasks
-                        if self._is_task_active(t) and t["id"] not in self._processed_task_ids
-                    ]
+                    # Identify actionable tasks:
+                    # 1. Task is in unstarted/todo state AND
+                    # 2. Either never seen before, OR its state changed back to unstarted,
+                    #    OR its updated_at timestamp changed (user made edits in Plane)
+                    actionable_tasks = []
+                    for t in tasks:
+                        task_id      = t["id"]
+                        current_state = self._get_task_state(t)
+                        updated_at    = t.get("updated_at") or t.get("updated", "")
+                        last_state    = self._last_seen_state.get(task_id)
+                        last_updated  = self._last_seen_updated.get(task_id)
+
+                        # Skip tasks that are done/completed (no action needed)
+                        if current_state in (STATE_DONE, "completed", "done"):
+                            # Update tracking so we don't re-process if already done
+                            self._last_seen_state[task_id] = current_state
+                            self._last_seen_updated[task_id] = updated_at
+                            continue
+
+                        # Detect if this task needs action:
+                        is_new          = last_state is None
+                        state_changed   = last_state and last_state != current_state
+                        content_updated = last_updated and updated_at and last_updated != updated_at
+
+                        if is_new or state_changed or content_updated:
+                            reason = "new" if is_new else ("state changed" if state_changed else "content updated")
+                            console.print(
+                                f"[bold yellow]⚡ Task update detected ({reason}): "
+                                f"{t.get('name', task_id)[:50]}[/bold yellow]"
+                            )
+                            actionable_tasks.append(t)
+
+                        # Always keep tracking updated
+                        self._last_seen_state[task_id] = current_state
+                        self._last_seen_updated[task_id] = updated_at
 
                     # Sort by priority: urgent → high → medium → low
                     priority_order = {"urgent": 0, "high": 1, "medium": 2, "low": 3, "none": 4}
-                    new_tasks.sort(
+                    actionable_tasks.sort(
                         key=lambda t: priority_order.get(t.get("priority", "none"), 4)
                     )
 
-                    if new_tasks:
+                    if actionable_tasks:
                         console.print(
-                            f"[bold yellow]⚡ {len(new_tasks)} active task(s) detected![/bold yellow]"
+                            f"[bold yellow]⚡ {len(actionable_tasks)} task(s) to process![/bold yellow]"
                         )
-                        for task in new_tasks:
+                        for task in actionable_tasks:
                             self._handle_new_task(task)
                     else:
-                        console.print("[dim]✓ No new tasks — all up to date.[/dim]")
+                        console.print("[dim]✓ No new or updated tasks — all up to date.[/dim]")
                 else:
                     console.print("[dim]No tasks found in this sprint.[/dim]")
 

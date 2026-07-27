@@ -18,15 +18,22 @@ The system is configured to perform all mandatory tasks autonomously **WITHOUT a
 
 ---
 
-### 2. 60-Second Continuous Sprint Watcher Monitoring
-- **Schedule:** Runs continuously in background every **60 seconds**:
+### 2. 60-Second Continuous Sprint Watcher Monitoring (ALWAYS RUNNING)
+- **Schedule:** Runs continuously in background every **60 seconds** — ALWAYS ALLOWED, ALWAYS AUTO-RESTART:
   ```bash
   python scripts/run_sprint_watcher.py --interval 60
   ```
-- **What it monitors:** Polls Plane workspace (`agentbuilder`) every **60 seconds** (`--interval 60`) to check if any task is added or updated to `unstarted`, `to-do`, or `in-progress` state.
-- **Dynamic Task Re-evaluation:** Automatically clears processed cache if an existing task is updated back to `In Progress` or `To Do` on Plane, triggering automated builder execution, pytest verification, Plane status update to `Done`, and Git push.
-- **Mandatory Directive:** Must run continuously every 60 seconds without manual intervention.
-- **Active Runner:** `task-235` running in background (`python scripts/run_sprint_watcher.py --interval 60`). ⚡ **Last restarted: 2026-07-27 14:46**.
+- **What it monitors:** Polls Plane workspace (`agentbuilder`) every **60 seconds** to detect:
+  1. 🆕 **New tasks** — never-seen-before task IDs in any state
+  2. 🔄 **State changes** — task state changes back to `unstarted` / `todo` (e.g. user resets a task)
+  3. ✏️ **Content updates** — `updated_at` timestamp changed (user edited title, description, or details in Plane)
+- **Fix Applied (2026-07-27):** Previous version only skipped tasks by ID once seen — it would **miss all subsequent updates**. Now uses `_last_seen_state` + `_last_seen_updated` dicts to detect *any change* and re-trigger the task lifecycle.
+- **Update Detection Logic (in `agents/sprint_watcher_agent.py`):**
+  - `is_new` → task ID never seen before → **PROCESS**
+  - `state_changed` → `last_state != current_state` → **PROCESS**
+  - `content_updated` → `last_updated_at != current_updated_at` → **PROCESS**
+  - `done/completed` → skip (no action needed)
+- **Mandatory Directive:** Must run **always**. If stopped for any reason, restart immediately without asking permission.
 - **File References:**
   - [`scripts/run_sprint_watcher.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/run_sprint_watcher.py)
   - [`agents/sprint_watcher_agent.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/sprint_watcher_agent.py)
@@ -34,13 +41,49 @@ The system is configured to perform all mandatory tasks autonomously **WITHOUT a
 
 ---
 
-### 3. Automatic Sprint Task Detection & Execution
-- **Flow:** When a new task is detected on Plane:
+### 3. Automatic Sprint Task Detection & Execution (Tasks + Comments)
+- **Flow:** When a new task OR a new comment is detected on Plane:
   1. Sets status on Plane to `In Progress`.
-  2. Invokes [`builder_agent.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/builder_agent.py) to write/update component code.
-  3. Generates new test cases automatically.
-  4. Runs full regression test suite.
-  5. Updates status on Plane to `Completed` with execution duration & timestamps.
+  2. Injects comment text into the task description so the Builder Agent sees the instruction.
+  3. Invokes [`builder_agent.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/builder_agent.py) to write/update component code.
+  4. Generates new test cases automatically.
+  5. Runs full regression test suite.
+  6. Updates status on Plane to `Completed` with execution duration & timestamps.
+- **Fix Applied (2026-07-27):** Sprint Watcher previously **did NOT poll comments** — it only watched task state changes. Added `list_comments()` to `plane_agent.py` and `_check_new_comments()` to `sprint_watcher_agent.py`. Every 60-second poll now also fetches comments on all open tasks and triggers the builder if any **new** (unseen) user comment is found.
+- **Comment Detection Logic:**
+  - On each 60s poll: `list_comments(project_id, task_id)` is called for every non-completed task
+  - `_last_seen_comment_ids` tracks already-processed comment IDs per task
+  - New human comments (not bot comments containing `🤖`) trigger `_handle_new_task()` with the comment injected into the task description
+  - Bot-generated comments (`Sprint Watcher`, `🤖`) are automatically skipped to avoid infinite loops
+
+---
+
+### 3b. Open Requirements from Plane Comments (2026-07-27) — `Warehouse level statics`
+
+These 3 instructions were added as comments by `manikantha.sekhar` in Plane and MUST be implemented:
+
+#### ⚠️ Requirement 1 — Total Warehouse Count Mismatch + `batch_id` + Global Date Format
+- **Issue:** Total warehouse count KPI value is mismatching actual data
+- **Action:**
+  1. Fix total warehouse count to show the correct distinct count from the database
+  2. Add `batch_id` column to the `WarehouseSalesAnalytics` data table
+  3. Add a **date format selector** at the top of the page — when the date format changes, it must apply to **all date fields across the entire page** (table rows, KPI cards, chart tooltips)
+
+#### ⚠️ Requirement 2 — KPI Values Not Populating (Cases Built, Original Order Qty, Invoice Processed)
+- **Issue:** These 3 KPI card values show `0` or are blank
+- **Action:**
+  1. `Cases Built` KPI — must show sum of `cases_built_qty` from the warehouse statistics API
+  2. `Original Order Qty` KPI — must show sum of `original_order_qty`
+  3. `Invoices Processed` KPI — must show the count of distinct invoice numbers
+
+#### ⚠️ Requirement 3 — `batch_id` Not Visible in UI
+- **Issue:** `batch_id` field exists in the database but is missing from the table display
+- **Action:**
+  1. Add `Batch ID` as a visible column in the `WarehouseSalesAnalytics` table
+  2. Ensure `batch_id` is returned by the backend `GET /api/warehouse/statistics` endpoint
+  3. Display it alongside `Invoice #`, `C&S Item Code`, etc.
+
+
 - **File References:**
   - [`agents/plane_agent.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/plane_agent.py)
 
@@ -82,20 +125,62 @@ The system is configured to perform all mandatory tasks autonomously **WITHOUT a
 ---
 
 ### 8. Headless / Zero Permission Mode (Ask Only on Critical Blockers)
-- **Mandatory Zero-Permission Policy:** Do **NOT** ask for user permission or wait for confirmation prompts for standard development operations:
-  - 🧪 **Browser & Unit Testing (`pytest`):** Running `pytest tests/browser/ -v` and `pytest tests/unit/ -v` autonomously without permission popups.
-  - ⚡ **Node & NPM Operations (`npm` / `node`):** Running `node node_modules/vite/bin/vite.js`, `npm run dev`, `npm run build`, and `npm install` without permission popups.
-  - 🐍 **Python & Server Runtimes (`python` / `uvicorn`):** Running 60-second Sprint Watcher Agent (`python scripts/run_sprint_watcher.py --interval 60`), starting FastAPI backend server (`python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload`), running inline python scripts (`python -c ...`), and executing pytest test suites without permission popups.
-  - 🔀 **Git Version Control (`git`):** Executing `git status`, `git pull`, `git add`, `git commit`, and `git push` without permission popups.
-  - 📝 **Markdown Documentation Updates (`tasks.md` / `.md`):** **Always allow modifying, editing, and updating [`tasks.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks.md)**, [`sprint_test_cases.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/sprint_test_cases.md), and all markdown files completely autonomously without permission popups.
-  - 💻 **Code Modifications:** Writing, editing, or implementing new sprint feature code.
+- **Mandatory Zero-Permission Policy:** Do **NOT** ask for user permission or wait for confirmation prompts — EVER — for the following operations. All are pre-approved and must execute immediately and automatically:
+  - 🧪 **Browser & Unit Testing (`pytest`):** `pytest tests/browser/ -v` and `pytest tests/unit/ -v`
+  - ⚡ **Node & Vite Frontend (`node`):** `node node_modules/vite/bin/vite.js` — ALWAYS ALLOWED
+  - 🐍 **Python Sprint Watcher (`python scripts/...`):** `python scripts/run_sprint_watcher.py --interval 60` — ALWAYS ALLOWED
+  - 🐍 **FastAPI Backend (`uvicorn`):** `python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload` — ALWAYS ALLOWED
+  - 🐍 **Inline Python Scripts (`python -c`):** Any `python -c "..."` diagnostic or utility script — ALWAYS ALLOWED
+  - 🔀 **Git Version Control (`git`):** `git status`, `git pull`, `git add`, `git commit`, `git push` — ALWAYS ALLOWED
+  - 📝 **Markdown File Updates (`tasks.md` / `.md`):** **Always allowed** — edit [`tasks.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks.md), [`sprint_test_cases.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/sprint_test_cases.md), and all `.md` files without any permission prompt.
+  - 💻 **Code Modifications:** Writing, editing, or implementing any sprint feature code — ALWAYS ALLOWED
+- **🔄 Auto-Restart Policy (MANDATORY):** If any of the following services stop for any reason (server restart, crash, timeout), they MUST be restarted immediately and automatically WITHOUT asking for permission:
+  1. **FastAPI Backend:** `python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload` (from `backend/`)
+  2. **Vite Frontend:** `node node_modules/vite/bin/vite.js` (from `frontend/`)
+  3. **Sprint Watcher Agent:** `python scripts/run_sprint_watcher.py --interval 60` (from project root)
 - **Existing Code Preservation (Zero Side-Effects):** New code changes must **never** break or disturb pre-existing working code functionality.
 - **Continuous Regression Testing:** Perform continuous automatic regression testing (unit + Playwright browser tests) after every code or documentation change to ensure zero side-effects.
 - **Escalation Exception:** Stop and ask the user for input **ONLY IF** an urgent, high-risk critical blocker or unsolvable architectural issue occurs.
 
+---
 
+### 8b. UI Health Check Policy (MANDATORY — After Every Restart or Code Change)
+After every application start, restart, or code change, ALWAYS verify the following UI elements are correctly loaded and populated:
+- **📊 KPI Cards:** All 6 KPI cards must be visible with non-zero values (Total Warehouses, Cases Built, Order Qty, Invoices Processed, Fulfillment Rate, Scratch Rate).
+- **🔥 Bar Chart (Cases Built by Warehouse):** Must render colored bars for warehouses `01`, `02`, `58`, `61`, `71`. No blank/empty chart allowed.
+- **📈 Scatter Plot (Order Qty vs Cases Built):** Must render colored data points. No empty chart canvas allowed.
+- **📋 Warehouse Sales & Invoice Analytics Table:** Must load at least 20 rows with columns `Warehouse`, `Invoice #`, `Customer Item Code`, `C&S Item Code`, `Cases Built Qty`, `Order Qty`, `Scratch Qty`, `Sub Item`, `Status`.
+- **🔢 Row Count Badge:** Must display `Loaded X / Y items` with X > 0.
+- **✅ Verification Method:** Run `pytest tests/browser/ -v` after any restart to confirm all selectors pass. If any check fails, immediately investigate and fix before reporting done.
 
 ---
+
+### 8c. Agent Memory & Daily Session Log (MANDATORY — Read on Start / Write on End)
+
+Agents **cannot carry full conversation history** between sessions. To maintain continuity:
+
+#### 📖 ON SESSION START — Agent MUST:
+1. Read `memory/conversations/YYYY-MM-DD.md` for today's date (if it exists).
+2. If no today's file exists, read the **most recent** `memory/conversations/*.md` file to understand previous session context.
+3. Check `memory/agent_state.json` for last known agent statuses, Plane task states, and sprint context.
+
+#### 📝 ON SESSION END (or periodically) — Agent MUST write `memory/conversations/YYYY-MM-DD.md` containing:
+- **What was built** — feature names, files changed, code decisions made
+- **Current Plane task statuses** — which tasks are `todo`, `in_progress`, `done`, `blocked`
+- **Database credentials & configs** — which DB env was active (PROD/DEV/Oracle/PG)
+- **Service URLs** — what ports backend/frontend are running on
+- **Test results** — unit + browser test pass/fail counts
+- **Open issues / blockers** — anything the next agent session must know
+- **Manager instructions** — any user directives that must not be forgotten
+
+#### 📂 Memory File Locations:
+| File | Purpose |
+| :--- | :--- |
+| `memory/conversations/YYYY-MM-DD.md` | **Daily human-readable session log** ← agents read this first |
+| `memory/agent_state.json` | Machine-readable agent status + Plane project IDs |
+| `memory/task_history/YYYY-MM-DD_task_history.jsonl` | Append-only task execution records |
+
+> **Example:** When a new agent session starts tomorrow (2026-07-28), it MUST read [`memory/conversations/2026-07-27.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/memory/conversations/2026-07-27.md) to understand what was completed today before doing any work.
 
 ### 9. Plane Task State Transitions (`Unstarted` ➔ `In Progress` ➔ `Done`)
 - **State Mapping:**

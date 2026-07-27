@@ -11,12 +11,31 @@ router = APIRouter()
 
 
 @router.get("/kpi")
-async def get_kpi():
-    """Return Warehouse Level KPI summary cards for the dashboard."""
+async def get_kpi(
+    oerdte: str = Query("", description="Order date filter YYYYMMDD (optional)"),
+    target_db: str = Query("pg_prod", description="Target database")
+):
+    """Return Warehouse Level KPI summary cards for the dashboard, derived from warehouse statistics."""
+    from app.warehouse_service import get_warehouse_statistics
+    stats = get_warehouse_statistics(target_db=target_db, limit=1000, offset=0)
+    summary = stats.get("summary", {})
+
+    # Derive unique warehouse count from items
+    whs_set = {item["whs_num"] for item in stats.get("warehouse_items", [])}
+    total_whs = summary.get("total_warehouses", len(whs_set))
+
+    total_built = summary.get("total_cases_built", 0)
+    total_order = summary.get("total_original_order_qty", 0)
+    total_invoices = summary.get("total_invoices_processed", 0)
+    fulfillment = summary.get("procurement_fulfillment_rate", "0%")
+
+    scratch_qty = total_order - total_built if total_order > total_built else 0
+    scratch_rate = f"{(scratch_qty / total_order * 100):.1f}%" if total_order > 0 else "0%"
+
     kpis = [
         {
             "title": "TOTAL WAREHOUSES",
-            "value": "2",
+            "value": str(total_whs),
             "unit": "Facilities",
             "trend": 0.0,
             "trend_direction": "up",
@@ -24,7 +43,7 @@ async def get_kpi():
         },
         {
             "title": "CASES BUILT (cases_bld)",
-            "value": "4,760",
+            "value": f"{total_built:,}",
             "unit": "Cases",
             "trend": 8.4,
             "trend_direction": "up",
@@ -32,7 +51,7 @@ async def get_kpi():
         },
         {
             "title": "ORIGINAL ORDER QTY",
-            "value": "4,900",
+            "value": f"{total_order:,}",
             "unit": "Cases",
             "trend": 6.2,
             "trend_direction": "up",
@@ -40,7 +59,7 @@ async def get_kpi():
         },
         {
             "title": "INVOICES PROCESSED",
-            "value": "384",
+            "value": str(total_invoices),
             "unit": "Invoices",
             "trend": 4.1,
             "trend_direction": "up",
@@ -48,7 +67,7 @@ async def get_kpi():
         },
         {
             "title": "FULFILLMENT RATE",
-            "value": "97.1%",
+            "value": fulfillment,
             "unit": "Target 95%",
             "trend": 2.1,
             "trend_direction": "up",
@@ -56,15 +75,17 @@ async def get_kpi():
         },
         {
             "title": "SCRATCH RATE",
-            "value": "2.9%",
-            "unit": "140 Cases",
+            "value": scratch_rate,
+            "unit": f"{scratch_qty:,} Cases",
             "trend": -1.5,
             "trend_direction": "down",
             "color": "#EF4444"
         }
     ]
 
-    return JSONResponse({"kpis": kpis})
+    return JSONResponse({"kpis": kpis, "total_warehouses": total_whs, "selected_oerdte": oerdte})
+
+
 
 
 @router.get("/bar")

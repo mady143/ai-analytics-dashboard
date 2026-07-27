@@ -250,6 +250,25 @@ def list_tasks(project_id: str, state_filter: Optional[str] = None) -> list[dict
     return issues
 
 
+def list_comments(project_id: str, issue_id: str) -> list[dict]:
+    """
+    Fetch all activity/comments for a specific Plane issue.
+    Returns a list of comment dicts with 'id', 'comment_html', 'created_at', 'actor_detail'.
+    """
+    url = (
+        f"{PLANE_BASE_URL}/workspaces/{PLANE_WORKSPACE_SLUG}"
+        f"/projects/{project_id}/issues/{issue_id}/comments/"
+    )
+    try:
+        with httpx.Client(timeout=10) as client:
+            resp = client.get(url, headers=HEADERS)
+            resp.raise_for_status()
+            return resp.json().get("results", [])
+    except Exception as e:
+        console.print(f"[yellow]⚠️  Could not fetch comments for issue {issue_id}: {e}[/yellow]")
+        return []
+
+
 # ── Sprint Setup ───────────────────────────────────────────────────────────────
 
 def setup_all_sprints(project_id: str) -> list[dict]:

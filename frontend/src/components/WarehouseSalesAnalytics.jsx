@@ -3,9 +3,8 @@ import axios from 'axios';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
-export default function WarehouseSalesAnalytics() {
-  const [targetDb, setTargetDb] = useState('pg_prod');
-  const [oerdte, setOerdte] = useState('2026-07-23');
+export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb }) {
+  const [targetDb, setTargetDb] = useState(globalTargetDb || 'pg_prod');
   const [summary, setSummary] = useState(null);
   const [items, setItems] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -14,13 +13,20 @@ export default function WarehouseSalesAnalytics() {
   const [loadingMore, setLoadingMore] = useState(false);
   const LIMIT = 20;
 
-  const formattedOerdte = oerdte ? oerdte.replace(/-/g, '') : '20260723';
+  useEffect(() => {
+    if (globalTargetDb) {
+      setTargetDb(globalTargetDb);
+    }
+  }, [globalTargetDb]);
 
-  // Reset & initial load on DB target or oerdte date change
+  const oerdte = globalDate ? globalDate.replace(/-/g, '') : '';
+
+  // Reset & initial load on DB target or date change
   useEffect(() => {
     const fetchInitial = async () => {
+      setLoading(true);
       try {
-        const res = await axios.get(`${API}/api/warehouse/statistics?target_db=${targetDb}&oerdte=${formattedOerdte}&limit=${LIMIT}&offset=0`);
+        const res = await axios.get(`${API}/api/warehouse/statistics?target_db=${targetDb}&oerdte=${oerdte}&limit=${LIMIT}&offset=0`);
         setSummary(res.data.summary);
         setItems(res.data.warehouse_items || []);
         setTotalCount(res.data.total_count || (res.data.warehouse_items ? res.data.warehouse_items.length : 0));
@@ -32,8 +38,6 @@ export default function WarehouseSalesAnalytics() {
       }
     };
     fetchInitial();
-    const timer = setInterval(fetchInitial, 10000);
-    return () => clearInterval(timer);
   }, [targetDb, oerdte]);
 
   // Load next batch on scroll down
@@ -42,7 +46,7 @@ export default function WarehouseSalesAnalytics() {
     setLoadingMore(true);
     const nextOffset = items.length;
     try {
-      const res = await axios.get(`${API}/api/warehouse/statistics?target_db=${targetDb}&oerdte=${formattedOerdte}&limit=${LIMIT}&offset=${nextOffset}`);
+      const res = await axios.get(`${API}/api/warehouse/statistics?target_db=${targetDb}&oerdte=${oerdte}&limit=${LIMIT}&offset=${nextOffset}`);
       setItems((prev) => [...prev, ...(res.data.warehouse_items || [])]);
       setHasMore(res.data.has_more ?? false);
     } catch (err) {
@@ -61,7 +65,7 @@ export default function WarehouseSalesAnalytics() {
 
   return (
     <div className="card" style={{ marginTop: '24px', padding: '24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <div>
           <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
             🏢 Warehouse & Invoice Sales Analytics
@@ -71,51 +75,28 @@ export default function WarehouseSalesAnalytics() {
           </p>
         </div>
 
-        {/* Database Configuration & Date Selector */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-              📅 Order Date (oerdte):
-            </label>
-            <input
-              type="date"
-              value={oerdte}
-              onChange={(e) => setOerdte(e.target.value)}
-              style={{
-                background: 'var(--bg-card)',
-                color: 'var(--text-primary)',
-                border: '1px solid var(--border-color)',
-                padding: '6px 12px',
-                borderRadius: '6px',
-                fontSize: '13px',
-                fontWeight: 600,
-                colorScheme: 'dark'
-              }}
-            />
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Target DB:</label>
-            <select
-              value={targetDb}
-              onChange={(e) => setTargetDb(e.target.value)}
-              style={{
-                background: 'var(--bg-card)',
-                color: 'var(--text-primary)',
-                border: '1px solid var(--border-color)',
-                padding: '6px 12px',
-                borderRadius: '6px',
-                fontSize: '13px',
-                fontWeight: 600
-              }}
-            >
-              <option value="pg_prod">PostgreSQL - PROD (sptnintgdb)</option>
-              <option value="pg_dev">PostgreSQL - DEV (sptnintgdb)</option>
-              <option value="oracle_dev">Oracle - DEV (csebsd2)</option>
-              <option value="oracle_f1">Oracle - F1 (csebsf1)</option>
-              <option value="oracle_prod">Oracle - PROD (EBSP_BI)</option>
-            </select>
-          </div>
+        {/* Database Configuration Selector */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Target DB:</label>
+          <select
+            value={targetDb}
+            onChange={(e) => setTargetDb(e.target.value)}
+            style={{
+              background: 'var(--bg-card)',
+              color: 'var(--text-primary)',
+              border: '1px solid var(--border-color)',
+              padding: '6px 12px',
+              borderRadius: '6px',
+              fontSize: '13px',
+              fontWeight: 600
+            }}
+          >
+            <option value="pg_prod">PostgreSQL - PROD (sptnintgdb)</option>
+            <option value="pg_dev">PostgreSQL - DEV (sptnintgdb)</option>
+            <option value="oracle_dev">Oracle - DEV (csebsd2)</option>
+            <option value="oracle_f1">Oracle - F1 (csebsf1)</option>
+            <option value="oracle_prod">Oracle - PROD (EBSP_BI)</option>
+          </select>
         </div>
       </div>
 
@@ -152,7 +133,7 @@ export default function WarehouseSalesAnalytics() {
       {/* Row Count Badge & Query Status */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
         <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-          📊 Data Table Rows: <span style={{ color: 'var(--color-primary-light)', fontWeight: 700 }}>{items.length}</span> / {totalCount} Loaded (Order Date: <span style={{ color: '#34d399', fontWeight: 700 }}>{formattedOerdte}</span>)
+          📊 Data Table Rows: <span style={{ color: 'var(--color-primary-light)', fontWeight: 700 }}>{items.length}</span> / {totalCount} Loaded
         </div>
       </div>
 
@@ -173,9 +154,8 @@ export default function WarehouseSalesAnalytics() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
             <thead style={{ position: 'sticky', top: 0, background: '#161B22', zIndex: 2 }}>
               <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
-                <th style={{ padding: '12px 10px' }}>Batch ID</th>
-                <th style={{ padding: '12px 10px' }}>Order Date (oerdte)</th>
                 <th style={{ padding: '12px 10px' }}>Warehouse</th>
+                <th style={{ padding: '12px 10px' }}>Batch ID</th>
                 <th style={{ padding: '12px 10px' }}>Invoice #</th>
                 <th style={{ padding: '12px 10px' }}>Customer Item Code</th>
                 <th style={{ padding: '12px 10px' }}>C&S Item Code</th>
@@ -189,9 +169,8 @@ export default function WarehouseSalesAnalytics() {
             <tbody>
               {items.map((item, idx) => (
                 <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <td style={{ padding: '10px', color: '#f59e0b', fontWeight: 600 }}>{item.batch_id}</td>
-                  <td style={{ padding: '10px', color: 'var(--text-secondary)' }}>{item.oerdte}</td>
                   <td style={{ padding: '10px', fontWeight: 700, color: 'var(--color-cyan)' }}>{item.whs_num}</td>
+                  <td style={{ padding: '10px', color: '#f59e0b', fontWeight: 600, fontFamily: 'monospace' }}>{item.batch_id || '—'}</td>
                   <td style={{ padding: '10px', color: 'var(--color-primary)' }}>{item.invc_num_stg}</td>
                   <td style={{ padding: '10px' }}>{item.cust_item_code}</td>
                   <td style={{ padding: '10px', color: '#34d399', fontWeight: 600 }}>{item.cs_item_code}</td>

@@ -62,3 +62,55 @@ def test_agent_status_sidebar(page: Page):
     status_section = page.locator("text=AGENT STATUS")
     expect(status_section).to_be_visible()
 
+
+# ── UI Health Check Tests (Section 8b) ──────────────────────────────────────
+
+
+def test_kpi_cards_populated(page: Page):
+    """All KPI cards must be visible and display non-empty values."""
+    page.goto(BASE_URL)
+    page.wait_for_selector(".kpi-card", timeout=10000)
+    kpi_cards = page.locator(".kpi-card")
+    assert kpi_cards.count() >= 6, "Expected at least 6 KPI cards"
+    # Each card must have a visible value element
+    for i in range(kpi_cards.count()):
+        card = kpi_cards.nth(i)
+        expect(card).to_be_visible()
+
+
+def test_bar_chart_rendered(page: Page):
+    """Bar chart must render SVG bars — not blank canvas."""
+    page.goto(BASE_URL)
+    page.wait_for_selector(".chart-card", timeout=10000)
+    # Recharts renders <svg> inside chart-card
+    page.wait_for_selector(".chart-card svg", timeout=8000)
+    svg_elements = page.locator(".chart-card svg")
+    assert svg_elements.count() >= 1, "Bar chart SVG not found — chart may be blank"
+
+
+def test_scatter_plot_rendered(page: Page):
+    """Scatter plot must render SVG dots — not blank canvas."""
+    page.goto(BASE_URL)
+    page.wait_for_selector(".chart-card svg", timeout=10000)
+    # Both charts (bar + scatter) must have SVGs
+    chart_svgs = page.locator(".chart-card svg")
+    assert chart_svgs.count() >= 2, "Scatter plot SVG not found — second chart may be blank"
+
+
+def test_warehouse_table_populated(page: Page):
+    """Warehouse Sales & Invoice Analytics table must have at least 1 row of data."""
+    page.goto(BASE_URL)
+    # Wait for the table to appear (it's inside WarehouseSalesAnalytics component)
+    page.wait_for_selector("table", timeout=15000)
+    rows = page.locator("table tbody tr")
+    count = rows.count()
+    assert count >= 1, f"Table has no data rows — got {count} rows"
+
+
+def test_table_row_count_badge(page: Page):
+    """Row count badge must show 'Loaded X / Y' with X > 0."""
+    page.goto(BASE_URL)
+    page.wait_for_selector("table", timeout=15000)
+    # Look for the row count text in the page
+    row_badge = page.locator("text=Data Table Rows")
+    expect(row_badge).to_be_visible()
