@@ -1,0 +1,48 @@
+{
+  "project": "AI Analytics Dashboard",
+  "version": "1.0.0",
+  "initialized_at": null,
+  "last_updated": null,
+  "current_sprint": null,
+  "active_tasks": [],
+  "completed_tasks": [],
+  "plane_project_id": null,
+  "plane_workspace_slug": null,
+  "github_repo": null,
+  "agents": {
+    "orchestrator": {
+      "status": "idle",
+      "last_run": null,
+      "current_task": null
+    },
+    "builder": {
+      "status": "idle",
+      "last_run": null,
+      "current_task": null,
+      "files_modified": []
+    },
+    "tester": {
+      "status": "idle",
+      "last_run": null,
+      "last_test_results": {
+        "unit": null,
+        "browser": null,
+        "passed": 0,
+        "failed": 0
+      }
+    },
+    "git_agent": {
+      "status": "idle",
+      "last_push": null,
+      "pending_files": []
+    }
+  },
+  "daily_summary": {
+    "date": null,
+    "tasks_completed": [],
+    "tests_passed": 0,
+    "tests_failed": 0,
+    "files_changed": [],
+    "git_pushed": false
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "workspace_slug": "",
+  "project_name": "AI Analytics Dashboard",
+  "project_id": "",
+  "api_base_url": "https://api.plane.so/api/v1",
+  "sprints": [
+    {
+      "name": "Sprint 1 — Foundation",
+      "description": "Project setup, backend API, memory system",
+      "duration_weeks": 1
+    },
+    {
+      "name": "Sprint 2 — Frontend",
+      "description": "React frontend, UI components, charts",
+      "duration_weeks": 1
+    },
+    {
+      "name": "Sprint 3 — Agents & MCP",
+      "description": "Agent system, Plane integration, MCP servers",
+      "duration_weeks": 1
+    },
+    {
+      "name": "Sprint 4 — Testing",
+      "description": "Testing suite, browser tests, git automation",
+      "duration_weeks": 1
+    },
+    {
+      "name": "Sprint 5 — Polish",
+      "description": "Performance, documentation, final review",
+      "duration_weeks": 1
+    }
+  ],
+  "priority_map": {
+    "critical": "urgent",
+    "high": "high",
+    "medium": "medium",
+    "low": "low"
+  },
+  "complexity_to_story_points": {
+    "1": "trivial (< 1 hour)",
+    "2": "easy (1-3 hours)",
+    "3": "medium (3-8 hours)",
+    "5": "hard (1-2 days)",
+    "8": "complex (2-5 days)"
+  }
+}

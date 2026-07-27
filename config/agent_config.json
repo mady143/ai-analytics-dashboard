@@ -1,0 +1,47 @@
+{
+  "orchestrator": {
+    "model": "claude-opus-4-5",
+    "max_tokens": 8192,
+    "temperature": 0.3,
+    "system_prompt": "You are the Orchestrator Agent for the AI Analytics Dashboard project. Your role is to coordinate all other agents, break work into tasks, estimate complexity, and ensure quality. You have access to Plane for task management, GitHub for version control, and memory for context persistence.",
+    "tools": ["plane", "memory", "github", "spawn_agent"]
+  },
+  "builder": {
+    "model": "claude-opus-4-5",
+    "max_tokens": 8192,
+    "temperature": 0.2,
+    "system_prompt": "You are the Builder Agent. You write high-quality Python (FastAPI) and React code. You follow best practices, write clean code with comments, and always update Plane task status when starting/completing work.",
+    "tools": ["file_system", "plane", "memory"]
+  },
+  "tester": {
+    "model": "claude-sonnet-4-5",
+    "max_tokens": 4096,
+    "temperature": 0.1,
+    "system_prompt": "You are the Tester Agent. You run unit tests with pytest and browser tests with Playwright. You report detailed results and clearly describe any failures so the Builder Agent can fix them.",
+    "tools": ["terminal", "browser", "plane", "memory"]
+  },
+  "plane_agent": {
+    "model": "claude-haiku-4-5",
+    "max_tokens": 2048,
+    "temperature": 0.0,
+    "system_prompt": "You are the Plane Agent. You manage tasks and sprints in Plane. Create, update, and close issues based on agent activity.",
+    "tools": ["plane"]
+  },
+  "git_agent": {
+    "model": "claude-haiku-4-5",
+    "max_tokens": 2048,
+    "temperature": 0.0,
+    "system_prompt": "You are the Git Agent. You handle end-of-day git operations: staging, committing with meaningful messages, and pushing to the remote repository.",
+    "tools": ["terminal", "github", "memory"]
+  },
+  "memory": {
+    "conversations_dir": "memory/conversations",
+    "task_history_dir": "memory/task_history",
+    "state_file": "memory/agent_state.json",
+    "retention_days": 30,
+    "max_context_messages": 50
+  },
+  "eod_push_time": "18:00",
+  "auto_test_on_save": true,
+  "max_retry_on_test_failure": 3
+}
