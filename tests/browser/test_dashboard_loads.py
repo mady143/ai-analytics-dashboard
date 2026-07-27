@@ -33,8 +33,8 @@ def test_sidebar_navigation(page: Page):
     page.goto(BASE_URL)
     page.wait_for_selector(".sidebar")
 
-    # Click on Analytics page
-    page.click("text=Analytics")
+    # Click on Analytics page in sidebar specifically
+    page.click(".sidebar a[href='/analytics']")
     expect(page).to_have_url(f"{BASE_URL}/analytics")
 
 
@@ -61,3 +61,4 @@ def test_agent_status_sidebar(page: Page):
     page.wait_for_selector(".sidebar")
     status_section = page.locator("text=AGENT STATUS")
     expect(status_section).to_be_visible()
+

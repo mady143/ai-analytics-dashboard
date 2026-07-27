@@ -169,15 +169,28 @@ def create_subtask(project_id: str, parent_issue_id: str, title: str, descriptio
 def update_task_status(project_id: str, issue_id: str, status: str) -> dict:
     """
     Update the status of a task.
-    status: "backlog" | "unstarted" | "started" | "completed" | "cancelled"
+    status: "backlog" | "unstarted" | "todo" | "started" | "in progress" | "completed" | "done" | "cancelled"
     """
-    # First get the state ID for the given status name
     states = get_states(project_id)
     state_id = None
+    status_clean = status.lower().strip()
+    
+    # Priority match by group or exact name
     for state in states:
-        if state["name"].lower() in status.lower() or status.lower() in state["name"].lower():
+        name = state.get("name", "").lower().strip()
+        group = state.get("group", "").lower().strip()
+        if status_clean in (name, group) or (status_clean == "done" and group == "completed") or (status_clean == "completed" and name == "done"):
             state_id = state["id"]
             break
+
+    if not state_id:
+        # Fallback substring match
+        for state in states:
+            name = state.get("name", "").lower().strip()
+            group = state.get("group", "").lower().strip()
+            if status_clean in name or status_clean in group:
+                state_id = state["id"]
+                break
 
     if not state_id:
         console.print(f"[red]State '{status}' not found in project states[/red]")

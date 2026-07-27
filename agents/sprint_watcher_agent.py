@@ -66,7 +66,7 @@ from memory_manager import (
 # Plane state names we care about (case-insensitive matching)
 STATE_TODO      = "unstarted"     # Newly added task
 STATE_INPROG    = "started"       # Being worked on by Builder
-STATE_DONE      = "completed"     # Tested and merged
+STATE_DONE      = "done"          # Tested and merged
 STATE_FAILED    = "cancelled"     # Tests failed — needs review
 STATE_BACKLOG   = "backlog"       # Not yet in sprint
 
@@ -453,8 +453,14 @@ class SprintWatcherAgent:
         try:
             while True:
                 cycle += 1
+                now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 console.rule(
-                    f"[dim]Poll #{cycle} — {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}[/dim]"
+                    f"[dim]Poll #{cycle} — {now_str}[/dim]"
+                )
+                update_agent_status(
+                    "sprint_watcher",
+                    "running",
+                    f"Watching sprint (Poll #{cycle} @ {datetime.now().strftime('%H:%M:%S')})"
                 )
 
                 tasks = self._fetch_sprint_tasks()
@@ -463,10 +469,10 @@ class SprintWatcherAgent:
                     self._print_sprint_table(tasks)
                     self._sync_completed_tasks(tasks)
 
-                    # Identify NEW tasks (unstarted / todo, not yet processed)
+                    # Identify NEW/UNCOMPLETED tasks (not yet processed this session)
                     new_tasks = [
                         t for t in tasks
-                        if self._get_task_state(t) in (STATE_TODO, STATE_BACKLOG, "")
+                        if self._get_task_state(t) not in (STATE_DONE, "completed", "done")
                         and t["id"] not in self._processed_task_ids
                     ]
 
