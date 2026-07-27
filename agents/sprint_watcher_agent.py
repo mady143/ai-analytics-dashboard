@@ -147,11 +147,12 @@ class SprintWatcherAgent:
 
     def _get_task_state(self, task: dict) -> str:
         """Normalise the task state to one of our STATE_* constants."""
-        state_name = (
-            task.get("state_detail", {}).get("name", "")
-            or task.get("state", "")
-        ).lower()
-        return state_name
+        if task.get("state_group"):
+            return task.get("state_group").lower()
+        state_detail = task.get("state_detail")
+        if isinstance(state_detail, dict) and state_detail.get("name"):
+            return state_detail.get("name").lower()
+        return str(task.get("state", "")).lower()
 
     def _print_sprint_table(self, tasks: list[dict]):
         """Render a Rich table of current sprint tasks."""
@@ -275,21 +276,26 @@ class SprintWatcherAgent:
                 timeout=300,          # 5-minute timeout per task
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
             )
+
+            stdout = result.stdout or ""
+            stderr = result.stderr or ""
 
             if result.returncode == 0:
                 console.print(f"[green]✅ Builder completed: {task_title}[/green]")
                 log_task_result(
                     task_id, task_title, "builder", "completed",
-                    result.stdout[-2000:],
+                    stdout[-2000:],
                 )
                 return True
             else:
                 console.print(f"[red]❌ Builder failed: {task_title}[/red]")
-                console.print(result.stderr[-1000:])
+                console.print(stderr[-1000:])
                 log_task_result(
                     task_id, task_title, "builder", "failed",
-                    result.stderr[-2000:],
+                    stderr[-2000:],
                 )
                 return False
 
@@ -318,9 +324,13 @@ class SprintWatcherAgent:
             cwd=str(ROOT_DIR),
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=120,
         )
-        output = result.stdout + result.stderr
+        stdout = result.stdout or ""
+        stderr = result.stderr or ""
+        output = stdout + stderr
         passed = result.returncode == 0
         if passed:
             console.print("[green]✅ Tests PASSED[/green]")
@@ -358,6 +368,18 @@ class SprintWatcherAgent:
         )
 
         self._processed_task_ids.add(task_id)
+
+        # ── Step 5: Automatically commit and push code if task passed ──────────
+        if success:
+            try:
+                from git_agent import eod_push
+                console.print(f"[bold cyan]🔀 Auto-committing and pushing code for completed task: {task_title}[/bold cyan]")
+                eod_push(
+                    tasks_completed=[task_title],
+                    custom_summary=f"Automated completion of sprint task: {task_title}"
+                )
+            except Exception as e:
+                console.print(f"[yellow]⚠️  Git push skipped/failed: {e}[/yellow]")
 
         console.print(Panel(
             f"[bold {'green' if success else 'red'}]{icon} Task {status_label.upper()}[/bold {'green' if success else 'red'}]\n"

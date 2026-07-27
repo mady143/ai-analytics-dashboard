@@ -153,6 +153,17 @@ def push(branch: str = "main", force: bool = False) -> bool:
         return False
 
 
+def pull(branch: str = "main") -> bool:
+    """Pull latest changes from remote origin."""
+    stdout, stderr, code = _run_git(["pull", "origin", branch])
+    if code == 0:
+        console.print(f"[bold green]📥 Pulled latest changes from origin/{branch}[/bold green]")
+        return True
+    else:
+        console.print(f"[red]❌ Pull failed: {stderr}[/red]")
+        return False
+
+
 def get_commit_log(n: int = 5) -> list[str]:
     """Get the last N commit messages."""
     stdout, _, _ = _run_git(["log", f"-{n}", "--oneline"])

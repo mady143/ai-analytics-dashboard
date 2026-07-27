@@ -1,138 +1,62 @@
 """
-Memory Manager — Handles persistent storage for all agents.
-Saves/loads conversation history, task logs, and agent state.
+Memory Manager — Manages persistent agent conversation state, task history, and logging.
 """
 
-import json
 import os
-import jsonlines
-from datetime import datetime, timedelta
+import json
 from pathlib import Path
-from typing import Any, Optional
+from datetime import datetime, timedelta
+from typing import Optional
 from rich.console import Console
 
-console = Console()
-
-# ── Paths ──────────────────────────────────────────────────────────────────────
 ROOT_DIR = Path(__file__).parent.parent
 MEMORY_DIR = ROOT_DIR / "memory"
 CONVERSATIONS_DIR = MEMORY_DIR / "conversations"
 TASK_HISTORY_DIR = MEMORY_DIR / "task_history"
 STATE_FILE = MEMORY_DIR / "agent_state.json"
-AGENT_CONFIG_FILE = ROOT_DIR / "config" / "agent_config.json"
+
+console = Console()
 
 
 def _ensure_dirs():
-    """Create memory directories if they don't exist."""
+    MEMORY_DIR.mkdir(parents=True, exist_ok=True)
     CONVERSATIONS_DIR.mkdir(parents=True, exist_ok=True)
     TASK_HISTORY_DIR.mkdir(parents=True, exist_ok=True)
 
 
-# ── Agent State ────────────────────────────────────────────────────────────────
-
 def load_state() -> dict:
-    """Load the global agent state from disk."""
     _ensure_dirs()
     if STATE_FILE.exists():
-        with open(STATE_FILE, "r") as f:
-            return json.load(f)
-    return {}
+        try:
+            return json.loads(STATE_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return {
+        "agents": {},
+        "current_sprint": None,
+        "plane_project_id": None,
+        "plane_workspace_slug": "agentbuilder",
+        "last_active": datetime.now().isoformat()
+    }
 
 
-def save_state(state: dict) -> None:
-    """Persist the global agent state to disk."""
+def save_state(state: dict):
     _ensure_dirs()
-    state["last_updated"] = datetime.now().isoformat()
-    with open(STATE_FILE, "w") as f:
-        json.dump(state, f, indent=2)
-    console.print(f"[green]✅ Agent state saved[/green]")
+    state["last_active"] = datetime.now().isoformat()
+    STATE_FILE.write_text(json.dumps(state, indent=2), encoding="utf-8")
 
 
-def update_agent_status(agent_name: str, status: str, task: Optional[str] = None) -> None:
-    """Update the status of a specific agent in the state file."""
+def update_agent_status(agent_name: str, status: str, current_task: Optional[str] = None):
     state = load_state()
     if "agents" not in state:
         state["agents"] = {}
-    if agent_name not in state["agents"]:
-        state["agents"][agent_name] = {}
-    state["agents"][agent_name]["status"] = status
-    state["agents"][agent_name]["last_run"] = datetime.now().isoformat()
-    if task:
-        state["agents"][agent_name]["current_task"] = task
+    state["agents"][agent_name] = {
+        "status": status,
+        "current_task": current_task,
+        "updated_at": datetime.now().isoformat()
+    }
     save_state(state)
 
-
-# ── Conversation History ───────────────────────────────────────────────────────
-
-def save_conversation(agent_name: str, messages: list[dict]) -> str:
-    """
-    Save a conversation session to JSONL file.
-    Returns the path to the saved file.
-    """
-    _ensure_dirs()
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    filename = f"{timestamp}_{agent_name}.jsonl"
-    filepath = CONVERSATIONS_DIR / filename
-
-    with jsonlines.open(filepath, mode="w") as writer:
-        for msg in messages:
-            msg["_saved_at"] = datetime.now().isoformat()
-            writer.write(msg)
-
-    console.print(f"[blue]💾 Conversation saved: {filename}[/blue]")
-    return str(filepath)
-
-
-def load_last_conversation(agent_name: str, max_messages: int = 50) -> list[dict]:
-    """
-    Load the most recent conversation for a given agent.
-    Returns list of messages for context restoration.
-    """
-    _ensure_dirs()
-    # Find the most recent file for this agent
-    agent_files = sorted(
-        [f for f in CONVERSATIONS_DIR.glob(f"*_{agent_name}.jsonl")],
-        reverse=True
-    )
-
-    if not agent_files:
-        console.print(f"[yellow]⚠️  No previous conversation for {agent_name}[/yellow]")
-        return []
-
-    latest_file = agent_files[0]
-    messages = []
-
-    with jsonlines.open(latest_file) as reader:
-        for line in reader:
-            messages.append(line)
-
-    # Trim to max_messages (keep most recent)
-    messages = messages[-max_messages:]
-    console.print(f"[blue]📂 Loaded {len(messages)} messages for {agent_name}[/blue]")
-    return messages
-
-
-def load_all_conversations(agent_name: str, days: int = 7) -> list[dict]:
-    """Load all conversations for an agent within the last N days."""
-    _ensure_dirs()
-    cutoff = datetime.now() - timedelta(days=days)
-    all_messages = []
-
-    for filepath in sorted(CONVERSATIONS_DIR.glob(f"*_{agent_name}.jsonl")):
-        # Parse date from filename: YYYY-MM-DD_HH-MM-SS_agent.jsonl
-        try:
-            date_str = filepath.stem.split("_")[0]
-            file_date = datetime.strptime(date_str, "%Y-%m-%d")
-            if file_date >= cutoff:
-                with jsonlines.open(filepath) as reader:
-                    all_messages.extend(list(reader))
-        except (ValueError, IndexError):
-            continue
-
-    return all_messages
-
-
-# ── Task History ───────────────────────────────────────────────────────────────
 
 def log_task_result(
     task_id: str,
@@ -140,101 +64,78 @@ def log_task_result(
     agent_name: str,
     status: str,
     output: str,
-    files_changed: list[str] = None,
-    test_results: dict = None
-) -> None:
-    """
-    Log the result of a task to the task history directory.
-    Used for auditing and context by the orchestrator.
-    """
+    test_results: Optional[dict] = None
+):
     _ensure_dirs()
-    today = datetime.now().strftime("%Y-%m-%d")
-    filename = f"{today}_task_history.jsonl"
-    filepath = TASK_HISTORY_DIR / filename
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    history_file = TASK_HISTORY_DIR / f"{today_str}_task_history.jsonl"
 
     record = {
+        "timestamp": datetime.now().isoformat(),
         "task_id": task_id,
         "task_title": task_title,
         "agent": agent_name,
-        "status": status,  # "completed" | "failed" | "in_progress"
-        "output": output,
-        "files_changed": files_changed or [],
-        "test_results": test_results or {},
-        "timestamp": datetime.now().isoformat()
+        "status": status,
+        "output_snippet": output[-1000:] if output else "",
+        "test_results": test_results or {}
     }
 
-    with jsonlines.open(filepath, mode="a") as writer:
-        writer.write(record)
-
-    icon = "✅" if status == "completed" else "❌" if status == "failed" else "🔄"
-    console.print(f"[cyan]{icon} Task logged: {task_title} [{status}][/cyan]")
-
-
-def load_task_history(days: int = 7) -> list[dict]:
-    """Load task history from the last N days."""
-    _ensure_dirs()
-    cutoff = datetime.now() - timedelta(days=days)
-    all_records = []
-
-    for filepath in sorted(TASK_HISTORY_DIR.glob("*.jsonl")):
-        try:
-            date_str = filepath.stem.replace("_task_history", "")
-            file_date = datetime.strptime(date_str, "%Y-%m-%d")
-            if file_date >= cutoff:
-                with jsonlines.open(filepath) as reader:
-                    all_records.extend(list(reader))
-        except (ValueError, IndexError):
-            continue
-
-    return all_records
+    with history_file.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(record) + "\n")
 
 
 def get_todays_summary() -> dict:
-    """Get a summary of what was done today."""
-    today = datetime.now().strftime("%Y-%m-%d")
-    history = [r for r in load_task_history(days=1)
-               if r.get("timestamp", "").startswith(today)]
+    _ensure_dirs()
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    history_file = TASK_HISTORY_DIR / f"{today_str}_task_history.jsonl"
 
-    completed = [r for r in history if r["status"] == "completed"]
-    failed = [r for r in history if r["status"] == "failed"]
-    all_files = []
-    for r in history:
-        all_files.extend(r.get("files_changed", []))
+    tasks_completed = 0
+    tasks_failed = 0
+    details = []
+
+    if history_file.exists():
+        with history_file.open("r", encoding="utf-8") as f:
+            for line in f:
+                if line.strip():
+                    try:
+                        rec = json.loads(line.strip())
+                        details.append(rec)
+                        if rec.get("status") == "completed":
+                            tasks_completed += 1
+                        elif rec.get("status") == "failed":
+                            tasks_failed += 1
+                    except Exception:
+                        pass
+
+    try:
+        import subprocess
+        res = subprocess.run(["git", "status", "--porcelain"], cwd=str(ROOT_DIR), capture_output=True, text=True)
+        files_changed = [line.strip().split()[-1] for line in res.stdout.strip().split("\n") if line.strip()]
+    except Exception:
+        files_changed = []
 
     return {
-        "date": today,
-        "tasks_completed": len(completed),
-        "tasks_failed": len(failed),
-        "files_changed": list(set(all_files)),
-        "details": history
+        "date": today_str,
+        "tasks_completed": tasks_completed,
+        "tasks_failed": tasks_failed,
+        "files_changed": files_changed,
+        "details": details
     }
 
 
-# ── Cleanup ────────────────────────────────────────────────────────────────────
-
-def cleanup_old_memory(retention_days: int = 30) -> None:
-    """Delete conversation and task history files older than retention_days."""
+def cleanup_old_memory(retention_days: int = 30):
     _ensure_dirs()
     cutoff = datetime.now() - timedelta(days=retention_days)
-
-    for directory in [CONVERSATIONS_DIR, TASK_HISTORY_DIR]:
-        for filepath in directory.glob("*.jsonl"):
+    for folder in [CONVERSATIONS_DIR, TASK_HISTORY_DIR]:
+        for filepath in folder.glob("*.jsonl"):
             try:
-                date_str = filepath.stem.split("_")[0]
-                file_date = datetime.strptime(date_str, "%Y-%m-%d")
-                if file_date < cutoff:
+                mtime = datetime.fromtimestamp(filepath.stat().st_mtime)
+                if mtime < cutoff:
                     filepath.unlink()
-                    console.print(f"[dim]🗑️  Deleted old memory: {filepath.name}[/dim]")
-            except (ValueError, IndexError):
-                continue
+                    console.print(f"[dim]Deleted old memory: {filepath.name}[/dim]")
+            except Exception:
+                pass
 
 
 if __name__ == "__main__":
-    # Quick test
-    console.print("[bold green]Memory Manager Test[/bold green]")
-    state = load_state()
-    console.print(f"State keys: {list(state.keys())}")
-    update_agent_status("orchestrator", "running", "Test task")
-    log_task_result("TASK-001", "Test Task", "orchestrator", "completed", "All good!")
-    summary = get_todays_summary()
-    console.print(f"Today's summary: {summary}")
+    console.print(f"Memory Manager status: {load_state()}")

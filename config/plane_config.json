@@ -1,31 +1,31 @@
 {
-  "workspace_slug": "",
+  "workspace_slug": "agentbuilder",
   "project_name": "AI Analytics Dashboard",
-  "project_id": "",
+  "project_id": "6ceb45ad-db0b-42eb-8de1-b4fd05d6593a",
   "api_base_url": "https://api.plane.so/api/v1",
   "sprints": [
     {
-      "name": "Sprint 1 — Foundation",
+      "name": "Sprint 1 - Foundation",
       "description": "Project setup, backend API, memory system",
       "duration_weeks": 1
     },
     {
-      "name": "Sprint 2 — Frontend",
+      "name": "Sprint 2 - Frontend",
       "description": "React frontend, UI components, charts",
       "duration_weeks": 1
     },
     {
-      "name": "Sprint 3 — Agents & MCP",
+      "name": "Sprint 3 - Agents & MCP",
       "description": "Agent system, Plane integration, MCP servers",
       "duration_weeks": 1
     },
     {
-      "name": "Sprint 4 — Testing",
+      "name": "Sprint 4 - Testing",
       "description": "Testing suite, browser tests, git automation",
       "duration_weeks": 1
     },
     {
-      "name": "Sprint 5 — Polish",
+      "name": "Sprint 5 - Polish",
       "description": "Performance, documentation, final review",
       "duration_weeks": 1
     }

@@ -1,3 +1,4 @@
+import Navbar from './components/Navbar';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Sidebar from './components/Sidebar'
@@ -31,6 +32,8 @@ const Placeholder = ({ title, emoji }) => (
 
 function App() {
   return (
+    <>
+      <Navbar />
     <QueryClientProvider client={queryClient}>
       <Router>
         <div className="app-layout">

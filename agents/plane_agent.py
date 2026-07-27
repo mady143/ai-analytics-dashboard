@@ -50,7 +50,7 @@ def get_or_create_project() -> str:
 
     # Return cached project_id if available
     if config.get("project_id"):
-        console.print(f"[green]✅ Using existing Plane project: {config['project_id']}[/green]")
+        console.print(f"[green]Using existing Plane project: {config['project_id']}[/green]")
         return config["project_id"]
 
     # Create new project
@@ -71,7 +71,7 @@ def get_or_create_project() -> str:
     config["project_id"] = project_id
     _save_plane_config(config)
 
-    console.print(f"[bold green]🎉 Created Plane project: {config['project_name']} (ID: {project_id})[/bold green]")
+    console.print(f"[bold green]Created Plane project: {config['project_name']} (ID: {project_id})[/bold green]")
     return project_id
 
 
@@ -82,12 +82,20 @@ def create_sprint(project_id: str, sprint_name: str, description: str, duration_
     start_date = datetime.now().strftime("%Y-%m-%d")
     end_date = (datetime.now() + timedelta(weeks=duration_weeks)).strftime("%Y-%m-%d")
 
+    # Ensure cycle_view is enabled on project
+    try:
+        with httpx.Client() as client:
+            client.patch(f"{PLANE_BASE_URL}/workspaces/{PLANE_WORKSPACE_SLUG}/projects/{project_id}/", headers=HEADERS, json={"cycle_view": True})
+    except Exception:
+        pass
+
     url = f"{PLANE_BASE_URL}/workspaces/{PLANE_WORKSPACE_SLUG}/projects/{project_id}/cycles/"
     payload = {
         "name": sprint_name,
         "description": description,
         "start_date": start_date,
-        "end_date": end_date
+        "end_date": end_date,
+        "project_id": project_id
     }
 
     with httpx.Client() as client:
@@ -95,7 +103,7 @@ def create_sprint(project_id: str, sprint_name: str, description: str, duration_
         resp.raise_for_status()
         cycle = resp.json()
 
-    console.print(f"[cyan]🔄 Created sprint: {sprint_name}[/cyan]")
+    console.print(f"[cyan]Created sprint: {sprint_name}[/cyan]")
     return cycle
 
 
@@ -142,7 +150,7 @@ def create_task(
     if cycle_id:
         add_task_to_sprint(project_id, cycle_id, issue["id"])
 
-    console.print(f"[yellow]📌 Created task: [{priority.upper()}] {title} ({story_points} pts)[/yellow]")
+    console.print(f"[yellow]Created task: [{priority.upper()}] {title} ({story_points} pts)[/yellow]")
     return issue
 
 
@@ -172,7 +180,7 @@ def update_task_status(project_id: str, issue_id: str, status: str) -> dict:
             break
 
     if not state_id:
-        console.print(f"[red]❌ State '{status}' not found in project states[/red]")
+        console.print(f"[red]State '{status}' not found in project states[/red]")
         return {}
 
     url = f"{PLANE_BASE_URL}/workspaces/{PLANE_WORKSPACE_SLUG}/projects/{project_id}/issues/{issue_id}/"
@@ -183,8 +191,7 @@ def update_task_status(project_id: str, issue_id: str, status: str) -> dict:
         resp.raise_for_status()
         issue = resp.json()
 
-    icon = "✅" if "complet" in status.lower() else "🔄" if "start" in status.lower() else "📋"
-    console.print(f"[green]{icon} Task status updated → {status}[/green]")
+    console.print(f"[green]Task status updated -> {status}[/green]")
     return issue
 
 
@@ -253,29 +260,29 @@ def setup_initial_tasks(project_id: str, sprint_1_id: str) -> None:
     """Create the initial set of tasks for Sprint 1 in Plane."""
     tasks = [
         # Backend epic
-        {"title": "🏗️ Create FastAPI project structure", "priority": "urgent", "pts": 2,
+        {"title": "Create FastAPI project structure", "priority": "urgent", "pts": 2,
          "desc": "Set up FastAPI app with CORS, health check, and router structure"},
-        {"title": "📊 Data ingestion endpoints", "priority": "high", "pts": 3,
+        {"title": "Data ingestion endpoints", "priority": "high", "pts": 3,
          "desc": "POST /upload, GET /sample, GET /summary endpoints"},
-        {"title": "🤖 ML analytics endpoints", "priority": "high", "pts": 5,
+        {"title": "ML analytics endpoints", "priority": "high", "pts": 5,
          "desc": "Train model, get results, predict endpoints"},
-        {"title": "📈 Chart data endpoints", "priority": "medium", "pts": 3,
+        {"title": "Chart data endpoints", "priority": "medium", "pts": 3,
          "desc": "Bar, scatter, heatmap, KPI chart data endpoints"},
 
         # Memory & Agents
-        {"title": "💾 Memory system implementation", "priority": "urgent", "pts": 3,
+        {"title": "Memory system implementation", "priority": "urgent", "pts": 3,
          "desc": "Conversation history, task logs, agent state persistence"},
-        {"title": "🤖 Orchestrator agent", "priority": "urgent", "pts": 8,
+        {"title": "Orchestrator agent", "priority": "urgent", "pts": 8,
          "desc": "Master agent that coordinates all sub-agents"},
-        {"title": "🔨 Builder agent", "priority": "high", "pts": 5,
+        {"title": "Builder agent", "priority": "high", "pts": 5,
          "desc": "Code writing agent with Plane + memory integration"},
-        {"title": "🧪 Tester agent", "priority": "high", "pts": 5,
+        {"title": "Tester agent", "priority": "high", "pts": 5,
          "desc": "Automated testing agent with pytest + Playwright"},
-        {"title": "🔀 Git agent", "priority": "medium", "pts": 2,
+        {"title": "Git agent", "priority": "medium", "pts": 2,
          "desc": "End-of-day git commit and push automation"},
 
         # MCP
-        {"title": "🔌 MCP server configuration", "priority": "medium", "pts": 3,
+        {"title": "MCP server configuration", "priority": "medium", "pts": 3,
          "desc": "Configure Plane, GitHub, Memory, Browser MCP servers"},
     ]
 
@@ -291,13 +298,13 @@ def setup_initial_tasks(project_id: str, sprint_1_id: str) -> None:
 
 
 if __name__ == "__main__":
-    console.print("[bold magenta]🚀 Plane Agent — Setup Mode[/bold magenta]")
+    console.print("[bold magenta]Plane Agent -- Setup Mode[/bold magenta]")
 
     if not PLANE_API_TOKEN or not PLANE_WORKSPACE_SLUG:
-        console.print("[red]❌ Please set PLANE_API_TOKEN and PLANE_WORKSPACE_SLUG in .env[/red]")
+        console.print("[red]Please set PLANE_API_TOKEN and PLANE_WORKSPACE_SLUG in .env[/red]")
     else:
         project_id = get_or_create_project()
         sprints = setup_all_sprints(project_id)
         if sprints:
             setup_initial_tasks(project_id, sprints[0]["id"])
-            console.print("[bold green]🎉 Plane project fully set up![/bold green]")
+            console.print("[bold green]Plane project fully set up![/bold green]")
