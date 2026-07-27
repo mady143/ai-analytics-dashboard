@@ -78,6 +78,8 @@ export default function Dashboard() {
       }
     }
     fetchAll()
+    const timer = setInterval(fetchAll, 10000)
+    return () => clearInterval(timer)
   }, [])
 
   return (

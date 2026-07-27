@@ -23,8 +23,10 @@ The system is configured to perform all mandatory tasks autonomously **WITHOUT a
   ```bash
   python scripts/run_sprint_watcher.py --interval 60
   ```
-- **What it monitors:** Polls Plane workspace (`agentbuilder`) every 60 seconds to check if any task is in `unstarted`, `to-do`, or `in-progress` state.
+- **What it monitors:** Polls Plane workspace (`agentbuilder`) every **60 seconds** (`--interval 60`) to check if any task is added or updated to `unstarted`, `to-do`, or `in-progress` state.
+- **Dynamic Task Re-evaluation:** Automatically clears processed cache if an existing task is updated back to `In Progress` or `To Do` on Plane, triggering automated builder execution, pytest verification, Plane status update to `Done`, and Git push.
 - **Mandatory Directive:** Must run continuously every 60 seconds without manual intervention.
+- **Active Runner:** `task-235` running in background (`python scripts/run_sprint_watcher.py --interval 60`). ⚡ **Last restarted: 2026-07-27 14:46**.
 - **File References:**
   - [`scripts/run_sprint_watcher.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/run_sprint_watcher.py)
   - [`agents/sprint_watcher_agent.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/sprint_watcher_agent.py)
@@ -134,6 +136,15 @@ The system is configured to perform all mandatory tasks autonomously **WITHOUT a
 ### 12. Primary Dashboard Layout Alignment with Active Sprint Specification
 - **Mandatory Directive:** Whenever a sprint defines a new feature component (such as Sprint `AAD-5`: **Warehouse Sales & Invoice Analytics**), the primary user interface (`http://localhost:5173`) must display the target sprint feature **prominently at the top of the page above the fold**.
 - **Sprint Specification Reading Rule:** Read and analyze the **Sprint ID**, **Sprint Title**, and **Sprint Description** thoroughly. Do not place active sprint components below secondary or generic fallback components (such as default HR/Employee cards). Ensure the primary dashboard header and top view reflect the active sprint topic.
+
+---
+
+### 13. Automatic UI Data Reload & Live Refresh Policy
+- **Mandatory Directive:** Ensure all frontend pages ([`Dashboard.jsx`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/frontend/src/pages/Dashboard.jsx), [`WarehouseSalesAnalytics.jsx`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/frontend/src/components/WarehouseSalesAnalytics.jsx)) implement automatic periodic polling/refresh intervals (`setInterval(fetchAll, 10000)`).
+- **Live Data Update Guarantee:** When background agents complete sprint tasks (such as **`Warehouse level statics`** or **`Warehouse Sales Analytics`**), the live web UI at `http://localhost:5173/` automatically updates KPI cards, charts, data tables, and warehouse metrics without requiring manual browser page reloads.
+- **File References:**
+  - [`frontend/src/pages/Dashboard.jsx`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/frontend/src/pages/Dashboard.jsx)
+  - [`frontend/src/components/WarehouseSalesAnalytics.jsx`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/frontend/src/components/WarehouseSalesAnalytics.jsx)
 
 
 

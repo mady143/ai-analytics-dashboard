@@ -19,7 +19,6 @@ export default function WarehouseSalesAnalytics() {
   // Reset & initial load on DB target or oerdte date change
   useEffect(() => {
     const fetchInitial = async () => {
-      setLoading(true);
       try {
         const res = await axios.get(`${API}/api/warehouse/statistics?target_db=${targetDb}&oerdte=${formattedOerdte}&limit=${LIMIT}&offset=0`);
         setSummary(res.data.summary);
@@ -33,6 +32,8 @@ export default function WarehouseSalesAnalytics() {
       }
     };
     fetchInitial();
+    const timer = setInterval(fetchInitial, 10000);
+    return () => clearInterval(timer);
   }, [targetDb, oerdte]);
 
   // Load next batch on scroll down

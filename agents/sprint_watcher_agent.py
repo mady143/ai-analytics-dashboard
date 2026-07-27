@@ -82,11 +82,11 @@ class SprintWatcherAgent:
     Todo → In Progress (Builder writes code) → Tests → Done / Failed
     """
 
-    def __init__(self, poll_interval_seconds: int = 120):
+    def __init__(self, poll_interval_seconds: int = 60):
         """
         Args:
             poll_interval_seconds: How often to poll Plane for task changes.
-                                   Default = 2 minutes.
+                                   Default = 60 seconds.
         """
         self.poll_interval = poll_interval_seconds
         self.project_id: Optional[str] = None
