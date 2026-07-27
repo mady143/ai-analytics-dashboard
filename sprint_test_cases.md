@@ -31,3 +31,17 @@ This document records the unit and browser automation test cases for each sprint
 - **Test Case 3: `test_sidebar_navigation`**
   - **Goal:** Click sidebar link `.sidebar a[href='/analytics']` and verify URL updates to `http://localhost:5173/analytics`.
   - **Result:** `PASSED`
+
+---
+
+## 🔹 Sprint Task: "Warehouse level statics"
+
+### Unit Test Suite: [`tests/unit/test_warehouse_analytics.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tests/unit/test_warehouse_analytics.py)
+
+- **Test Case 1: `test_warehouse_file_exists`**
+  - **Goal:** Verify component file [`WarehouseAnalytics.jsx`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/frontend/src/components/WarehouseAnalytics.jsx) exists.
+  - **Result:** `PASSED`
+
+- **Test Case 2: `test_warehouse_structure`**
+  - **Goal:** Verify component contains `"Warehouse Level Statistics"` heading and storage metrics.
+  - **Result:** `PASSED`

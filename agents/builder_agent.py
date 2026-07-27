@@ -132,6 +132,17 @@ export default function WarehouseAnalytics() {
     warehouse_file.write_text(warehouse_code, encoding="utf-8")
     console.print(f"[green]✅ Created WarehouseAnalytics component at {warehouse_file}[/green]")
 
+    # Inject component into Dashboard.jsx if missing
+    dashboard_file = ROOT_DIR / "frontend" / "src" / "pages" / "Dashboard.jsx"
+    if dashboard_file.exists():
+        dash_code = dashboard_file.read_text(encoding="utf-8")
+        if "WarehouseAnalytics" not in dash_code:
+            updated_dash = "import WarehouseAnalytics from '../components/WarehouseAnalytics';\n" + dash_code
+            if "</motion.div>" in updated_dash:
+                updated_dash = updated_dash.replace("</motion.div>", "  <WarehouseAnalytics />\n    </motion.div>")
+            dashboard_file.write_text(updated_dash, encoding="utf-8")
+            console.print("[green]✅ Integrated WarehouseAnalytics into Dashboard.jsx[/green]")
+
     # Create unit test file
     test_dir = ROOT_DIR / "tests" / "unit"
     test_dir.mkdir(parents=True, exist_ok=True)

@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import KPICard from '../components/KPICard'
+import WarehouseAnalytics from '../components/WarehouseAnalytics'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   ScatterChart, Scatter, LineChart, Line, Legend, Cell
@@ -162,6 +163,8 @@ export default function Dashboard() {
           ))}
         </div>
       </motion.div>
+      {/* Warehouse Analytics Component */}
+      <WarehouseAnalytics />
     </motion.div>
   )
 }
