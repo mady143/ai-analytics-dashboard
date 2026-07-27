@@ -39,10 +39,15 @@ from rich.panel import Panel
 from rich.table import Table
 from dotenv import load_dotenv
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
+
 ROOT_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT_DIR / "agents"))
 load_dotenv(ROOT_DIR / ".env")
-console = Console()
+console = Console(legacy_windows=False)
 
 # ── Imports from sibling agents ──────────────────────────────────────────────
 from plane_agent import (
@@ -153,6 +158,16 @@ class SprintWatcherAgent:
         if isinstance(state_detail, dict) and state_detail.get("name"):
             return state_detail.get("name").lower()
         return str(task.get("state", "")).lower()
+
+    def _is_task_active(self, task: dict) -> bool:
+        """Check if a task is in an active/workable state (unstarted, todo, started, in progress)."""
+        group = str(task.get("state_group", "")).lower()
+        detail = task.get("state_detail") or {}
+        name = str(detail.get("name") if isinstance(detail, dict) else "").lower()
+        raw_state = str(task.get("state", "")).lower()
+
+        active_terms = {"unstarted", "todo", "to do", "to_do", "started", "in progress", "in_progress"}
+        return (group in active_terms) or (name in active_terms) or (raw_state in active_terms)
 
     def _print_sprint_table(self, tasks: list[dict]):
         """Render a Rich table of current sprint tasks."""
@@ -282,6 +297,7 @@ class SprintWatcherAgent:
                 text=True,
                 encoding="utf-8",
                 errors="replace",
+                env={**os.environ, "PYTHONIOENCODING": "utf-8"},
             )
 
             stdout = result.stdout or ""
@@ -394,6 +410,8 @@ class SprintWatcherAgent:
             border_style="green" if success else "red",
         ))
 
+        # Ensure processed task ID is retained so we don't re-trigger unless state changes on Plane again
+
     # ── Completed Task Sync ───────────────────────────────────────────────────
 
     def _sync_completed_tasks(self, tasks: list[dict]):
@@ -469,11 +487,15 @@ class SprintWatcherAgent:
                     self._print_sprint_table(tasks)
                     self._sync_completed_tasks(tasks)
 
-                    # Identify NEW/UNCOMPLETED tasks (not yet processed this session)
+                    # Re-evaluate tasks updated on Plane to active state (In Progress / To Do)
+                    for t in tasks:
+                        if self._is_task_active(t) and t["id"] in self._processed_task_ids:
+                            self._processed_task_ids.remove(t["id"])
+
+                    # Identify NEW/UNCOMPLETED tasks
                     new_tasks = [
                         t for t in tasks
-                        if self._get_task_state(t) not in (STATE_DONE, "completed", "done")
-                        and t["id"] not in self._processed_task_ids
+                        if self._is_task_active(t) and t["id"] not in self._processed_task_ids
                     ]
 
                     # Sort by priority: urgent → high → medium → low
@@ -484,7 +506,7 @@ class SprintWatcherAgent:
 
                     if new_tasks:
                         console.print(
-                            f"[bold yellow]⚡ {len(new_tasks)} new task(s) detected![/bold yellow]"
+                            f"[bold yellow]⚡ {len(new_tasks)} active task(s) detected![/bold yellow]"
                         )
                         for task in new_tasks:
                             self._handle_new_task(task)

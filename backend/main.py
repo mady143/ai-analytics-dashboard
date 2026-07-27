@@ -40,6 +40,13 @@ app.include_router(analytics.router, prefix="/api/analytics", tags=["Analytics"]
 app.include_router(charts.router, prefix="/api/charts", tags=["Charts"])
 
 
+# ── Warehouse Statistics Endpoint (AAD-5 Specification) ─────────────────────────
+@app.get("/api/warehouse/statistics", tags=["Warehouse"])
+async def warehouse_statistics(target_db: str = "pg_prod", limit: int = 20, offset: int = 0, oerdte: str = "20260723"):
+    from app.warehouse_service import get_warehouse_statistics
+    return get_warehouse_statistics(target_db=target_db, limit=limit, offset=offset, oerdte=oerdte)
+
+
 # ── Health Check ───────────────────────────────────────────────────────────────
 @app.get("/api/health", tags=["Health"])
 async def health_check():

@@ -11,12 +11,18 @@ from datetime import datetime
 from rich.console import Console
 from rich.panel import Panel
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
+
 ROOT_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT_DIR / "agents"))
 
 from memory_manager import update_agent_status, log_task_result
 
-console = Console()
+console = Console(legacy_windows=False)
+
 
 
 def build_navbar(task_title: str, description: str):
