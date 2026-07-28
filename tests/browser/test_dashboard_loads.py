@@ -101,7 +101,8 @@ def test_warehouse_table_populated(page: Page):
     """Warehouse Sales & Invoice Analytics table populates dynamically when target DB with records is selected."""
     page.goto(BASE_URL)
     page.wait_for_selector("#global-db-selector", timeout=10000)
-    page.select_option("#global-db-selector", "pg_prod")
+    page.select_option("#global-db-selector", "pg_dev")
+    page.fill("#global-date-picker", "2026-07-24")
     page.click("#submit-db-btn")
     page.wait_for_selector("table", timeout=15000)
     rows = page.locator("table tbody tr")
@@ -119,19 +120,10 @@ def test_table_row_count_badge(page: Page):
 
 
 def test_target_db_selection_prod_vs_dev(page: Page):
-    """Selecting target DB (PROD vs DEV) updates active badge and page state."""
+    """Selecting target DB updates active badge and page state."""
     page.goto(BASE_URL)
     page.wait_for_selector("#global-db-selector", timeout=10000)
     
-    # Select PostgreSQL PROD
-    page.select_option("#global-db-selector", "pg_prod")
-    page.click("#submit-db-btn")
-    page.wait_for_timeout(1000)
-    
-    # Active badge should state PG_PROD
-    badge = page.locator("text=Active: PG_PROD")
-    expect(badge).to_be_visible()
-
     # Select PostgreSQL DEV
     page.select_option("#global-db-selector", "pg_dev")
     page.click("#submit-db-btn")
@@ -150,8 +142,9 @@ def test_parameter_filter_inputs(page: Page):
     page.goto(BASE_URL)
     page.wait_for_selector("table", timeout=15000)
     
-    # Select pg_prod to ensure populated data rows exist for filter testing
-    page.select_option("#global-db-selector", "pg_prod")
+    # Select pg_dev and date 2026-07-24 to ensure populated data rows exist for filter testing
+    page.select_option("#global-db-selector", "pg_dev")
+    page.fill("#global-date-picker", "2026-07-24")
     page.click("#submit-db-btn")
     page.wait_for_timeout(2000)
     

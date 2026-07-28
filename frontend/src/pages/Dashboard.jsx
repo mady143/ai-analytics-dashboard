@@ -159,11 +159,9 @@ export default function Dashboard() {
                 cursor: 'pointer'
               }}
             >
-              <option value="pg_prod">PostgreSQL PROD</option>
               <option value="pg_dev">PostgreSQL DEV</option>
               <option value="oracle_dev">Oracle DEV</option>
               <option value="oracle_f1">Oracle F1</option>
-              <option value="oracle_prod">Oracle PROD</option>
             </select>
           </div>
 

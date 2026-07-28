@@ -27,19 +27,6 @@ DB_CONFIGURATIONS = {
         "user": "sptnintg",
         "password": "qPZodJS-IGNThHP-N66Bh8"
     },
-    "pg_prod": {
-        "type": "PostgreSQL",
-        "env": "PROD",
-        # ⚠️ PRODUCTION DB DISABLED PER USER INSTRUCTION — PREVENTS PRODUCTION DB QUERY ALERTS
-        # "host": "gc-ue4-psql-sni-prd01.prod.gcp.cswg.com",
-        # "user": "sptnintg_ro",
-        # "password": "63Z3zk-kPEID3",
-        "host": "gc-ue4-psql-sni-dev01.nonprod.gcp.cswg.com",
-        "port": 5432,
-        "dbname": "sptnintgdb",
-        "user": "sptnintg",
-        "password": "qPZodJS-IGNThHP-N66Bh8"
-    },
     "oracle_dev": {
         "type": "Oracle",
         "env": "DEV",
@@ -58,11 +45,11 @@ DB_CONFIGURATIONS = {
     },
     "oracle_prod": {
         "type": "Oracle",
-        "env": "PROD",
-        "host": "ebsdb.cswg.com",
+        "env": "DEV",
+        "host": "csebsd2db.cswg.com",
         "port": 1521,
-        "service_name": "EBSP_BI",
-        "user": "XXMKTMED_DEALS_RO"
+        "service_name": "CSEBSD2",
+        "user": "apps"
     }
 }
 
