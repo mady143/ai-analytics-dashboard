@@ -192,6 +192,15 @@ These instructions were added as comments in Plane and MUST be implemented:
   2. Clicking the **🚀 Submit** button (or submitting the form) MUST invoke `handleSubmit(e)`, applying the chosen date (`appliedDate`) and target database (`appliedTargetDb`).
   3. Form submission immediately triggers decoupled API calls to `/api/charts/kpi`, `/api/charts/bar`, `/api/charts/scatter`, and `/api/warehouse/statistics`, updating all KPI cards, Bar charts, Scatter plots, and table views dynamically in real time.
 
+#### ⚠️ Requirement 4e — Comprehensive Application Testing & Anti-Freeze Release Directive (2026-07-28)
+- **Mandatory Policy (No Half-Testing Permitted):** Whenever ANY code change is made in backend Python (`backend/`) or frontend React (`frontend/`), partial or half testing is strictly forbidden. The system MUST perform **100% Comprehensive End-to-End Testing** across all UI components and database queries before release:
+
+  - 🔹 **Sub-task 4e.1 — KPI Cards Verification:** Validate total warehouse count, cases built quantity, original order quantity, and distinct invoice counts for any selected date across all target databases (`pg_prod`, `pg_dev`, `oracle_dev`, `oracle_f1`, `oracle_prod`).
+  - 🔹 **Sub-task 4e.2 — Bar Chart & Scatter Plot Rendering Verification:** Verify Recharts bar charts and scatter plots render dynamic data points, tooltips, axis labels, and legend titles matching database records without freezing or throwing rendering errors.
+  - 🔹 **Sub-task 4e.3 — Warehouse Analytics Table Verification:** Verify line items table populates `Warehouse #`, `Batch ID`, `Date`, `Invoice #`, `C&S Item Code`, `Cases Built`, `Order Qty`, and `Fulfillment Status` with infinite scrolling and filter parameter matching.
+  - 🔹 **Sub-task 4e.4 — Database Query Caching & Anti-Freeze Performance:** Maintain a thread-safe 15-second TTL query cache (`_fetch_from_postgres_cached` in `warehouse_service.py`) to prevent concurrent API requests (`/api/charts/kpi`, `/api/charts/bar`, `/api/charts/scatter`, `/api/warehouse/statistics`) from opening redundant DB connections or freezing the application UI.
+  - 🔹 **Sub-task 4e.5 — Automated Release & Verification Pipeline:** Run unit tests (`pytest tests/unit/`) and Playwright browser tests (`pytest tests/browser/`) end-to-end, reloading the browser page, testing date picker and DB selector form submission, confirming 100% PASS rate, and auto-pushing to remote Git (`git push origin main`).
+
 #### ⚠️ Requirement 4c — Mandatory File-Change Re-Deployment & End-to-End Browser Testing Mandate (2026-07-28)
 - **Mandatory Redeployment & Verification Directive:**
   Whenever ANY source file in `backend/` or `frontend/` is created or modified, the system MUST autonomously:

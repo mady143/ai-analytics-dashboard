@@ -9,6 +9,7 @@ it strictly returns 0 records and 0 summary counts without generating artificial
 """
 
 from typing import Dict, Any, List, Tuple
+import threading
 import psycopg2
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 
@@ -204,6 +205,28 @@ def _fetch_from_postgres(config: Dict[str, Any], oerdte: str = "", batch_id: str
         return [], [], {}
 
 
+import time
+
+_CACHE_LOCK = threading.Lock()
+_QUERY_CACHE: Dict[str, Tuple[float, Any]] = {}
+CACHE_TTL = 15.0  # 15 seconds TTL cache
+
+def _fetch_from_postgres_cached(config: Dict[str, Any], oerdte: str = "", batch_id: str = "", oewhse: str = "", oeinv: str = "", limit: int = 500) -> Tuple[List[Dict[str, Any]], List[str], Dict[str, Dict[str, int]]]:
+    """Caches query results for 15 seconds to prevent parallel API requests from blocking database execution."""
+    cache_key = f"{config.get('host')}:{oerdte}:{batch_id}:{oewhse}:{oeinv}:{limit}"
+    now = time.time()
+    with _CACHE_LOCK:
+        if cache_key in _QUERY_CACHE:
+            ts, cached_data = _QUERY_CACHE[cache_key]
+            if now - ts < CACHE_TTL:
+                return cached_data
+
+    res = _fetch_from_postgres(config, oerdte=oerdte, batch_id=batch_id, oewhse=oewhse, oeinv=oeinv, limit=limit)
+    with _CACHE_LOCK:
+        _QUERY_CACHE[cache_key] = (now, res)
+    return res
+
+
 def get_warehouse_statistics(
     target_db: str = "pg_dev",
     oerdte: str = "",
@@ -229,7 +252,7 @@ def get_warehouse_statistics(
     whs_totals_map = {}
 
     if config["type"] == "PostgreSQL":
-        all_items, distinct_warehouses, whs_totals_map = _fetch_from_postgres(config, oerdte=oerdte, batch_id=batch_id, oewhse=oewhse, oeinv=oeinv, limit=500)
+        all_items, distinct_warehouses, whs_totals_map = _fetch_from_postgres_cached(config, oerdte=oerdte, batch_id=batch_id, oewhse=oewhse, oeinv=oeinv, limit=500)
 
     # Strict filtering for batch_id, oewhse, and oeinv
     if oewhse:
