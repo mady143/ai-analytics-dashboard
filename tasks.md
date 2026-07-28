@@ -159,6 +159,12 @@ These instructions were added as comments in Plane and MUST be implemented:
   3. **Strict Active Warehouse Analytics:** If querying `pg_prod` for date `20260728` populates active warehouses (e.g. `58`, `71`), calculate and render analytics, KPIs, and item quantities strictly for those matching warehouses returned for that date.
   4. **Clean API Execution & Race Condition Removal:** Prevent race conditions in `Dashboard.jsx` and `WarehouseSalesAnalytics.jsx` using subscription cleanup flags (`isMounted` / `isSubscribed`) so background fetches never overwrite selected date or DB state.
 
+#### ⚠️ Requirement 4d — Global Form Submit Button OnClick Execution Directive (2026-07-28)
+- **Submit OnClick Implementation:**
+  1. The top navigation header provides the **📅 Order Date Picker (`#global-date-picker`)**, **🗄️ Target DB Selector (`#global-db-selector`)**, and **🚀 Submit Button (`#submit-db-btn`)**.
+  2. Clicking the **🚀 Submit** button (or submitting the form) MUST invoke `handleSubmit(e)`, applying the chosen date (`appliedDate`) and target database (`appliedTargetDb`).
+  3. Form submission immediately triggers decoupled API calls to `/api/charts/kpi`, `/api/charts/bar`, `/api/charts/scatter`, and `/api/warehouse/statistics`, updating all KPI cards, Bar charts, Scatter plots, and table views dynamically in real time.
+
 #### ⚠️ Requirement 4c — Mandatory File-Change Re-Deployment & End-to-End Browser Testing Mandate (2026-07-28)
 - **Mandatory Redeployment & Verification Directive:**
   Whenever ANY source file in `backend/` or `frontend/` is created or modified, the system MUST autonomously:
