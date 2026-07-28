@@ -76,17 +76,26 @@ The AI AGENT is 100% responsible for keeping ALL background services, autonomous
 ---
 
 ### 3. Automatic Sprint Task Detection & Execution (Sequential Execution Flow)
-- **Mandatory Autonomous Workflow Directive (2026-07-28):** Whenever any code changes occur, sprint tasks are picked up, or Plane comments are updated, the agent MUST follow this **exact 6-step sequential workflow**:
+- **Mandatory Autonomous Workflow Directive (2026-07-28):** Before executing ANY code changes, user requests, or sprint tasks, the agent MUST follow this **exact 7-step sequential workflow**:
 
   ```mermaid
   graph TD
-      A[1. Code Implementation & Changes] --> B[2. Server Reload & Re-Deploy]
+      A0[0. Pre-Execution Agent & Server Health Check] --> A1[1. Code Implementation & Changes]
+      A1 --> B[2. Server Reload & Re-Deploy]
       B --> C[3. Run Unit Test Suite pytest tests/unit/]
       C --> D[4. Reload Browser & Run Playwright UI Tests pytest tests/browser/]
       D --> E[5. Git Pull Rebase, Stage, Commit & Push git push origin main]
       E --> F[6. Sync Plane Task Status Done & Update Docs]
   ```
 
+  0. 🩺 **Step 0 — Pre-Execution Background Agent & Server Watcher Health Check (MANDATORY FIRST STEP):**
+     - **BEFORE** making any code changes or processing requests, inspect running background tasks (`manage_task list`).
+     - Verify that:
+       1. `Sprint Watcher` agent (`python scripts/run_sprint_watcher.py --interval 60`) is running.
+       2. `FastAPI Backend API Server` (`python -m uvicorn main:app`) is running on port `8000`.
+       3. `Vite Frontend Dev Server` (`npm run dev`) is running on port `5173`.
+       4. MCP Servers (`plane`, `github`, `memory`, `browser`) are active.
+     - **Auto-Restart Rule:** If ANY process or agent is stopped, offline, or killed, the system MUST **automatically launch/restart it in background mode immediately** before touching any source code!
   1. 🛠️ **Step 1 — Code Implementation & File Changes:** Pick up task/issue, analyze requirements, and write/modify source code files in `backend/` and `frontend/`.
   2. 🔄 **Step 2 — Server Reload & Re-Deploy Verification:** Ensure backend FastAPI server (`uvicorn main:app`) and frontend Vite server (`npm run dev`) reload with the new changes, verifying API health check at `http://127.0.0.1:8000/api/health`.
   3. 🧪 **Step 3 — Run Unit Test Suite (`pytest tests/unit/`):** Execute full unit test suite to verify data models, endpoints, database filter queries, and ensure 100% PASS rate.
