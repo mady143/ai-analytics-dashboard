@@ -75,12 +75,30 @@ The AI AGENT is 100% responsible for keeping ALL background services, autonomous
 
 ---
 
-### 3. Automatic Sprint Task Detection & Execution (Sprint Updates & New Tasks)
-- **Mandatory Autonomous Directive:** Whenever the sprint is updated or a new task is added in the sprint, the agent MUST work on the task, test it, test in browser, and deploy it:
-  1. 🛠️ **Work on the Task:** Pick up the task, transition Plane status to `In Progress`, extract all instructions/comments, and write/update the backend & frontend component code.
-  2. 🧪 **Test the Code (Unit Tests):** Automatically generate and run unit tests (`pytest tests/unit/ -v`) to verify core component logic, endpoints, and ensure zero regression.
-  3. 🌐 **Test in Browser (UI Automation):** Execute Playwright browser automation tests (`pytest tests/browser/ -v`) to test live rendering, charts, tables, KPI cards, and user interactions in a real browser environment.
-  4. 🚀 **Deploy & Push:** Commit and push the tested changes to the remote Git repository (`mady143/ai-analytics-dashboard`), deploy the build, and mark the task status as `Done` / `Completed` in Plane.
+### 3. Automatic Sprint Task Detection & Execution (Sequential Execution Flow)
+- **Mandatory Autonomous Workflow Directive (2026-07-28):** Whenever any code changes occur, sprint tasks are picked up, or Plane comments are updated, the agent MUST follow this **exact 6-step sequential workflow**:
+
+  ```mermaid
+  graph TD
+      A[1. Code Implementation & Changes] --> B[2. Server Reload & Re-Deploy]
+      B --> C[3. Run Unit Test Suite pytest tests/unit/]
+      C --> D[4. Reload Browser & Run Playwright UI Tests pytest tests/browser/]
+      D --> E[5. Git Pull Rebase, Stage, Commit & Push git push origin main]
+      E --> F[6. Sync Plane Task Status Done & Update Docs]
+  ```
+
+  1. 🛠️ **Step 1 — Code Implementation & File Changes:** Pick up task/issue, analyze requirements, and write/modify source code files in `backend/` and `frontend/`.
+  2. 🔄 **Step 2 — Server Reload & Re-Deploy Verification:** Ensure backend FastAPI server (`uvicorn main:app`) and frontend Vite server (`npm run dev`) reload with the new changes, verifying API health check at `http://127.0.0.1:8000/api/health`.
+  3. 🧪 **Step 3 — Run Unit Test Suite (`pytest tests/unit/`):** Execute full unit test suite to verify data models, endpoints, database filter queries, and ensure 100% PASS rate.
+  4. 🌐 **Step 4 — Reload Browser & Run Playwright Automation Tests (`pytest tests/browser/`):** Automatically reload the browser page, run end-to-end Playwright tests, verify target DB dropdown switching (`pg_prod` vs `pg_dev`), test date picker selection, click 🚀 **Submit** button, verify KPI cards, Bar chart, Scatter plot, and table population in a real browser environment.
+  5. 🔀 **Step 5 — Git Synchronization, Commit & Auto-Push:**
+     - Pull latest remote changes: `git pull origin main --rebase`
+     - Stage all modified files: `git add .`
+     - Commit with descriptive message: `git commit -m "feat/fix: ..."`
+     - Create Pull Request if required: `gh pr create`
+     - Push code to remote repository: `git push origin main`
+  6. 📋 **Step 6 — Update Task Status & Documentation:** Mark Plane task status as `Done` / `Completed` with test results, and update `README.md` and `tasks.md` to keep documentation current.
+
 - **Fix Applied (2026-07-27):** Sprint Watcher previously **did NOT poll comments** — it only watched task state changes. Added `list_comments()` to `plane_agent.py` and `_check_new_comments()` to `sprint_watcher_agent.py`. Every 60-second poll now also fetches comments on all open tasks and triggers the builder if any **new** (unseen) user comment is found.
 
 
