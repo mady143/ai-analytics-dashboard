@@ -24,6 +24,65 @@ The system is configured to perform all mandatory tasks autonomously **WITHOUT a
 
 ---
 
+## 🖥️ Section 1c: Screen-by-Screen Modular Task & Component Breakdown
+
+The application is structured into distinct, modular UI Screens and Component Services. Each screen has dedicated task specifications and sub-tasks:
+
+### 📌 TASK 1 — Global Parameter & Header Control Panel (`#global-header-controls`)
+- **Screen / Component Location:** Top Navigation Header ([`Dashboard.jsx`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/frontend/src/pages/Dashboard.jsx))
+- **Sub-Task 1.1:** 📅 **Order Date Picker (`#global-date-picker`)** — Select target order date (`oerdte` in `YYYY-MM-DD` format).
+- **Sub-Task 1.2:** 🗄️ **Target DB Selector (`#global-db-selector`)** — Dropdown menu supporting `pg_prod`, `pg_dev`, `oracle_dev`, `oracle_f1`, `oracle_prod`.
+- **Sub-Task 1.3:** 🚀 **Submit Button (`#submit-db-btn`)** — `onClick` / `onSubmit` form submission handler executing real-time backend API queries and updating UI state.
+- **Sub-Task 1.4:** ⚡ **Active Target DB Status Badge** — Visual badge displaying active target database (`⚡ Active: PG_PROD` / `⚡ Active: PG_DEV`).
+
+---
+
+### 📌 TASK 2 — Executive Warehouse KPI Summary Cards (`#kpi-grid`)
+- **Screen / Component Location:** Top Summary Grid ([`KPICard.jsx`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/frontend/src/components/KPICard.jsx))
+- **Sub-Task 2.1:** 🏢 **Total Warehouses KPI Card** — Displays distinct SQL count of active warehouses for selected date.
+- **Sub-Task 2.2:** 📦 **Cases Built KPI Card** — Displays sum of `cases_built_qty` across active warehouses.
+- **Sub-Task 2.3:** 📋 **Original Order Qty KPI Card** — Displays sum of `original_order_qty`.
+- **Sub-Task 2.4:** 📄 **Invoices Processed KPI Card** — Displays distinct count of invoice numbers (`oeinvo`).
+
+---
+
+### 📌 TASK 3 — Warehouse Analytics & Data Visualization Charts (`#charts-section`)
+- **Screen / Component Location:** Main Analytics View ([`Dashboard.jsx`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/frontend/src/pages/Dashboard.jsx))
+- **Sub-Task 3.1:** 📊 **Cases Built Breakdown Bar Chart** — Recharts bar chart plotting cases built per warehouse.
+- **Sub-Task 3.2:** 📈 **Order Quantity vs Cases Built Scatter Plot** — Recharts scatter plot showing order volume vs fulfillment.
+- **Sub-Task 3.3:** 🌡️ **Correlation Heatmap Matrix** — Feature correlation heatmap matrix.
+- **Sub-Task 3.4:** 📉 **Distribution Histogram Chart** — Quantity distribution histogram.
+
+---
+
+### 📌 TASK 4 — Warehouse Item Level & Procurement Data Table (`#warehouse-table-container`)
+- **Screen / Component Location:** Detailed Data View ([`WarehouseSalesAnalytics.jsx`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/frontend/src/components/WarehouseSalesAnalytics.jsx))
+- **Sub-Task 4.1:** 📋 **Line Items Data Grid** — Displays `Warehouse #`, `Batch ID`, `Date`, `Customer Item Code`, `C&S Item Code`, `Invoice #`, `Cases Built`, `Order Qty`, `Scratch Qty`, `Fulfillment Status`.
+- **Sub-Task 4.2:** 🔍 **Table Level Parameters & Search Filters** — Live filter inputs for `Warehouse #`, `Batch ID`, and `Invoice #`.
+- **Sub-Task 4.3:** ♾️ **Infinite Scroll & Pagination Batching** — Smooth scrolling batch loader for large datasets.
+
+---
+
+### 📌 TASK 5 — Multi-Database Engine & SQL Execution Service (`#backend-db-service`)
+- **Service Location:** Backend Layer ([`warehouse_service.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/backend/app/warehouse_service.py) & [`charts.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/backend/routers/charts.py))
+- **Sub-Task 5.1:** ⚡ **Strict Parameter SQL Execution** — Direct PostgreSQL queries on `sptn_sales_data ssd` matching exact parameters (`oerdte`, `batch_id`, `oewhse`, `oeinvo`).
+- **Sub-Task 5.2:** 🚫 **Zero Synthetic Data Fallback Policy** — 0 database records strictly returns 0 UI rows without generating fake data.
+- **Sub-Task 5.3:** ⏱️ **15-Second Thread-Safe TTL Query Cache (`_fetch_from_postgres_cached`)** — Prevents parallel API requests from blocking database threads or freezing the UI.
+
+---
+
+### 📌 TASK 6 — Autonomous Agent Network & Background Services (`#background-agent-system`)
+- **Service Location:** Agent Layer ([`agents/`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/) & [`scripts/`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/))
+- **Sub-Task 6.1:** 🤖 **Sprint Watcher Agent** (`python scripts/run_sprint_watcher.py --interval 60`) — Continuous 60s background task and comment watcher.
+- **Sub-Task 6.2:** 🚀 **FastAPI Backend API Server** (`python -m uvicorn main:app` at `:8000`).
+- **Sub-Task 6.3:** 💻 **Vite Frontend Dev Server** (`npm run dev` at `:5173`).
+- **Sub-Task 6.4:** 🔌 **MCP Server Fleet** (`plane`, `github`, `memory`, `browser` MCP servers).
+- **Sub-Task 6.5:** 🔀 **Autonomous Git Synchronization & Remote Push** (`git pull --rebase`, `git add .`, `git commit`, `git push origin main`).
+
+---
+
+---
+
 ### 2. 60-Second Continuous Sprint Watcher Monitoring (ALWAYS RUNNING)
 - **Schedule:** Runs continuously in background every **60 seconds** — ALWAYS ALLOWED, ALWAYS AUTO-RESTART:
   ```bash
