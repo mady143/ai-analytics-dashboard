@@ -30,11 +30,15 @@ DB_CONFIGURATIONS = {
     "pg_prod": {
         "type": "PostgreSQL",
         "env": "PROD",
-        "host": "gc-ue4-psql-sni-prd01.prod.gcp.cswg.com",
+        # ⚠️ PRODUCTION DB DISABLED PER USER INSTRUCTION — PREVENTS PRODUCTION DB QUERY ALERTS
+        # "host": "gc-ue4-psql-sni-prd01.prod.gcp.cswg.com",
+        # "user": "sptnintg_ro",
+        # "password": "63Z3zk-kPEID3",
+        "host": "gc-ue4-psql-sni-dev01.nonprod.gcp.cswg.com",
         "port": 5432,
         "dbname": "sptnintgdb",
-        "user": "sptnintg_ro",
-        "password": "63Z3zk-kPEID3"
+        "user": "sptnintg",
+        "password": "qPZodJS-IGNThHP-N66Bh8"
     },
     "oracle_dev": {
         "type": "Oracle",

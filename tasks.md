@@ -26,9 +26,23 @@ The system is configured to perform all mandatory tasks autonomously **WITHOUT a
 
 ## 🖥️ Section 1c: Screen-by-Screen Modular Task & Component Breakdown
 
-The application is structured into distinct, modular UI Screens and Component Services. Each screen has dedicated task specifications and sub-tasks:
+The application is structured into distinct, modular UI Screens and Component Services. Each component domain has its own dedicated `.md` task file in the [`tasks/`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/) directory:
+
+- 📄 [`tasks/task_1_header_controls.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_1_header_controls.md) — Global Parameter & Header Control Panel
+- 📄 [`tasks/task_2_kpi_cards.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_2_kpi_cards.md) — Executive Warehouse KPI Summary Cards
+- 📄 [`tasks/task_3_charts_analytics.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_3_charts_analytics.md) — Warehouse Analytics & Data Visualization Charts
+- 📄 [`tasks/task_4_data_table.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_4_data_table.md) — Warehouse Item Level & Procurement Data Table
+- 📄 [`tasks/task_5_database_service.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_5_database_service.md) — Multi-Database Engine & SQL Execution Service
+- 📄 [`tasks/task_6_agents_and_mcp.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_6_agents_and_mcp.md) — Autonomous Agent Network & Background Services
+- 📄 [`tasks/task_7_git_automation.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_7_git_automation.md) — Pre-Approved Git Automation & Synchronization
+- 📄 [`tasks/task_8_parallel_background_agents.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_8_parallel_background_agents.md) — Continuous Parallel Background Agent Fleet
+- 📄 [`tasks/task_9_continuous_application_uptime.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_9_continuous_application_uptime.md) — Continuous Application Server Uptime
+- 📄 [`tasks/task_10_end_to_end_parameter_testing.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_10_end_to_end_parameter_testing.md) — Interactive Browser Parameter Combination Testing & Strict Quality Gate Push Policy
+
+---
 
 ### 📌 TASK 1 — Global Parameter & Header Control Panel (`#global-header-controls`)
+- **Dedicated Task File:** [`tasks/task_1_header_controls.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_1_header_controls.md)
 - **Screen / Component Location:** Top Navigation Header ([`Dashboard.jsx`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/frontend/src/pages/Dashboard.jsx))
 - **Sub-Task 1.1:** 📅 **Order Date Picker (`#global-date-picker`)** — Select target order date (`oerdte` in `YYYY-MM-DD` format).
 - **Sub-Task 1.2:** 🗄️ **Target DB Selector (`#global-db-selector`)** — Dropdown menu supporting `pg_prod`, `pg_dev`, `oracle_dev`, `oracle_f1`, `oracle_prod`.
