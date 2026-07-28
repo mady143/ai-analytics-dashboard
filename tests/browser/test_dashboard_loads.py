@@ -149,6 +149,12 @@ def test_parameter_filter_inputs(page: Page):
     """Filtering by warehouse, batch_id, and invoice # updates table component dynamically."""
     page.goto(BASE_URL)
     page.wait_for_selector("table", timeout=15000)
+    
+    # Select pg_prod to ensure populated data rows exist for filter testing
+    page.select_option("#global-db-selector", "pg_prod")
+    page.click("#submit-db-btn")
+    page.wait_for_timeout(2000)
+    
     page.wait_for_selector("table tbody tr:not(:has-text('Querying'))", timeout=15000)
     
     batch_input = page.locator("input[placeholder*='1851']")
