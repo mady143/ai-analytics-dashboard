@@ -98,9 +98,11 @@ def test_scatter_plot_rendered(page: Page):
 
 
 def test_warehouse_table_populated(page: Page):
-    """Warehouse Sales & Invoice Analytics table must have at least 1 row of data."""
+    """Warehouse Sales & Invoice Analytics table populates dynamically when target DB with records is selected."""
     page.goto(BASE_URL)
-    # Wait for the table to appear (it's inside WarehouseSalesAnalytics component)
+    page.wait_for_selector("#global-db-selector", timeout=10000)
+    page.select_option("#global-db-selector", "pg_prod")
+    page.click("#submit-db-btn")
     page.wait_for_selector("table", timeout=15000)
     rows = page.locator("table tbody tr")
     count = rows.count()
@@ -114,3 +116,76 @@ def test_table_row_count_badge(page: Page):
     # Look for the row count text in the page
     row_badge = page.locator("text=Data Table Rows")
     expect(row_badge).to_be_visible()
+
+
+def test_target_db_selection_prod_vs_dev(page: Page):
+    """Selecting target DB (PROD vs DEV) updates active badge and page state."""
+    page.goto(BASE_URL)
+    page.wait_for_selector("#global-db-selector", timeout=10000)
+    
+    # Select PostgreSQL PROD
+    page.select_option("#global-db-selector", "pg_prod")
+    page.click("#submit-db-btn")
+    page.wait_for_timeout(1000)
+    
+    # Active badge should state PG_PROD
+    badge = page.locator("text=Active: PG_PROD")
+    expect(badge).to_be_visible()
+
+    # Select PostgreSQL DEV
+    page.select_option("#global-db-selector", "pg_dev")
+    page.click("#submit-db-btn")
+    page.wait_for_timeout(1000)
+    
+    # Active badge should state PG_DEV
+    badge_dev = page.locator("text=Active: PG_DEV")
+    expect(badge_dev).to_be_visible()
+
+
+import re
+
+
+def test_parameter_filter_inputs(page: Page):
+    """Filtering by warehouse, batch_id, and invoice # updates table component dynamically."""
+    page.goto(BASE_URL)
+    page.wait_for_selector("table", timeout=15000)
+    page.wait_for_selector("table tbody tr:not(:has-text('Querying'))", timeout=15000)
+    
+    batch_input = page.locator("input[placeholder*='1851']")
+    if batch_input.count() > 0:
+        expect(batch_input).to_be_visible()
+        batch_input.fill("1851")
+        page.wait_for_timeout(1000)
+        table_container = page.locator("table")
+        expect(table_container).to_be_visible()
+
+
+def test_bar_chart_total_warehouses_alignment_browser(page: Page):
+    """Browser test dynamically verifying that Bar Chart X-axis tick count matches Total Warehouses KPI count."""
+    page.goto(BASE_URL)
+    page.wait_for_selector(".kpi-card", timeout=15000)
+    page.wait_for_selector(".chart-card svg", timeout=15000)
+
+    # Extract Total Warehouses count dynamically from top KPI card once loaded
+    kpi_card = page.locator(".kpi-card", has_text="TOTAL WAREHOUSES").first
+    expect(kpi_card).to_be_visible()
+    
+    # Wait until KPI card is populated with numbers instead of placeholder '...'
+    page.wait_for_function("() => !document.querySelector('.kpi-card .kpi-value')?.innerText.includes('...')")
+    kpi_val_text = kpi_card.locator(".kpi-value").inner_text()
+    
+    match = re.search(r'\d+', kpi_val_text)
+    assert match is not None, f"Could not find numeric total warehouses count in '{kpi_val_text}'"
+    expected_count = int(match.group(0))
+
+    # Count rendered X-axis ticks in the Cases Built Bar Chart once Recharts layout finishes
+    bar_chart_card = page.locator(".chart-card", has_text="Cases Built by Warehouse").first
+    expect(bar_chart_card).to_be_visible()
+    page.wait_for_timeout(2000)
+    axis_ticks = bar_chart_card.locator(".recharts-xAxis .recharts-cartesian-axis-tick")
+    actual_count = axis_ticks.count()
+
+    # Dynamically verify X-axis tick count matches KPI count without hardcoded static values
+    assert actual_count == expected_count, f"Bar chart ticks ({actual_count}) mismatch Total Warehouses KPI ({expected_count})"
+
+

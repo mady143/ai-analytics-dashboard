@@ -332,24 +332,31 @@ class SprintWatcherAgent:
         Returns (passed: bool, output: str).
         """
         console.print("[cyan]🧪 Running tests after implementation...[/cyan]")
-        result = subprocess.run(
-            [sys.executable, "-m", "pytest", "tests/unit/", "-q", "--tb=short"],
-            cwd=str(ROOT_DIR),
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            timeout=120,
-        )
-        stdout = result.stdout or ""
-        stderr = result.stderr or ""
-        output = stdout + stderr
-        passed = result.returncode == 0
-        if passed:
-            console.print("[green]✅ Tests PASSED[/green]")
-        else:
-            console.print("[red]❌ Tests FAILED[/red]")
-        return passed, output[-3000:]
+        try:
+            result = subprocess.run(
+                [sys.executable, "-m", "pytest", "tests/unit/", "-q", "--tb=short"],
+                cwd=str(ROOT_DIR),
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=120,
+            )
+            stdout = result.stdout or ""
+            stderr = result.stderr or ""
+            output = stdout + stderr
+            passed = result.returncode == 0
+            if passed:
+                console.print("[green]✅ Tests PASSED[/green]")
+            else:
+                console.print("[red]❌ Tests FAILED[/red]")
+            return passed, output[-3000:]
+        except subprocess.TimeoutExpired:
+            console.print("[yellow]⚠️ Tests TIMED OUT after 120s[/yellow]")
+            return False, "Tests timed out after 120s"
+        except Exception as e:
+            console.print(f"[red]❌ Test execution error: {e}[/red]")
+            return False, str(e)
 
     def _finalize_task(
         self,

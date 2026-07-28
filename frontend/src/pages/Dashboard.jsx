@@ -1,5 +1,4 @@
 import AiAnalyticsDashboardAddingDateParameter from '../components/AiAnalyticsDashboardAddingDateParameter';
-import AiAnalyticsDahsboardDateParaemeter from '../components/AiAnalyticsDahsboardDateParaemeter';
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import axios from 'axios'
@@ -12,7 +11,7 @@ import {
   ScatterChart, Scatter, Cell
 } from 'recharts'
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API = import.meta.env.VITE_API_URL || ''
 
 const COLORS = ['#7C3AED', '#06B6D4', '#F59E0B', '#10B981', '#EF4444', '#8B5CF6']
 
@@ -48,52 +47,65 @@ const CustomTooltip = ({ active, payload, label }) => {
 }
 
 const DEFAULT_KPIS = [
-  { title: "TOTAL WAREHOUSES", value: "5", unit: "Facilities", trend: 0.0, trend_direction: "up", color: "#7C3AED" },
-  { title: "CASES BUILT (cases_bld)", value: "—", unit: "Cases", trend: 8.4, trend_direction: "up", color: "#06B6D4" },
-  { title: "ORIGINAL ORDER QTY", value: "—", unit: "Cases", trend: 6.2, trend_direction: "up", color: "#F59E0B" },
-  { title: "INVOICES PROCESSED", value: "—", unit: "Invoices", trend: 4.1, trend_direction: "up", color: "#10B981" },
-  { title: "FULFILLMENT RATE", value: "—", unit: "Target 95%", trend: 2.1, trend_direction: "up", color: "#34D399" },
-  { title: "SCRATCH RATE", value: "—", unit: "—", trend: -1.5, trend_direction: "down", color: "#EF4444" }
+  { title: "TOTAL WAREHOUSES", value: "...", unit: "Facilities", trend: 0.0, trend_direction: "up", color: "#7C3AED" },
+  { title: "CASES BUILT (cases_bld)", value: "...", unit: "Cases", trend: 8.4, trend_direction: "up", color: "#06B6D4" },
+  { title: "ORIGINAL ORDER QTY", value: "...", unit: "Cases", trend: 6.2, trend_direction: "up", color: "#F59E0B" },
+  { title: "INVOICES PROCESSED", value: "...", unit: "Invoices", trend: 4.1, trend_direction: "up", color: "#10B981" },
+  { title: "FULFILLMENT RATE", value: "...", unit: "Target 95%", trend: 2.1, trend_direction: "up", color: "#34D399" },
+  { title: "SCRATCH RATE", value: "...", unit: "...", trend: -1.5, trend_direction: "down", color: "#EF4444" }
 ]
 
 export default function Dashboard() {
-  // ── Global Date State — propagates to ALL components on this page ──────────
-  const [globalDate, setGlobalDate] = useState(todayISO())
-  const [targetDb, setTargetDb] = useState('pg_prod')
+  // ── Form Input State ──────────
+  const [selectedDate, setSelectedDate] = useState(todayISO())
+  const [selectedDb, setSelectedDb] = useState('pg_dev')
+
+  // ── Applied State (updated on Submit click or selection change) ──────────
+  const [appliedDate, setAppliedDate] = useState(todayISO())
+  const [appliedTargetDb, setAppliedTargetDb] = useState('pg_dev')
 
   const [kpis, setKpis] = useState(DEFAULT_KPIS)
-  const [barData, setBarData] = useState([
-    { label: "Whse 01", value: 1540 },
-    { label: "Whse 02", value: 1820 },
-    { label: "Whse 58", value: 2310 },
-    { label: "Whse 61", value: 1980 },
-    { label: "Whse 71", value: 2150 }
-  ])
+  const [barData, setBarData] = useState([])
   const [scatterData, setScatterData] = useState([])
 
-  // Re-fetch whenever date or DB changes
+  // Dynamic fetch with active flag to eliminate race conditions
   useEffect(() => {
-    const oerdte = toOerdte(globalDate)
+    let isMounted = true
+    const oerdte = toOerdte(appliedDate)
 
-    const fetchAll = async () => {
-      try {
-        const [kpiRes, barRes, scatterRes] = await Promise.all([
-          axios.get(`${API}/api/charts/kpi?oerdte=${oerdte}&target_db=${targetDb}`),
-          axios.get(`${API}/api/charts/bar`),
-          axios.get(`${API}/api/charts/scatter`)
-        ])
-        if (kpiRes.data?.kpis) setKpis(kpiRes.data.kpis)
-        if (barRes.data?.data) setBarData(barRes.data.data)
-        if (scatterRes.data?.data) setScatterData(scatterRes.data.data)
-      } catch (err) {
-        console.error('Failed to fetch dashboard data:', err)
-      }
+    const runFetch = () => {
+      axios.get(`/api/charts/kpi?oerdte=${oerdte}&target_db=${appliedTargetDb}`)
+        .then(res => {
+          if (isMounted && res.data?.kpis) setKpis(res.data.kpis)
+        })
+        .catch(err => console.error('Failed to fetch KPI cards:', err))
+
+      axios.get(`/api/charts/bar?oerdte=${oerdte}&target_db=${appliedTargetDb}`)
+        .then(res => {
+          if (isMounted && res.data?.data) setBarData(res.data.data)
+        })
+        .catch(err => console.error('Failed to fetch Bar chart data:', err))
+
+      axios.get(`/api/charts/scatter?oerdte=${oerdte}&target_db=${appliedTargetDb}`)
+        .then(res => {
+          if (isMounted && res.data?.data) setScatterData(res.data.data)
+        })
+        .catch(err => console.error('Failed to fetch Scatter plot data:', err))
     }
 
-    fetchAll()
-    const timer = setInterval(fetchAll, 10000)
-    return () => clearInterval(timer)
-  }, [globalDate, targetDb])
+    runFetch()
+    const timer = setInterval(runFetch, 15000)
+    return () => {
+      isMounted = false
+      clearInterval(timer)
+    }
+  }, [appliedDate, appliedTargetDb])
+
+  const handleSubmit = (e) => {
+    if (e) e.preventDefault()
+    setAppliedDate(selectedDate)
+    setAppliedTargetDb(selectedDb)
+  }
 
   return (
     <motion.div
@@ -108,9 +120,9 @@ export default function Dashboard() {
           <p className="page-subtitle">Sprint AAD-5 · Real-time Warehouse Item &amp; Procurement Analytics</p>
         </div>
 
-        {/* Global Date + DB Controls — changing these re-fetches ALL components */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap',
+        {/* Global Date + DB Controls + Submit Button */}
+        <form onSubmit={handleSubmit} style={{
+          display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap',
           background: 'var(--bg-card)', border: '1px solid var(--border-color)',
           borderRadius: '10px', padding: '10px 16px'
         }}>
@@ -119,8 +131,12 @@ export default function Dashboard() {
             <input
               id="global-date-picker"
               type="date"
-              value={globalDate}
-              onChange={(e) => setGlobalDate(e.target.value)}
+              value={selectedDate}
+              onChange={(e) => {
+                const val = e.target.value;
+                setSelectedDate(val);
+                setAppliedDate(val);
+              }}
               style={{
                 background: 'var(--bg-secondary)',
                 color: 'var(--text-primary)',
@@ -137,8 +153,12 @@ export default function Dashboard() {
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>🗄️ Target DB:</span>
             <select
               id="global-db-selector"
-              value={targetDb}
-              onChange={(e) => setTargetDb(e.target.value)}
+              value={selectedDb}
+              onChange={(e) => {
+                const val = e.target.value;
+                setSelectedDb(val);
+                setAppliedTargetDb(val);
+              }}
               style={{
                 background: 'var(--bg-secondary)',
                 color: 'var(--text-primary)',
@@ -146,7 +166,8 @@ export default function Dashboard() {
                 padding: '6px 10px',
                 borderRadius: '6px',
                 fontSize: '13px',
-                fontWeight: 600
+                fontWeight: 600,
+                cursor: 'pointer'
               }}
             >
               <option value="pg_prod">PostgreSQL PROD</option>
@@ -156,13 +177,37 @@ export default function Dashboard() {
               <option value="oracle_prod">Oracle PROD</option>
             </select>
           </div>
+
+          <button
+            type="submit"
+            id="submit-db-btn"
+            onClick={handleSubmit}
+            style={{
+              background: 'linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%)',
+              color: '#FFFFFF',
+              border: 'none',
+              padding: '7px 18px',
+              borderRadius: '6px',
+              fontSize: '13px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'all 0.2s ease',
+              boxShadow: '0 2px 6px rgba(124, 58, 237, 0.4)'
+            }}
+          >
+            🚀 Submit
+          </button>
+
           <span style={{
             fontSize: '11px', color: '#34d399', fontWeight: 700,
             background: 'rgba(52,211,153,0.1)', padding: '3px 8px', borderRadius: '4px'
           }}>
-            ⚡ Live — applies to entire page
+            ⚡ Active: {appliedTargetDb.toUpperCase()}
           </span>
-        </div>
+        </form>
       </div>
 
       {/* ── Warehouse Level KPI Grid ── */}
@@ -185,7 +230,7 @@ export default function Dashboard() {
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={barData} margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-              <XAxis dataKey="label" tick={{ fill: '#8B949E', fontSize: 11 }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="label" interval={0} tick={{ fill: '#8B949E', fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: '#8B949E', fontSize: 11 }} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(124,58,237,0.08)' }} />
               <Bar dataKey="value" name="Cases Built Qty" radius={[6, 6, 0, 0]}>
@@ -195,8 +240,7 @@ export default function Dashboard() {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-          <AiAnalyticsDahsboardDateParaemeter />
-      <AiAnalyticsDashboardAddingDateParameter />
+          <AiAnalyticsDashboardAddingDateParameter />
     </motion.div>
 
         {/* Scatter Chart */}
@@ -216,13 +260,12 @@ export default function Dashboard() {
               <Scatter name="Order vs Built" data={scatterData} fill="#06B6D4" opacity={0.8} />
             </ScatterChart>
           </ResponsiveContainer>
-          <AiAnalyticsDahsboardDateParaemeter />
-      <AiAnalyticsDashboardAddingDateParameter />
+          <AiAnalyticsDashboardAddingDateParameter />
     </motion.div>
       </div>
 
       {/* ── Warehouse Sales & Invoice Analytics — receives global date & db ── */}
-      <WarehouseSalesAnalytics globalDate={globalDate} globalTargetDb={targetDb} />
+      <WarehouseSalesAnalytics globalDate={appliedDate} globalTargetDb={appliedTargetDb} />
 
       {/* ── Warehouse Inventory Level Statistics ── */}
       <WarehouseAnalytics />
@@ -231,8 +274,8 @@ export default function Dashboard() {
       <div style={{ marginTop: '24px' }}>
         <InventoryRiskForecast />
       </div>
-      <AiAnalyticsDahsboardDateParaemeter />
       <AiAnalyticsDashboardAddingDateParameter />
     </motion.div>
   )
 }
+

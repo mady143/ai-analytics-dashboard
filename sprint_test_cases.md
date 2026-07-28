@@ -34,3 +34,5 @@ This document maintains the official record of test cases, test objectives, and 
 - **Test Case 3: `test_dashboard_loads` (Browser Automation)** — Verify live dashboard rendering at `http://localhost:5173/` displays top-level Warehouse Sales & Invoice Analytics above the fold. 👉 **`PASSED`**
 - **Test Case 4: `test_analytics_page_loads` (Browser Automation)** — Verify navigation to `http://localhost:5173/analytics` and ML model configuration selector. 👉 **`PASSED`**
 - **Test Case 5: `test_sidebar_navigation` (Browser Automation)** — Validate interactive sidebar navigation across dashboard pages. 👉 **`PASSED`**
+- **Test Case 6: `test_bar_chart_total_warehouses_alignment` (Fully Dynamic)** — Dynamically validate that `/api/charts/bar` returns ALL total warehouses for target DB matching `summary.total_warehouses` with 0 hardcoded static numbers. 👉 **`PASSED`**
+- **Test Case 7: `test_bar_chart_total_warehouses_alignment_browser` (Browser Automation)** — Launch Playwright Chromium, navigate to `http://localhost:5173/`, dynamically read Total Warehouses KPI card, and verify Bar Chart X-axis tick count matches KPI count. 👉 **`PASSED`**

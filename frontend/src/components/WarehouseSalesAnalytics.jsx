@@ -1,44 +1,61 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API = import.meta.env.VITE_API_URL || '';
 
-export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb }) {
-  const [targetDb, setTargetDb] = useState(globalTargetDb || 'pg_prod');
+export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = 'pg_prod' }) {
   const [summary, setSummary] = useState(null);
   const [items, setItems] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+
+  // Table Level Filter Parameters
+  const [filterWhs, setFilterWhs] = useState('');
+  const [filterBatchId, setFilterBatchId] = useState('');
+  const [filterInvoice, setFilterInvoice] = useState('');
+
   const LIMIT = 20;
-
-  useEffect(() => {
-    if (globalTargetDb) {
-      setTargetDb(globalTargetDb);
-    }
-  }, [globalTargetDb]);
-
   const oerdte = globalDate ? globalDate.replace(/-/g, '') : '';
 
-  // Reset & initial load on DB target or date change
+  // Reset & initial load on DB target, date change, or filter inputs
   useEffect(() => {
+    let isSubscribed = true;
     const fetchInitial = async () => {
       setLoading(true);
       try {
-        const res = await axios.get(`${API}/api/warehouse/statistics?target_db=${targetDb}&oerdte=${oerdte}&limit=${LIMIT}&offset=0`);
-        setSummary(res.data.summary);
-        setItems(res.data.warehouse_items || []);
-        setTotalCount(res.data.total_count || (res.data.warehouse_items ? res.data.warehouse_items.length : 0));
+        const res = await axios.get(`${API}/api/warehouse/statistics?target_db=${globalTargetDb}&oerdte=${oerdte}&batch_id=${filterBatchId}&oewhse=${filterWhs}&oeinv=${filterInvoice}&limit=${LIMIT}&offset=0`);
+        if (!isSubscribed) return;
+        
+        let fetchedItems = res.data?.warehouse_items || [];
+        if (filterWhs) {
+          fetchedItems = fetchedItems.filter(it => String(it.whs_num).trim() === String(filterWhs).trim());
+        }
+        if (filterBatchId) {
+          fetchedItems = fetchedItems.filter(it => String(it.batch_id).trim().includes(String(filterBatchId).trim()));
+        }
+        if (filterInvoice) {
+          fetchedItems = fetchedItems.filter(it => String(it.invc_num_stg).trim().includes(String(filterInvoice).trim()));
+        }
+        
+        setSummary(res.data.summary || null);
+        setItems(fetchedItems);
+        setTotalCount(res.data.total_count ?? fetchedItems.length);
         setHasMore(res.data.has_more ?? false);
       } catch (err) {
-        console.error('Failed to fetch warehouse statistics:', err);
+        if (!isSubscribed) return;
+        console.error('[WarehouseSalesAnalytics] API query error:', err);
+        setItems([]);
+        setTotalCount(0);
+        setSummary(null);
       } finally {
-        setLoading(false);
+        if (isSubscribed) setLoading(false);
       }
     };
     fetchInitial();
-  }, [targetDb, oerdte]);
+    return () => { isSubscribed = false; };
+  }, [globalTargetDb, oerdte, filterWhs, filterBatchId, filterInvoice]);
 
   // Load next batch on scroll down
   const loadMoreData = async () => {
@@ -46,7 +63,7 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb }) 
     setLoadingMore(true);
     const nextOffset = items.length;
     try {
-      const res = await axios.get(`${API}/api/warehouse/statistics?target_db=${targetDb}&oerdte=${oerdte}&limit=${LIMIT}&offset=${nextOffset}`);
+      const res = await axios.get(`${API}/api/warehouse/statistics?target_db=${globalTargetDb}&oerdte=${oerdte}&batch_id=${filterBatchId}&oewhse=${filterWhs}&oeinv=${filterInvoice}&limit=${LIMIT}&offset=${nextOffset}`);
       setItems((prev) => [...prev, ...(res.data.warehouse_items || [])]);
       setHasMore(res.data.has_more ?? false);
     } catch (err) {
@@ -65,7 +82,7 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb }) 
 
   return (
     <div className="card" style={{ marginTop: '24px', padding: '24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
         <div>
           <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
             🏢 Warehouse & Invoice Sales Analytics
@@ -75,28 +92,93 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb }) 
           </p>
         </div>
 
-        {/* Database Configuration Selector */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Target DB:</label>
-          <select
-            value={targetDb}
-            onChange={(e) => setTargetDb(e.target.value)}
-            style={{
-              background: 'var(--bg-card)',
-              color: 'var(--text-primary)',
-              border: '1px solid var(--border-color)',
-              padding: '6px 12px',
-              borderRadius: '6px',
-              fontSize: '13px',
-              fontWeight: 600
-            }}
-          >
-            <option value="pg_prod">PostgreSQL - PROD (sptnintgdb)</option>
-            <option value="pg_dev">PostgreSQL - DEV (sptnintgdb)</option>
-            <option value="oracle_dev">Oracle - DEV (csebsd2)</option>
-            <option value="oracle_f1">Oracle - F1 (csebsf1)</option>
-            <option value="oracle_prod">Oracle - PROD (EBSP_BI)</option>
-          </select>
+        {/* Dynamic Parameter Filter Bar: Warehouse (oewhse), Batch ID (batch_id), Invoice (oeinv) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>Warehouse (oewhse):</span>
+            <select
+              value={filterWhs}
+              onChange={(e) => setFilterWhs(e.target.value)}
+              style={{
+                background: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border-color)',
+                padding: '4px 8px',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: 600
+              }}
+            >
+              <option value="">All Warehouses</option>
+              {globalTargetDb.toLowerCase().includes('dev') ? (
+                <>
+                  <option value="01">Whse 01</option>
+                  <option value="02">Whse 02</option>
+                  <option value="58">Whse 58</option>
+                  <option value="61">Whse 61</option>
+                  <option value="71">Whse 71</option>
+                </>
+              ) : (
+                <>
+                  <option value="58">Whse 58</option>
+                  <option value="61">Whse 61</option>
+                  <option value="71">Whse 71</option>
+                </>
+              )}
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>Batch ID (batch_id):</span>
+            <input
+              type="text"
+              placeholder="e.g. 1851"
+              value={filterBatchId}
+              onChange={(e) => setFilterBatchId(e.target.value)}
+              style={{
+                width: '90px',
+                background: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border-color)',
+                padding: '4px 8px',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: 600
+              }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>Invoice # (oeinv):</span>
+            <input
+              type="text"
+              placeholder="e.g. 487613"
+              value={filterInvoice}
+              onChange={(e) => setFilterInvoice(e.target.value)}
+              style={{
+                width: '100px',
+                background: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border-color)',
+                padding: '4px 8px',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: 600
+              }}
+            />
+          </div>
+
+          <span style={{
+            fontSize: '12px',
+            color: '#34D399',
+            background: 'rgba(52, 211, 153, 0.1)',
+            border: '1px solid rgba(52, 211, 153, 0.2)',
+            padding: '4px 10px',
+            borderRadius: '6px',
+            fontWeight: 700
+          }}>
+            ⚡ Target DB: {globalTargetDb.toUpperCase()}
+          </span>
         </div>
       </div>
 
@@ -138,36 +220,52 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb }) 
       </div>
 
       {/* Warehouse Items Table with Vertical Scroll Bar & Automatic Infinite Load */}
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-secondary)' }}>Loading warehouse statistics...</div>
-      ) : (
-        <div
-          onScroll={handleScroll}
-          style={{
-            maxHeight: '400px',
-            overflowY: 'auto',
-            border: '1px solid var(--border-color)',
-            borderRadius: '8px',
-            background: 'var(--bg-card)'
-          }}
-        >
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
-            <thead style={{ position: 'sticky', top: 0, background: '#161B22', zIndex: 2 }}>
-              <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
-                <th style={{ padding: '12px 10px' }}>Warehouse</th>
-                <th style={{ padding: '12px 10px' }}>Batch ID</th>
-                <th style={{ padding: '12px 10px' }}>Invoice #</th>
-                <th style={{ padding: '12px 10px' }}>Customer Item Code</th>
-                <th style={{ padding: '12px 10px' }}>C&S Item Code</th>
-                <th style={{ padding: '12px 10px' }}>Cases Built Qty</th>
-                <th style={{ padding: '12px 10px' }}>Order Qty</th>
-                <th style={{ padding: '12px 10px' }}>Scratch Qty</th>
-                <th style={{ padding: '12px 10px' }}>Sub Item (sl_itm_ind)</th>
-                <th style={{ padding: '12px 10px' }}>Status</th>
+      <div
+        onScroll={handleScroll}
+        style={{
+          maxHeight: '400px',
+          overflowY: 'auto',
+          border: '1px solid var(--border-color)',
+          borderRadius: '8px',
+          background: 'var(--bg-card)'
+        }}
+      >
+        <table id="warehouse-analytics-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+          <thead style={{ position: 'sticky', top: 0, background: '#161B22', zIndex: 2 }}>
+            <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
+              <th style={{ padding: '12px 10px' }}>Warehouse</th>
+              <th style={{ padding: '12px 10px' }}>Batch ID</th>
+              <th style={{ padding: '12px 10px' }}>Invoice #</th>
+              <th style={{ padding: '12px 10px' }}>Customer Item Code</th>
+              <th style={{ padding: '12px 10px' }}>C&S Item Code</th>
+              <th style={{ padding: '12px 10px' }}>Cases Built Qty</th>
+              <th style={{ padding: '12px 10px' }}>Order Qty</th>
+              <th style={{ padding: '12px 10px' }}>Scratch Qty</th>
+              <th style={{ padding: '12px 10px' }}>Sub Item (sl_itm_ind)</th>
+              <th style={{ padding: '12px 10px' }}>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={10} style={{ textAlign: 'center', padding: '24px', color: 'var(--color-primary-light)', fontWeight: 600 }}>
+                  ⚡ Querying PostgreSQL Warehouse Statistics...
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {items.map((item, idx) => (
+            ) : items.length === 0 ? (
+              <tr>
+                <td colSpan={10} style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--text-secondary)' }}>
+                  <div style={{ fontSize: '24px', marginBottom: '8px' }}>📭</div>
+                  <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px' }}>
+                    No Database Records Found for Selected Date ({globalDate || 'No Date'})
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                    PostgreSQL {globalTargetDb.toUpperCase()} has 0 records matching the selected date & filter parameters. Please change the date picker above.
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              items.map((item, idx) => (
                 <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                   <td style={{ padding: '10px', fontWeight: 700, color: 'var(--color-cyan)' }}>{item.whs_num}</td>
                   <td style={{ padding: '10px', color: '#f59e0b', fontWeight: 600, fontFamily: 'monospace' }}>{item.batch_id || '—'}</td>
@@ -188,17 +286,17 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb }) 
                     </span>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              ))
+            )}
+          </tbody>
+        </table>
 
-          {loadingMore && (
-            <div style={{ textAlign: 'center', padding: '12px', fontSize: '12px', color: 'var(--color-primary-light)', fontWeight: 600 }}>
-              ⚡ Querying next 20 rows...
-            </div>
-          )}
-        </div>
-      )}
+        {loadingMore && (
+          <div style={{ textAlign: 'center', padding: '12px', fontSize: '12px', color: 'var(--color-primary-light)', fontWeight: 600 }}>
+            ⚡ Querying next 20 rows...
+          </div>
+        )}
+      </div>
     </div>
   );
 }

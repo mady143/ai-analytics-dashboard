@@ -7,7 +7,7 @@ export default function AiAnalyticsDahsboardDateParaemeter() {
         ⚡ AI Analytics Dahsboard Date Paraemeter
       </h3>
       <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '16px' }}>
-        <p class="editor-paragraph-block" data-spacing-group="body" data-id="899cae51-f32f-47e2-b0ce-c1c2fe90c1ed">Add from_date and to_date selectrs and populate the data</p>
+        <span className="editor-paragraph-block" data-spacing-group="body" data-id="899cae51-f32f-47e2-b0ce-c1c2fe90c1ed">Add from_date and to_date selectrs and populate the data</span>
       </p>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
         <div style={{ background: 'var(--bg-card)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>

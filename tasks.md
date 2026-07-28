@@ -8,13 +8,19 @@ This document outlines the mandatory operational requirements, daily tasks, comp
 
 The system is configured to perform all mandatory tasks autonomously **WITHOUT asking for permission prompts** (except in critical blocker scenarios):
 
-### 1. Daily Git Synchronization (Morning & Evening)
-- **Morning (Start of Day):** Run `python scripts/start_of_day.py` to execute `git pull origin main` and pull remote changes before work begins.
-- **Evening (End of Day & Task Completion):** Run `python scripts/end_of_day.py` or automated `git_agent.eod_push()` to stage, commit, and push updated code to GitHub (`mady143/ai-analytics-dashboard`).
+### 1. Daily Git Synchronization & Automatic Conflict Resolution (Morning & Evening)
+- **Morning (Start of Day):** Run `python scripts/start_of_day.py` or `git pull origin main` to pull latest remote changes before work begins.
+- **Automatic Merge Conflict Resolution:** If any git merge or rebase conflicts occur during pull, automatically analyze conflicting files, resolve all conflicts cleanly, stage changes (`git add .`), and complete the commit.
+- **Task Completion & Autonomous Git Push / PR:** Automatically pull remote changes (`git pull origin main`), stage changes (`git add .`), commit with a descriptive message, create pull requests when applicable, and push updated code to remote GitHub (`mady143/ai-analytics-dashboard`) upon task completion or at the end of the day.
 - **File References:**
   - [`scripts/start_of_day.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/start_of_day.py)
   - [`scripts/end_of_day.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/end_of_day.py)
   - [`agents/git_agent.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/git_agent.py)
+
+### 1b. Automatic README.md Documentation Maintenance Mandate (2026-07-28)
+- **Mandatory Documentation Directive:**
+  - The AI AGENT MUST automatically maintain and update [`README.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/README.md) whenever new features, backend API endpoints, multi-database architecture parameters, or agent processes are added or updated.
+  - Keep `README.md` synchronized with the active project structure, API endpoints table, background agent list, and testing instructions.
 
 ---
 
@@ -33,32 +39,74 @@ The system is configured to perform all mandatory tasks autonomously **WITHOUT a
   - `state_changed` → `last_state != current_state` → **PROCESS**
   - `content_updated` → `last_updated_at != current_updated_at` → **PROCESS**
   - `done/completed` → skip (no action needed)
-- **Mandatory Directive:** Must run **always**. If stopped for any reason, restart immediately without asking permission.
+- **Mandatory Autonomous Agent Management Mandate (2026-07-28):**
+  - **Zero User Manual Execution:** The USER will NOT manually execute `python scripts/run_sprint_watcher.py --interval 60`.
+  - **100% Agent Ownership:** The AI AGENT is strictly responsible for launching, managing, monitoring, and keeping `run_sprint_watcher.py --interval 60` continuously running in background mode.
+  - If `sprint_watcher` is ever detected as stopped, idle, or not running, the agent MUST immediately restart `python scripts/run_sprint_watcher.py --interval 60` autonomously.
 - **File References:**
   - [`scripts/run_sprint_watcher.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/run_sprint_watcher.py)
   - [`agents/sprint_watcher_agent.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/sprint_watcher_agent.py)
+  - [`memory/agent_state.json`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/memory/agent_state.json)
 
 
 ---
 
+### 2b. Mandatory Continuous Background Services, Agents & MCP Servers (ALWAYS RUNNING)
+The AI AGENT is 100% responsible for keeping ALL background services, autonomous agents, and MCP servers continuously running in active background mode **WITHOUT manual user intervention**:
+
+#### 1. Core Background Application Services:
+- **Frontend Dashboard Dev Server:** `npm run dev` (inside `frontend/`) ➔ [http://localhost:5173](http://localhost:5173)
+- **Backend FastAPI API Server:** `python -m uvicorn main:app --host 127.0.0.1 --port 8000` (inside `backend/`) ➔ [http://127.0.0.1:8000](http://127.0.0.1:8000)
+
+#### 2. Autonomous Agent Network:
+- **Sprint Watcher Agent:** `python scripts/run_sprint_watcher.py --interval 60` (Continuous background polling every 60s)
+- **Master Orchestrator Agent:** `agents/orchestrator_agent.py` (Continuous task coordination)
+- **Builder Agent:** `agents/builder_agent.py` (Autonomous code implementation)
+- **Tester Agent:** `agents/tester_agent.py` (Autonomous unit & browser testing)
+- **Git Agent:** `agents/git_agent.py` (Autonomous morning pull & evening git push)
+
+#### 3. Model Context Protocol (MCP) Servers (`mcp_servers/mcp_config.json`):
+- **Plane Task Management MCP Server:** `agents.plane_agent` (Task lifecycle, comments, status sync)
+- **GitHub Operations MCP Server:** `github-mcp-server` (Commits, pull requests, push operations)
+- **Persistent Agent Memory MCP Server:** `agents.memory_manager` (Conversation state & task summary logging)
+- **Browser Automation MCP Server:** `playwright` (UI testing & automated browser verification)
+
+- **Mandatory Autonomous Directive:** The USER will NOT run these agent scripts or MCP servers manually. If any background agent or MCP service is detected as offline or stopped, the system MUST automatically restart it in background mode immediately.
+
+---
+
 ### 3. Automatic Sprint Task Detection & Execution (Sprint Updates & New Tasks)
-- **Mandatory Autonomous Directive:** Whenever the sprint is updated or a new task is added/updated in the sprint, the agent MUST automatically execute the full task lifecycle:
+- **Mandatory Autonomous Directive:** Whenever the sprint is updated or a new task is added in the sprint, the agent MUST work on the task, test it, test in browser, and deploy it:
   1. 🛠️ **Work on the Task:** Pick up the task, transition Plane status to `In Progress`, extract all instructions/comments, and write/update the backend & frontend component code.
   2. 🧪 **Test the Code (Unit Tests):** Automatically generate and run unit tests (`pytest tests/unit/ -v`) to verify core component logic, endpoints, and ensure zero regression.
   3. 🌐 **Test in Browser (UI Automation):** Execute Playwright browser automation tests (`pytest tests/browser/ -v`) to test live rendering, charts, tables, KPI cards, and user interactions in a real browser environment.
   4. 🚀 **Deploy & Push:** Commit and push the tested changes to the remote Git repository (`mady143/ai-analytics-dashboard`), deploy the build, and mark the task status as `Done` / `Completed` in Plane.
 - **Fix Applied (2026-07-27):** Sprint Watcher previously **did NOT poll comments** — it only watched task state changes. Added `list_comments()` to `plane_agent.py` and `_check_new_comments()` to `sprint_watcher_agent.py`. Every 60-second poll now also fetches comments on all open tasks and triggers the builder if any **new** (unseen) user comment is found.
-- **Comment Detection Logic:**
-  - On each 60s poll: `list_comments(project_id, task_id)` is called for every non-completed task
-  - `_last_seen_comment_ids` tracks already-processed comment IDs per task
-  - New human comments (not bot comments containing `🤖`) trigger `_handle_new_task()` with the comment injected into the task description
-  - Bot-generated comments (`Sprint Watcher`, `🤖`) are automatically skipped to avoid infinite loops
+
+
+---
+
+### 4. 🚨 HIGH PRIORITY DIRECTIVE: Fully Dynamic Unit & Browser Test Suite & Auto-Fix Mandate
+- **Mandatory Operational Directive (ZERO Hardcoded Values):** All unit tests (`tests/unit/`) and browser automation tests (`tests/browser/`) MUST be 100% dynamic. Test cases must collect information dynamically from connected databases (`pg_prod`, `pg_dev`, `oracle_dev`, `oracle_f1`, `oracle_prod`) and API service payloads **WITHOUT hardcoding static database record values** (such as static warehouse count numbers `3` or `5`, static facility arrays `["58", "61", "71"]`, static dates, static batch IDs, or invoice numbers).
+- **Dynamic Test Case Preparation & Data-Driven Assertions:** Every test file must dynamically query API endpoints and database summary fields, construct dynamic data-driven assertions (e.g. comparing bar chart array length against dynamic summary count `len(data) == stats["summary"]["total_warehouses"]` or browser tick count `actual_ticks == kpi_total_warehouses`), and validate structural data models, status codes, and filter parameter propagation.
+- **Mandatory Auto-Fix & Issue Resolution Rule:** If ANY unit test, browser test, or compilation issue occurs during testing, the agent MUST NOT stop or abandon work. The agent MUST immediately fetch error tracebacks/logs, fix the root cause in the respective backend (`backend/`) or frontend (`frontend/`) source files, and re-test immediately until 100% PASS rate is achieved.
+- **🔓 FULL PRE-APPROVED COMMAND PERMISSIONS (ZERO PERMISSION PROMPTS — ALWAYS ALLOWED):**
+  1. `python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload` (FastAPI Server — 100% Pre-Approved, Zero Prompts)
+  2. `node node_modules/vite/bin/vite.js` (Vite Frontend Server — 100% Pre-Approved, Zero Prompts)
+  3. `python -m pytest tests/browser/ -v` (Playwright Browser Test Suite — 100% Pre-Approved)
+  4. `python -m pytest tests/unit/test_charts.py -v` (Charts Unit Test Suite — 100% Pre-Approved)
+  5. `python -m pytest tests/unit/ -v` (Full Unit Test Suite — 100% Pre-Approved)
+  - All five commands are **100% PRE-APPROVED** for autonomous background execution without asking the user for confirmation or text permission prompts.
+- **100% Dynamic Database Record Execution (Zero Hardcoded Dates or Counts):**
+  - No static date tables or fixed date record assumptions are permitted in `tasks.md`, source code, or test suites.
+  - For **ANY date (`oerdte`)** selected in the UI or requested in API endpoints, the application MUST dynamically query the connected database table (`sptn_sales_data`).
+  - If a selected date has 0 records in the database, return strictly 0 items / empty dataset without synthetic data generation. If records exist for that date, filter and return exact matching records dynamically.
 
 ---
 
 ### 3b. Open Requirements from Plane Comments (2026-07-27) — `Warehouse level statics`
 
-These 3 instructions were added as comments by `manikantha.sekhar` in Plane and MUST be implemented:
+These instructions were added as comments in Plane and MUST be implemented:
 
 #### ⚠️ Requirement 1 — Total Warehouse Count Mismatch + `batch_id` + Global Date Format
 - **Issue:** Total warehouse count KPI value is mismatching actual data
@@ -81,16 +129,111 @@ These 3 instructions were added as comments by `manikantha.sekhar` in Plane and 
   2. Ensure `batch_id` is returned by the backend `GET /api/warehouse/statistics` endpoint
   3. Display it alongside `Invoice #`, `C&S Item Code`, etc.
 
+#### ⚠️ Requirement 4 — `batch_id` Column Population from `sptn_sales_data ssd`
+- **Issue:** `batch_id` values are wrong and should be populated from the `batch_id` column of `sptn_sales_data ssd`.
+- **Query Specification:**
+  ```sql
+  select oerdte,batch_id
+  from sptn_sales_data ssd ;
+  ```
+- **Action:**
+  1. Ensure query logic fetches `batch_id` directly from `sptn_sales_data ssd` along with `oerdte`.
+  2. Return the correct `batch_id` column values in the API and display them in the table component.
+
 
 - **File References:**
   - [`agents/plane_agent.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/plane_agent.py)
 
+#### ⚠️ Requirement 4b — Strict SQL Execution Matching Target DB & Date (No Hardcoding & No Synthetic Fallbacks) (2026-07-28)
+- **SQL Execution Specification:**
+  ```sql
+  SELECT DISTINCT oewhse
+  FROM sptn_sales_data ssd 
+  WHERE 1=1 -- oeinvo = '487591'
+    AND oerdte = %s;
+  ```
+- **Operational Rules:**
+  1. **Strict Target DB & Date Matching:** Execute direct SQL queries against whatever target database (`pg_prod`, `pg_dev`, etc.) and whatever date (`oerdte`) the user selects in the UI.
+  2. **Strict Zero Record Handling:** If querying `pg_dev` for date `20260728` yields 0 records in the database, the UI MUST show 0 records / empty dataset. Never substitute synthetic data or fallback dates.
+  3. **Strict Active Warehouse Analytics:** If querying `pg_prod` for date `20260728` populates active warehouses (e.g. `58`, `71`), calculate and render analytics, KPIs, and item quantities strictly for those matching warehouses returned for that date.
+  4. **Clean API Execution & Race Condition Removal:** Prevent race conditions in `Dashboard.jsx` and `WarehouseSalesAnalytics.jsx` using subscription cleanup flags (`isMounted` / `isSubscribed`) so background fetches never overwrite selected date or DB state.
+
+#### ⚠️ Requirement 4c — Mandatory File-Change Re-Deployment & End-to-End Browser Testing Mandate (2026-07-28)
+- **Mandatory Redeployment & Verification Directive:**
+  Whenever ANY source file in `backend/` or `frontend/` is created or modified, the system MUST autonomously:
+  1. 🔄 **Re-Deploy / Restart Backend Services:** Restart the FastAPI backend uvicorn server (`python -m uvicorn main:app`) and verify API health check (`GET /api/health`).
+  2. 🧪 **Execute Unit Test Suite:** Run `pytest tests/unit/` and verify 100% PASS rate.
+  3. 🌐 **Execute End-to-End Browser Test Suite:** Run `pytest tests/browser/` (Playwright) to verify live rendering, target DB dropdown switching (`pg_prod` vs `pg_dev`), dynamic date picker selection, KPI card rendering, chart rendering, and table population in a real browser environment.
+  4. 🚀 **Auto-Fix & Deploy:** Automatically resolve any test failures, re-test end-to-end, and commit clean changes to remote Git repository.
+
+#### ⚠️ Requirement 5 — 100% Dynamic Date & Target DB Query Execution (Strict Zero Hardcoding Directive)
+- **Mandatory Requirement:** Warehouses, quantities, dates, and metrics MUST NEVER be hardcoded for any specific dates or target databases.
+- **Dynamic Database Execution Specification:**
+  1. For **ANY selected Target DB** (`pg_prod`, `pg_dev`, `oracle_dev`, `oracle_f1`, `oracle_prod`) and for **ANY selected Date** (`oerdte`), the system MUST dynamically query the active connected database.
+  2. Query 1 executes:
+     ```sql
+     SELECT DISTINCT oewhse
+     FROM sptn_sales_data ssd
+     WHERE oerdte = %s ...
+     ORDER BY oewhse ASC;
+     ```
+     passing whatever `oerdte` and filter parameters are selected by the user in the UI or API request.
+  3. The resulting `distinct_warehouses` list dynamically defines `total_warehouses = len(distinct_warehouses)` and determines the exact warehouse labels rendered in the Bar Chart ("Cases Built by Warehouse").
+  4. If N warehouses are active for a date in the target database, render strictly N bars. If 0 records exist for a date, render strictly 0 bars.
+  5. All static fallbacks (`5 if DEV else 3`), fixed date assumptions, and hardcoded warehouse counts are 100% eliminated from backend services (`backend/app/warehouse_service.py`, `backend/routers/charts.py`), frontend components, and unit/browser test suites.
+
+#### ⚠️ Requirement 6 — 100% Dynamic Database-Driven Warehouse & Quantity Aggregation
+- **Required Architecture & Execution:**
+  - **Subtask 1 — Query 1 (Distinct Active Warehouses for Selected Date & Target DB):**
+    ```sql
+    SELECT DISTINCT oewhse
+    FROM sptn_sales_data ssd
+    WHERE oerdte = %s ...
+    ORDER BY oewhse ASC;
+    ```
+    Executes dynamically against the connected target database (`pg_prod`, `pg_dev`, `oracle_dev`, `oracle_f1`, `oracle_prod`) matching whatever exact date (`oerdte`) and filter parameters (`batch_id`, `oewhse`, `oeinv`) the user selects. Sets `distinct_warehouses` list and `total_warehouses = len(distinct_warehouses)`.
+  - **Subtask 2 — Query 2 (Item Details & Quantities Aggregation):**
+    ```sql
+    SELECT oewhse, batch_id, oerdte, oecst, oeitem, oeinvo, oeqtys, oeqtyo, oeqscr, oesubf, gb_process_status
+    FROM sptn_sales_data ssd
+    WHERE oerdte = %s ...
+    ORDER BY oerdte DESC, oewhse ASC
+    LIMIT 500;
+    ```
+    Queries line item details for the selected date & DB type, calculates total cases built (`total_cases_built`), original order quantity (`total_original_order_qty`), and distinct invoice counts.
+  - **Subtask 3 — Bar Chart & KPI Alignment:**
+    Construct bar chart items derived strictly from `distinct_warehouses` for the queried date & DB type.
+  - **Subtask 4 — Zero Static Fallbacks:**
+    Eliminate all hardcoded fallback assignments (`5 if is_dev else 3`) across backend services (`backend/app/warehouse_service.py`, `backend/routers/charts.py`), frontend, and test files.
+
+#### ⚠️ Requirement 7 — 🚨 STRICT MANDATE: ZERO HARDCODED VALUES & DYNAMIC UI PARAMETER QUERY PREPARATION
+- **Zero Hardcoded Values Mandate:** Absolutely NO hardcoding of static warehouse IDs (such as `'58'`, `'61'`, `'71'`), static dates, static quantities, or static limits anywhere in backend services (`backend/app/warehouse_service.py`, `backend/routers/charts.py`), frontend components (`frontend/src/`), or unit/browser test suites.
+- **Dynamic UI Parameter Query Execution:**
+  1. The system MUST accept parameters directly from the UI inputs: `target_db` (Target Database selector), `oerdte` (Global Order Date), `oewhse` (Warehouse filter), `batch_id` (Batch ID filter), and `oeinv` (Invoice filter).
+  2. Dynamically prepare and execute SQL queries matching the exact user parameters:
+     - **Query 1 (Active Warehouse IDs):** `SELECT DISTINCT oewhse FROM sptn_sales_data ssd WHERE oerdte = %s ... ORDER BY oewhse ASC;`
+     - **Query 2 (Aggregated Quantities per Warehouse):**
+       ```sql
+       SELECT oewhse, 
+              COALESCE(SUM(CAST(NULLIF(oeqtys, '') AS NUMERIC)), 0) AS total_cases_built,
+              COALESCE(SUM(CAST(NULLIF(oeqtyo, '') AS NUMERIC)), 0) AS total_order_qty,
+              COUNT(DISTINCT oeinvo) AS total_invoices
+       FROM sptn_sales_data ssd
+       WHERE oerdte = %s ...
+       GROUP BY oewhse
+       ORDER BY oewhse ASC;
+       ```
+     - **Query 3 (Partitioned Line Items & Interleaved Output):** Fetch line item details partitioned across all active warehouses and interleave them round-robin so ALL warehouses (58, 61, 71) are represented in the UI table and charts.
+  3. Automatically populate all KPI cards, Bar Charts ("Cases Built by Warehouse"), Scatter Plots, and Data Tables strictly with data dynamically fetched from the connected target database.
+
 ---
 
-### 4. Code Modification & Zero Regression Rule (Do Not Disturb Existing Code)
+### 4. Code Modification, Mandatory Testing & Auto-Fix Rule (Do Not Disturb Existing Code)
 - **Mandatory Directive:** Do **NOT** alter or disturb existing working code. Handle **ONLY** new sprint changes and feature additions.
+- **Mandatory Testing & Auto-Fix Policy:** Whenever ANY code change is made (backend or frontend), testing the application and running browser tests (`pytest tests/browser/ -v`) are **MANDATORY**. If any issues, compilation errors, or test failures occur, the agent MUST fix them accordingly and re-test immediately until 100% passed.
 - **Strict Scope Control:** All code modifications must be additively non-destructive to pre-existing components, services, routes, or configurations.
-- **Enforcement:** Both unit tests and browser tests must pass 100%. If any existing or new test fails, the task is marked `FAILED` and flagged for immediate resolution.
+- **Mandatory Post-Testing Application Reload & Server Restart Policy:** Whenever all testing (`pytest tests/unit/ -v` and `pytest tests/browser/ -v`) and code changes are completed for a task or feature, the agent MUST automatically reload/restart the FastAPI backend server (`python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload`) and Vite frontend dev server (`node node_modules/vite/bin/vite.js`) to ensure the application runs smoothly with 100% updated code and zero stale processes.
+- **Enforcement:** Both unit tests (`pytest tests/unit/ -v`) and browser tests (`pytest tests/browser/ -v`) must pass 100% after every code change. If any existing or new test fails, the task is marked `FAILED` and resolved immediately.
 
 ---
 
@@ -104,12 +247,17 @@ These 3 instructions were added as comments by `manikantha.sekhar` in Plane and 
 
 ---
 
-### 6. Full Playwright Browser Automation Testing (Zero Permission Prompting)
-- **Mandatory Directive:** Run `pytest tests/browser/ -v` and all testing/build commands autonomously **WITHOUT asking for permission prompts**. Never pause or ask confirmation to run browser tests or shell commands.
-- **Execution:** Headless Chromium browser automation tests verify UI rendering, routes, KPI cards, and components on the live web app.
-- **Command:** `pytest tests/browser/ -v`
+### 6. Mandatory Application Testing, Browser Verification & Auto-Fix Policy (Pre-Approved Permission Commands)
+- **Pre-Approved Command Mandate (ZERO Permission Prompts):** The test execution commands `python -m pytest tests/browser/ -v` and `python -m pytest tests/unit/ -v` have **FULL PRE-APPROVED AUTONOMOUS PERMISSION**. The agent MUST run these commands automatically via `run_command` after any code update without issuing text prompts asking the user for permission.
+- **Dynamic End-to-End Test Case Preparation:** Both unit tests (`tests/unit/`) and browser automation tests (`tests/browser/`) must dynamically extract information from the connected databases (`pg_prod`, `pg_dev`, `oracle_dev`, `oracle_f1`, `oracle_prod`) and live UI elements, preparing dynamic test cases and assertions based on real data flow without hardcoding static values.
+- **Immediate Auto-Fix Resolution Policy:** If browser testing or unit testing detects ANY UI error, compilation issue, or broken component, the agent MUST immediately inspect tracebacks/logs, fix the root cause in the respective backend or frontend files, and re-run browser/unit tests until 100% PASS rate is achieved.
+- **Execution:** Headless Chromium browser automation tests verify UI rendering, routes, KPI cards, Recharts SVG elements, tables, dropdowns, and components on the live web app after every code update.
+- **Pre-Approved Commands:**
+  - `python -m pytest tests/browser/ -v`
+  - `python -m pytest tests/unit/ -v`
 - **File References:**
   - [`tests/browser/test_dashboard_loads.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tests/browser/test_dashboard_loads.py)
+  - [`tests/unit/test_warehouse_db_filters.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tests/unit/test_warehouse_db_filters.py)
 
 
 ---
@@ -121,6 +269,77 @@ These 3 instructions were added as comments by `manikantha.sekhar` in Plane and 
   - **Backend Server (FastAPI):** `python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload` (Cwd: `backend/`) -> Active on `http://localhost:8000` (Docs: `http://localhost:8000/docs`).
   - **Frontend Server (React + Vite):** `node node_modules/vite/bin/vite.js` or `npm run dev` (Cwd: `frontend/`) -> Active on `http://localhost:5173`.
 - **Runtime Verification:** Ensure both servers are operational and accessible prior to running Playwright browser automation suites.
+
+---
+
+### 7b. 🔧 Permanent Fix for Node.js `MODULE_NOT_FOUND` & Manual Execution Guide (Agent Restart / Token Expiry)
+
+#### 1. Permanent Fix for Node.js `MODULE_NOT_FOUND` (Windows `&` Path Special Character Issue)
+- **Problem:** Paths containing special characters like `&` (`c&s\mani_personal\...`) break Windows command-line `.bin` wrapper shims (`node_modules\.bin\vite`), producing `MODULE_NOT_FOUND` or invalid command errors.
+- **Permanent Solution:** In `frontend/package.json`, the `"dev"` script is configured to invoke Vite directly using Node:
+  ```json
+  "dev": "node node_modules/vite/bin/vite.js"
+  ```
+  This bypasses `.bin` cmd shims completely and ensures `npm run dev` works natively on Windows regardless of folder path characters.
+
+#### 2. How to Run the Application Manually (If Agent is OFF or out of tokens)
+If the AI agent is offline, paused, or token limit is reached, you can run both servers manually from PowerShell/Terminal:
+- **Backend (FastAPI):**
+  ```powershell
+  cd "c:\Users\manik\Downloads\c&s\mani_personal\ai_analytics_dashboard\backend"
+  python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+  ```
+- **Frontend (Vite/React):**
+  ```powershell
+  cd "c:\Users\manik\Downloads\c&s\mani_personal\ai_analytics_dashboard\frontend"
+  npm run dev
+  ```
+
+#### 3. Fresh Day Agent Boot Protocol & Zero-Command Resume Strategy
+When starting a new conversation on a fresh day or resuming work:
+- **User Opening Message:** The user can initiate the conversation using ANY standard opening message, greeting, or goal statement (e.g., `"Good morning"`, `"What's the status?"`, `"Resume sprint"`, `"Check memory"`, or `"Continue task"`). The user does **NOT** need to explicitly say `"start the application"`.
+- **Autonomous Agent Boot Protocol (Triggered Automatically on First Turn):**
+  1. 📚 **Context & Memory Inspection:** The agent automatically inspects [`tasks.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks.md) and the latest session log in [`memory/conversations/`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/memory/conversations/) (`YYYY-MM-DD.md`) to load full project architecture, recent completed items, and pending requirements.
+  2. ⚡ **Server Health Check & Auto-Launch:** The agent inspects if the FastAPI backend (port 8000) and Vite React frontend (port 5173) are active. If either server is offline or stopped, the agent starts them autonomously in the background via `run_command` without asking permission.
+  3. 🧪 **Automated Sanity Verification:** The agent runs automated test suites (`pytest tests/unit/ -v`) to confirm clean operational status.
+  4. 📢 **Status & Context Synthesis:** The agent summarizes current runtime state, recent code changes, and active tasks directly to the user.
+
+---
+
+### 7c. 🎛️ Header Controls On-Click Functionality & System Route Specifications
+
+#### 1. Header Dropdown & Submit Button On-Click Functionality (`Dashboard.jsx`)
+- **Order Date Picker (`#global-date-picker`):**
+  - Event: `onChange={(e) => ...}`
+  - Behavior: Captures selected ISO date (`YYYY-MM-DD`), converts to `oerdte` (`YYYYMMDD`), updates state, and immediately triggers `fetchAll(selectedDate, selectedDb)`.
+- **Target DB Dropdown (`#global-db-selector`):**
+  - Event: `onChange={(e) => ...}`
+  - Options: `PostgreSQL PROD` (`pg_prod`), `PostgreSQL DEV` (`pg_dev`), `Oracle DEV` (`oracle_dev`), `Oracle F1` (`oracle_f1`), `Oracle PROD` (`oracle_prod`).
+  - Behavior: Updates `selectedDb` and `appliedTargetDb`, updates badge status (`⚡ Active: PG_DEV` / `PG_PROD`), and immediately triggers `fetchAll(selectedDate, val)` across all backend endpoints.
+- **Submit Button (`#submit-db-btn`):**
+  - Event: `onClick={handleSubmit}` + `onSubmit={(e) => handleSubmit(e)}`
+  - Behavior: Prevents form reload (`e.preventDefault()`), commits `appliedDate` & `appliedTargetDb`, and forces simultaneous refresh of KPI Cards (`/api/charts/kpi`), Bar Chart (`/api/charts/bar`), Scatter Plot (`/api/charts/scatter`), and Warehouse Data Table (`/api/warehouse/statistics`).
+
+#### 2. System Route Specifications (Frontend & Backend APIs)
+
+##### 🌐 Frontend Application Routes (React Router)
+| Route Path | Component File | Description |
+| :--- | :--- | :--- |
+| `/` | [`frontend/src/pages/Dashboard.jsx`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/frontend/src/pages/Dashboard.jsx) | Main Dashboard: Global Header Controls, 6 KPI Cards, Warehouse Bar Chart, Scatter Plot, Warehouse & Invoice Sales Analytics Table, Inventory Risk Forecast. |
+| `/analytics` | `frontend/src/pages/Analytics.jsx` | Predictive Model Training & Machine Learning Analytics page. |
+
+##### 🔌 Backend REST API Endpoints (FastAPI)
+| HTTP Method | API Endpoint | Query Parameters | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/warehouse/statistics` | `target_db`, `oerdte`, `batch_id`, `oewhse`, `oeinv`, `limit`, `offset` | Direct PostgreSQL / Oracle query returning dynamic item-level and invoice-level warehouse statistics. |
+| `GET` | `/api/charts/kpi` | `oerdte`, `target_db` | Returns summary KPI metrics (Total Warehouses, Cases Built, Order Qty, Invoices Processed, Fulfillment Rate, Scratch Rate). |
+| `GET` | `/api/charts/bar` | `oerdte`, `target_db` | Returns warehouse cases built breakdown for the Bar Chart. |
+| `GET` | `/api/charts/scatter` | `oerdte`, `target_db` | Returns order quantity vs cases built points for Scatter Plot. |
+| `GET` | `/api/health` | None | Returns API service health status (`{"status": "healthy"}`). |
+| `GET` | `/api/data/sample` | `rows` | Returns sample dataset rows. |
+| `GET` | `/api/data/summary` | None | Returns statistical summary of dataset columns and numeric stats. |
+| `POST` | `/api/data/upload` | Multipart file | Uploads CSV dataset. |
+| `POST` | `/api/analytics/train` | Body (`target_col`, `model_type`) | Trains Random Forest or Logistic Regression model on dataset. |
 
 ---
 
@@ -146,6 +365,20 @@ These 3 instructions were added as comments by `manikantha.sekhar` in Plane and 
 
 ### 8b. UI Health Check Policy (MANDATORY — After Every Restart or Code Change)
 After every application start, restart, or code change, ALWAYS verify the following UI elements are correctly loaded and populated:
+### 3b. Real Database Schema & Mandatory Column Mapping (`sptn_sales_data ssd`)
+- **Query Reference:** `SELECT oerdte, batch_id, oewhse, oecst, oeitem, oeinv, oeqtys, oeqtyo, oeqscr, oesubf, gb_process_status FROM sptn_sales_data ssd;`
+- **Mandatory Column Mappings:**
+  1. `oewhse` ➔ `whs_num` (Warehouse Facility: PROD has `'58'`, `'61'`, `'71'`; DEV has `'01'`, `'02'`, `'58'`, `'61'`, `'71'`).
+  2. `batch_id` ➔ `batch_id` (Real numeric string Batch IDs populated directly from `batch_id` column e.g. `'100'`, `'1000'`, `'4569'`, `'785'`. Do **NOT** prefix with `BCH-`).
+  3. `oerdte` ➔ `oerdte` (Order Date YYYYMMDD).
+  4. `oecst` ➔ `cust_item_code` (Customer Item Code).
+  5. `oeitem` ➔ `cs_item_code` (C&S Item Code).
+  6. `oeinv` ➔ `invc_num_stg` (Invoice Number).
+  7. `oeqtys` ➔ `cases_bld_stg` (Cases Built Quantity).
+  8. `oeqtyo` ➔ `orgnl_ordr_qty_stg` (Original Order Quantity).
+  9. `oeqscr` ➔ `whs_scrtch_qty_stg` (Warehouse Scratch Quantity).
+  10. `gb_process_status` ➔ `procurement_transfer_status` (`'P'` mapped to `'COMPLETED'`).
+- **Instant UI Target DB Synchronization:** Changing Target DB or clicking Submit MUST instantly query target database and update all KPI cards, Bar Charts, Scatter Plots, and Data Tables across the entire page without desync.
 - **📊 KPI Cards:** All 6 KPI cards must be visible with non-zero values (Total Warehouses, Cases Built, Order Qty, Invoices Processed, Fulfillment Rate, Scratch Rate).
 - **🔥 Bar Chart (Cases Built by Warehouse):** Must render colored bars for warehouses `01`, `02`, `58`, `61`, `71`. No blank/empty chart allowed.
 - **📈 Scatter Plot (Order Qty vs Cases Built):** Must render colored data points. No empty chart canvas allowed.
@@ -179,6 +412,14 @@ Agents **cannot carry full conversation history** between sessions. To maintain 
 | `memory/conversations/YYYY-MM-DD.md` | **Daily human-readable session log** ← agents read this first |
 | `memory/agent_state.json` | Machine-readable agent status + Plane project IDs |
 | `memory/task_history/YYYY-MM-DD_task_history.jsonl` | Append-only task execution records |
+
+---
+
+### 8d. Mandatory Test Execution, Statistics Reporting & Memory Session Log Policy
+- **Mandatory Directive:** After running application test commands (`pytest tests/unit/ -v`) and browser automation commands (`pytest tests/browser/ -v`), the agent MUST:
+  1. 📊 **Report Detailed Statistics:** Output pass/fail counts, total duration, test suite breakdown, and pass rate to the user.
+  2. 📝 **Update Memory Conversation Log:** Update [`memory/conversations/YYYY-MM-DD.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/memory/conversations/2026-07-27.md) with the latest test statistics, code modifications, service statuses, and task context.
+- **Enforcement:** Never complete a test execution cycle or session without updating `memory/conversations/YYYY-MM-DD.md` and providing the full statistics summary to the user.
 
 > **Example:** When a new agent session starts tomorrow (2026-07-28), it MUST read [`memory/conversations/2026-07-27.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/memory/conversations/2026-07-27.md) to understand what was completed today before doing any work.
 

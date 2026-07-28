@@ -1,7 +1,8 @@
 """
-Charts Router — Returns chart-ready data for the React frontend.
+Charts Router — Returns chart-ready data for the React frontend matching selected Target DB & Order Date.
 """
 
+from typing import Any
 import numpy as np
 from fastapi import APIRouter, Query, HTTPException
 from fastapi.responses import JSONResponse
@@ -10,22 +11,33 @@ from services import data_service
 router = APIRouter()
 
 
+def _clean_param(val: Any, default: str = "") -> str:
+    if hasattr(val, "default"):
+        val = val.default
+    s = str(val or "").strip()
+    if s.startswith("annotation=") or "Query" in str(type(val)):
+        return default
+    return s
+
+
 @router.get("/kpi")
-async def get_kpi(
+def get_kpi(
     oerdte: str = Query("", description="Order date filter YYYYMMDD (optional)"),
     from_date: str = Query("", description="From order date filter YYYYMMDD (optional)"),
     to_date: str = Query("", description="To order date filter YYYYMMDD (optional)"),
-    target_db: str = Query("pg_prod", description="Target database")
+    target_db: str = Query("pg_dev", description="Target database")
 ):
     """Return Warehouse Level KPI summary cards for the dashboard, derived from warehouse statistics."""
+    oerdte_clean = _clean_param(oerdte, "")
+    target_db_clean = _clean_param(target_db, "pg_dev")
+    from_date_clean = _clean_param(from_date, "")
+    to_date_clean = _clean_param(to_date, "")
+
     from app.warehouse_service import get_warehouse_statistics
-    stats = get_warehouse_statistics(target_db=target_db, oerdte=oerdte, from_date=from_date, to_date=to_date, limit=1000, offset=0)
+    stats = get_warehouse_statistics(target_db=target_db_clean, oerdte=oerdte_clean, from_date=from_date_clean, to_date=to_date_clean, limit=1000, offset=0)
     summary = stats.get("summary", {})
 
-    # Derive unique warehouse count from items
-    whs_set = {item["whs_num"] for item in stats.get("warehouse_items", [])}
-    total_whs = summary.get("total_warehouses", len(whs_set))
-
+    total_whs = summary.get("total_warehouses", 0)
     total_built = summary.get("total_cases_built", 0)
     total_order = summary.get("total_original_order_qty", 0)
     total_invoices = summary.get("total_invoices_processed", 0)
@@ -88,32 +100,43 @@ async def get_kpi(
     return JSONResponse({"kpis": kpis, "total_warehouses": total_whs, "selected_oerdte": oerdte})
 
 
-
-
 @router.get("/bar")
-async def get_bar_chart(
+def get_bar_chart(
     column: str = Query("warehouse", description="Categorical column for grouping"),
-    metric: str = Query("cases_bld", description="Numeric column to aggregate")
+    metric: str = Query("cases_bld", description="Numeric column to aggregate"),
+    target_db: str = Query("pg_dev", description="Target database"),
+    oerdte: str = Query("", description="Order date filter YYYYMMDD")
 ):
-    """Return warehouse level or column grouped bar chart data."""
-    df = data_service.get_or_generate()
+    target_db_clean = _clean_param(target_db, "pg_dev")
+    oerdte_clean = _clean_param(oerdte, "")
+    col_val = str(column) if not hasattr(column, 'default') else (column.default or "warehouse")
+    if col_val == "warehouse" or column == "warehouse":
+        from app.warehouse_service import get_warehouse_statistics
+        stats = get_warehouse_statistics(target_db=target_db_clean, oerdte=oerdte_clean, limit=1000, offset=0)
+        items = stats.get("warehouse_items", [])
 
-    if column == "warehouse":
-        data = [
-            {"label": "Whse 01", "value": 1540},
-            {"label": "Whse 02", "value": 1820},
-            {"label": "Whse 58", "value": 2310},
-            {"label": "Whse 61", "value": 1980},
-            {"label": "Whse 71", "value": 2150}
-        ]
+        distinct_whs = stats.get("summary", {}).get("distinct_warehouses", [])
+        if not distinct_whs and items:
+            distinct_whs = sorted(list({str(item.get("whs_num", "")).strip() for item in items if item.get("whs_num")}))
+
+        whs_totals = {w: 0 for w in distinct_whs}
+        for item in items:
+            whs = str(item.get("whs_num", "")).strip()
+            if whs in whs_totals:
+                whs_totals[whs] += item.get("cases_bld_stg", 0)
+
+        data = [{"label": f"Whse {w}", "value": whs_totals[w], "whs_num": w} for w in distinct_whs]
+
         return JSONResponse({
             "chart_type": "bar",
-            "title": "Cases Built by Warehouse",
+            "title": f"Cases Built by Warehouse ({target_db_clean.upper()})",
             "data": data,
             "x_label": "Warehouse",
-            "y_label": "Cases Built Qty"
+            "y_label": "Cases Built Qty",
+            "total_warehouses": len(distinct_whs)
         })
 
+    df = data_service.get_or_generate()
     if column not in df.columns:
         raise HTTPException(status_code=400, detail=f"Column '{column}' not found")
 
@@ -132,25 +155,32 @@ async def get_bar_chart(
 
 
 @router.get("/scatter")
-async def get_scatter_chart(
+def get_scatter_chart(
     x: str = Query("order_qty", description="X-axis column"),
     y: str = Query("cases_bld", description="Y-axis column"),
-    color: str = Query("warehouse", description="Color grouping column")
+    color: str = Query("warehouse", description="Color grouping column"),
+    target_db: str = Query("pg_dev", description="Target database"),
+    oerdte: str = Query("", description="Order date filter YYYYMMDD")
 ):
-    """Return warehouse scatter plot data: Original Order Qty vs Cases Built."""
-    np.random.seed(42)
-    whs_codes = ["Whse 01", "Whse 02", "Whse 58", "Whse 61", "Whse 71"]
-    orders = np.random.randint(100, 1500, 180)
-    built = orders - np.random.randint(0, 50, 180)
+    """Return warehouse scatter plot data: Original Order Qty vs Cases Built matching selected DB."""
+    target_db_clean = _clean_param(target_db, "pg_dev")
+    oerdte_clean = _clean_param(oerdte, "")
+    from app.warehouse_service import get_warehouse_statistics
+    stats = get_warehouse_statistics(target_db=target_db_clean, oerdte=oerdte_clean, limit=200, offset=0)
+    items = stats.get("warehouse_items", [])
 
     data = [
-        {"x": int(o), "y": int(b), "color": whs_codes[i % len(whs_codes)]}
-        for i, (o, b) in enumerate(zip(orders, built))
+        {
+            "x": item.get("orgnl_ordr_qty_stg", 0),
+            "y": item.get("cases_bld_stg", 0),
+            "color": f"Whse {item.get('whs_num', '00')}"
+        }
+        for item in items
     ]
 
     return JSONResponse({
         "chart_type": "scatter",
-        "title": "Original Order Qty vs Cases Built",
+        "title": f"Original Order Qty vs Cases Built ({target_db.upper()})",
         "data": data,
         "x_label": "Original Order Qty",
         "y_label": "Cases Built Qty"
@@ -164,7 +194,6 @@ async def get_heatmap():
     numeric_df = df.select_dtypes(include=np.number)
     corr = numeric_df.corr().round(3)
 
-    # Format as list of {x, y, value} for the frontend
     records = []
     cols = corr.columns.tolist()
     for i, row_label in enumerate(cols):
@@ -178,31 +207,32 @@ async def get_heatmap():
     return JSONResponse({
         "chart_type": "heatmap",
         "title": "Feature Correlation Matrix",
-        "data": records,
-        "columns": cols
+        "columns": cols,
+        "data": records
     })
 
 
 @router.get("/distribution")
-async def get_distribution(column: str = Query("salary", description="Column to show distribution")):
-    """Return histogram distribution data for a numeric column."""
+async def get_distribution(column: str = Query("order_qty", description="Numeric column for distribution")):
+    """Return histogram distribution data for numeric columns."""
     df = data_service.get_or_generate()
+    if column not in df.columns or not np.issubdtype(df[column].dtype, np.number):
+        column = df.select_dtypes(include=np.number).columns[0]
 
-    if column not in df.columns:
-        raise HTTPException(status_code=400, detail=f"Column '{column}' not found")
-
-    col_data = df[column].dropna()
-    counts, bins = np.histogram(col_data, bins=20)
-
-    data = [
-        {"bin_start": round(float(bins[i]), 2), "bin_end": round(float(bins[i + 1]), 2), "count": int(counts[i])}
+    counts, bin_edges = np.histogram(df[column].dropna(), bins=20)
+    bins_data = [
+        {
+            "bin": f"{int(bin_edges[i])}-{int(bin_edges[i+1])}",
+            "bin_start": float(bin_edges[i]),
+            "bin_end": float(bin_edges[i+1]),
+            "count": int(counts[i])
+        }
         for i in range(len(counts))
     ]
 
     return JSONResponse({
         "chart_type": "histogram",
         "title": f"Distribution of {column.replace('_', ' ').title()}",
-        "data": data,
-        "x_label": column,
-        "y_label": "Count"
+        "data": bins_data,
+        "column": column
     })
