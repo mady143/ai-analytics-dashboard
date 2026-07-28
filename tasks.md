@@ -91,12 +91,13 @@ The AI AGENT is 100% responsible for keeping ALL background services, autonomous
 - **Dynamic Test Case Preparation & Data-Driven Assertions:** Every test file must dynamically query API endpoints and database summary fields, construct dynamic data-driven assertions (e.g. comparing bar chart array length against dynamic summary count `len(data) == stats["summary"]["total_warehouses"]` or browser tick count `actual_ticks == kpi_total_warehouses`), and validate structural data models, status codes, and filter parameter propagation.
 - **Mandatory Auto-Fix & Issue Resolution Rule:** If ANY unit test, browser test, or compilation issue occurs during testing, the agent MUST NOT stop or abandon work. The agent MUST immediately fetch error tracebacks/logs, fix the root cause in the respective backend (`backend/`) or frontend (`frontend/`) source files, and re-test immediately until 100% PASS rate is achieved.
 - **🔓 FULL PRE-APPROVED COMMAND PERMISSIONS (ZERO PERMISSION PROMPTS — ALWAYS ALLOWED):**
-  1. `python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload` (FastAPI Server — 100% Pre-Approved, Zero Prompts)
-  2. `node node_modules/vite/bin/vite.js` (Vite Frontend Server — 100% Pre-Approved, Zero Prompts)
-  3. `python -m pytest tests/browser/ -v` (Playwright Browser Test Suite — 100% Pre-Approved)
-  4. `python -m pytest tests/unit/test_charts.py -v` (Charts Unit Test Suite — 100% Pre-Approved)
+  1. `git *` (ALL Git commands including `git pull`, `git add`, `git commit`, `git push`, `git status`, `git checkout`, `git rebase` — **100% Pre-Approved, Always Allowed, Zero Prompts**)
+  2. `python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload` (FastAPI Server — 100% Pre-Approved, Zero Prompts)
+  3. `node node_modules/vite/bin/vite.js` (Vite Frontend Server — 100% Pre-Approved, Zero Prompts)
+  4. `python -m pytest tests/browser/ -v` (Playwright Browser Test Suite — 100% Pre-Approved)
   5. `python -m pytest tests/unit/ -v` (Full Unit Test Suite — 100% Pre-Approved)
-  - All five commands are **100% PRE-APPROVED** for autonomous background execution without asking the user for confirmation or text permission prompts.
+  6. `python scripts/run_sprint_watcher.py --interval 60` (Sprint Watcher Agent — 100% Pre-Approved)
+  - All listed commands and ALL Git CLI commands are **100% PRE-APPROVED** for autonomous background execution without asking the user for confirmation or text permission prompts.
 - **100% Dynamic Database Record Execution (Zero Hardcoded Dates or Counts):**
   - No static date tables or fixed date record assumptions are permitted in `tasks.md`, source code, or test suites.
   - For **ANY date (`oerdte`)** selected in the UI or requested in API endpoints, the application MUST dynamically query the connected database table (`sptn_sales_data`).
