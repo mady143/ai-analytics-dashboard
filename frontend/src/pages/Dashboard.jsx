@@ -68,43 +68,40 @@ export default function Dashboard() {
   const [barData, setBarData] = useState([])
   const [scatterData, setScatterData] = useState([])
 
-  // Dynamic fetch with active flag to eliminate race conditions
+  const fetchAll = (dateVal, dbVal) => {
+    const oerdte = toOerdte(dateVal)
+
+    axios.get(`/api/charts/kpi?oerdte=${oerdte}&target_db=${dbVal}`)
+      .then(res => {
+        if (res.data?.kpis) setKpis(res.data.kpis)
+      })
+      .catch(err => console.error('Failed to fetch KPI cards:', err))
+
+    axios.get(`/api/charts/bar?oerdte=${oerdte}&target_db=${dbVal}`)
+      .then(res => {
+        if (res.data?.data) setBarData(res.data.data)
+      })
+      .catch(err => console.error('Failed to fetch Bar chart data:', err))
+
+    axios.get(`/api/charts/scatter?oerdte=${oerdte}&target_db=${dbVal}`)
+      .then(res => {
+        if (res.data?.data) setScatterData(res.data.data)
+      })
+      .catch(err => console.error('Failed to fetch Scatter plot data:', err))
+  }
+
+  // Initial fetch and on submission
   useEffect(() => {
-    let isMounted = true
-    const oerdte = toOerdte(appliedDate)
-
-    const runFetch = () => {
-      axios.get(`/api/charts/kpi?oerdte=${oerdte}&target_db=${appliedTargetDb}`)
-        .then(res => {
-          if (isMounted && res.data?.kpis) setKpis(res.data.kpis)
-        })
-        .catch(err => console.error('Failed to fetch KPI cards:', err))
-
-      axios.get(`/api/charts/bar?oerdte=${oerdte}&target_db=${appliedTargetDb}`)
-        .then(res => {
-          if (isMounted && res.data?.data) setBarData(res.data.data)
-        })
-        .catch(err => console.error('Failed to fetch Bar chart data:', err))
-
-      axios.get(`/api/charts/scatter?oerdte=${oerdte}&target_db=${appliedTargetDb}`)
-        .then(res => {
-          if (isMounted && res.data?.data) setScatterData(res.data.data)
-        })
-        .catch(err => console.error('Failed to fetch Scatter plot data:', err))
-    }
-
-    runFetch()
-    const timer = setInterval(runFetch, 15000)
-    return () => {
-      isMounted = false
-      clearInterval(timer)
-    }
+    fetchAll(appliedDate, appliedTargetDb)
+    const timer = setInterval(() => fetchAll(appliedDate, appliedTargetDb), 15000)
+    return () => clearInterval(timer)
   }, [appliedDate, appliedTargetDb])
 
   const handleSubmit = (e) => {
     if (e) e.preventDefault()
     setAppliedDate(selectedDate)
     setAppliedTargetDb(selectedDb)
+    fetchAll(selectedDate, selectedDb)
   }
 
   return (
@@ -132,11 +129,7 @@ export default function Dashboard() {
               id="global-date-picker"
               type="date"
               value={selectedDate}
-              onChange={(e) => {
-                const val = e.target.value;
-                setSelectedDate(val);
-                setAppliedDate(val);
-              }}
+              onChange={(e) => setSelectedDate(e.target.value)}
               style={{
                 background: 'var(--bg-secondary)',
                 color: 'var(--text-primary)',
@@ -154,11 +147,7 @@ export default function Dashboard() {
             <select
               id="global-db-selector"
               value={selectedDb}
-              onChange={(e) => {
-                const val = e.target.value;
-                setSelectedDb(val);
-                setAppliedTargetDb(val);
-              }}
+              onChange={(e) => setSelectedDb(e.target.value)}
               style={{
                 background: 'var(--bg-secondary)',
                 color: 'var(--text-primary)',
