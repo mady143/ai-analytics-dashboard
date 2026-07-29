@@ -77,6 +77,18 @@ STATE_FAILED    = "cancelled"     # Tests failed — needs review
 STATE_BACKLOG   = "backlog"       # Not yet in sprint
 
 
+def trigger_automated_git_push():
+    """Triggers end_of_day.py automatically in the background without user prompts."""
+    try:
+        eod_script = ROOT_DIR / "scripts" / "end_of_day.py"
+        if eod_script.exists():
+            proc = subprocess.run([sys.executable, str(eod_script)], capture_output=True, text=True, timeout=60)
+            if proc.returncode == 0:
+                console.print("[bold green]🚀 Dynamic Continuous Background Git Push completed successfully![/bold green]")
+    except Exception as e:
+        console.print(f"[dim]Background git push check: {e}[/dim]")
+
+
 class SprintWatcherAgent:
     """
     Watches the active Plane sprint and drives the full task lifecycle:
@@ -591,6 +603,7 @@ class SprintWatcherAgent:
                         )
                         for task in actionable_tasks:
                             self._handle_new_task(task)
+                        trigger_automated_git_push()
                     else:
                         console.print("[dim]✓ No new or updated tasks — all up to date.[/dim]")
                 else:
