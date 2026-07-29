@@ -18,3 +18,8 @@
    - Insight response card with **"Apply Filter to Table"** button.
 3. **Table State Binding:**
    - Binds Copilot filter actions to `WarehouseSalesAnalytics.jsx` filter state.
+4. **Interactive Playwright Browser Verification (`tests/browser/test_ai_copilot_and_anomalies.py`):**
+   - Type queries into AI Copilot search input in Chromium.
+   - Click "Ask AI" button and verify AI Copilot Finding card populates.
+   - Click quick insight pills and verify instant query execution.
+   - Click "Apply Filter to Table" and assert dynamic sales table update.
