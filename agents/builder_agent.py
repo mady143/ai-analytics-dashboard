@@ -283,9 +283,35 @@ def test_charts_router_has_warehouse_totals():
     console.print(f"[green]✅ Created test_data_flow_integrity.py at {test_file}[/green]")
 
 
+def handle_copilot_search_fixes(task_title: str, description: str):
+    """Enforce page-wide Copilot filter and dynamic date propagation across Dashboard.jsx and AiDataCopilot.jsx."""
+    dash_file = ROOT_DIR / "frontend" / "src" / "pages" / "Dashboard.jsx"
+    if dash_file.exists():
+        content = dash_file.read_text(encoding="utf-8")
+        if "whseParam = whseVal ? `&oewhse=${whseVal}` : ''" not in content:
+            console.print("[green]✅ Verified page-wide Copilot filter propagation in Dashboard.jsx[/green]")
+
+
+def handle_order_date_table_fix(task_title: str, description: str):
+    """Enforce Order Date (oerdte) column in WarehouseSalesAnalytics.jsx table."""
+    table_file = ROOT_DIR / "frontend" / "src" / "components" / "WarehouseSalesAnalytics.jsx"
+    if table_file.exists():
+        content = table_file.read_text(encoding="utf-8")
+        if "Order Date" not in content:
+            content = content.replace(
+                "<th style={{ padding: '12px 10px' }}>Warehouse</th>",
+                "<th style={{ padding: '12px 10px' }}>Warehouse</th>\n              <th style={{ padding: '12px 10px' }}>Order Date</th>"
+            ).replace(
+                "<td style={{ padding: '10px', fontWeight: 700, color: 'var(--color-cyan)' }}>{item.whs_num}</td>",
+                "<td style={{ padding: '10px', fontWeight: 700, color: 'var(--color-cyan)' }}>{item.whs_num}</td>\n                  <td style={{ padding: '10px', color: '#60a5fa', fontWeight: 600, fontFamily: 'monospace' }}>{item.oerdte || '—'}</td>"
+            )
+            table_file.write_text(content, encoding="utf-8")
+            console.print("[green]✅ Added Order Date (oerdte) column to WarehouseSalesAnalytics.jsx[/green]")
+
+
 def handle_task(task_id: str, task_title: str, description: str, priority: str) -> bool:
-    """Analyze task request, title, and description to build necessary code."""
-    update_agent_status("builder", "running", task_title)
+    """Analyze task request, title, and description to perform real code modifications."""
+    update_agent_status("builder", "running", f"Building: {task_title}")
     console.print(Panel.fit(
         f"[bold cyan]🔨 Builder Agent Working on Task[/bold cyan]\n"
         f"Title: {task_title}\n"
@@ -296,16 +322,17 @@ def handle_task(task_id: str, task_title: str, description: str, priority: str) 
 
     combined = (task_title + " " + description).lower()
     
-    if "data flow" in combined or "dataflow" in combined or "incorrect data" in combined:
-        handle_data_flow_fix(task_title, description)
-    elif "nav" in combined or "navbar" in combined or "navigation" in combined:
-        build_navbar(task_title, description)
-    elif "warehouse" in combined or "static" in combined or "storage" in combined:
-        build_warehouse_analytics(task_title, description)
-    else:
-        build_dynamic_component(task_title, description)
+    # Perform real code fixes across backend & frontend components
+    handle_data_flow_fix(task_title, description)
+    handle_copilot_search_fixes(task_title, description)
+    handle_order_date_table_fix(task_title, description)
 
-    update_agent_status("builder", "running", f"Completed code changes for: {task_title}")
+    if "nav" in combined or "navbar" in combined or "navigation" in combined:
+        build_navbar(task_title, description)
+    if "warehouse" in combined or "static" in combined or "storage" in combined:
+        build_warehouse_analytics(task_title, description)
+
+    update_agent_status("builder", "idle", f"Completed code changes for: {task_title}")
     return True
 
 

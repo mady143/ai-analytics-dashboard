@@ -36,6 +36,14 @@ export default function AiDataCopilot({ globalDate, globalTargetDb = 'pg_dev', o
         oerdte: oerdte
       });
       setCopilotResult(res.data);
+      if (res.data && onApplyFilter) {
+        onApplyFilter({
+          whse: res.data.filtered_whse || '',
+          batch: res.data.filtered_batch || '',
+          invoice: res.data.filtered_invoice || '',
+          effectiveDate: res.data.effective_date || ''
+        });
+      }
     } catch (err) {
       console.error('[AiDataCopilot] Query error:', err);
     } finally {
@@ -53,7 +61,8 @@ export default function AiDataCopilot({ globalDate, globalTargetDb = 'pg_dev', o
       onApplyFilter({
         whse: copilotResult.filtered_whse || '',
         batch: copilotResult.filtered_batch || '',
-        invoice: copilotResult.filtered_invoice || ''
+        invoice: copilotResult.filtered_invoice || '',
+        effectiveDate: copilotResult.effective_date || ''
       });
     }
   };

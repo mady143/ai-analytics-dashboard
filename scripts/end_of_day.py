@@ -14,7 +14,14 @@ from dotenv import load_dotenv
 ROOT_DIR = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT_DIR / "agents"))
 load_dotenv(ROOT_DIR / ".env")
-console = Console()
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+
+console = Console(force_terminal=True, legacy_windows=False)
 
 
 def main():

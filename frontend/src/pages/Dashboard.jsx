@@ -69,47 +69,50 @@ export default function Dashboard() {
   const [tableFilters, setTableFilters] = useState(null)
 
   const handleApplyTableFilter = (filters) => {
-    setTableFilters({ ...filters, _ts: Date.now() })
-    setTimeout(() => {
-      const tableEl = document.getElementById('warehouse-table-card') || document.getElementById('warehouse-analytics-table')
-      if (tableEl) {
-        tableEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    setTableFilters(prev => ({ ...(prev || {}), ...filters, _ts: Date.now() }))
+    if (filters.effectiveDate || filters.date) {
+      const d = filters.effectiveDate || filters.date;
+      if (d) {
+        const formattedDate = d.length === 8 ? `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}` : d;
+        setSelectedDate(formattedDate);
+        setAppliedDate(formattedDate);
       }
-    }, 100)
+    }
   }
 
   const [kpis, setKpis] = useState(DEFAULT_KPIS)
   const [barData, setBarData] = useState([])
   const [scatterData, setScatterData] = useState([])
 
-  const fetchAll = (dateVal, dbVal) => {
+  const fetchAll = (dateVal, dbVal, whseVal = '') => {
     const oerdte = toOerdte(dateVal)
+    const whseParam = whseVal ? `&oewhse=${whseVal}` : ''
 
-    axios.get(`/api/charts/kpi?oerdte=${oerdte}&target_db=${dbVal}`)
+    axios.get(`/api/charts/kpi?oerdte=${oerdte}&target_db=${dbVal}${whseParam}`)
       .then(res => {
         if (res.data?.kpis) setKpis(res.data.kpis)
       })
       .catch(err => console.error('Failed to fetch KPI cards:', err))
 
-    axios.get(`/api/charts/bar?oerdte=${oerdte}&target_db=${dbVal}`)
+    axios.get(`/api/charts/bar?oerdte=${oerdte}&target_db=${dbVal}${whseParam}`)
       .then(res => {
         if (res.data?.data) setBarData(res.data.data)
       })
       .catch(err => console.error('Failed to fetch Bar chart data:', err))
 
-    axios.get(`/api/charts/scatter?oerdte=${oerdte}&target_db=${dbVal}`)
+    axios.get(`/api/charts/scatter?oerdte=${oerdte}&target_db=${dbVal}${whseParam}`)
       .then(res => {
         if (res.data?.data) setScatterData(res.data.data)
       })
       .catch(err => console.error('Failed to fetch Scatter plot data:', err))
   }
 
-  // Initial fetch and on submission
+  // Initial fetch and on submission or filter change
   useEffect(() => {
-    fetchAll(appliedDate, appliedTargetDb)
-    const timer = setInterval(() => fetchAll(appliedDate, appliedTargetDb), 15000)
+    fetchAll(appliedDate, appliedTargetDb, tableFilters?.whs_num || '')
+    const timer = setInterval(() => fetchAll(appliedDate, appliedTargetDb, tableFilters?.whs_num || ''), 15000)
     return () => clearInterval(timer)
-  }, [appliedDate, appliedTargetDb])
+  }, [appliedDate, appliedTargetDb, tableFilters?.whs_num])
 
   const handleSubmit = (e) => {
     if (e) e.preventDefault()

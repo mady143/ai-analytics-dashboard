@@ -244,6 +244,7 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = '
           <thead style={{ position: 'sticky', top: 0, background: '#161B22', zIndex: 2 }}>
             <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--text-secondary)' }}>
               <th style={{ padding: '12px 10px' }}>Warehouse</th>
+              <th style={{ padding: '12px 10px' }}>Order Date</th>
               <th style={{ padding: '12px 10px' }}>Batch ID</th>
               <th style={{ padding: '12px 10px' }}>Invoice #</th>
               <th style={{ padding: '12px 10px' }}>Customer Item Code</th>
@@ -258,13 +259,13 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = '
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={10} style={{ textAlign: 'center', padding: '24px', color: 'var(--color-primary-light)', fontWeight: 600 }}>
+                <td colSpan={11} style={{ textAlign: 'center', padding: '24px', color: 'var(--color-primary-light)', fontWeight: 600 }}>
                   Querying PostgreSQL Warehouse Statistics...
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td colSpan={10} style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--text-secondary)' }}>
+                <td colSpan={11} style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--text-secondary)' }}>
                   <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px' }}>
                     No Database Records Found for Selected Date ({globalDate || 'No Date'})
                   </div>
@@ -277,6 +278,7 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = '
               items.map((item, idx) => (
                 <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                   <td style={{ padding: '10px', fontWeight: 700, color: 'var(--color-cyan)' }}>{item.whs_num}</td>
+                  <td style={{ padding: '10px', color: '#60a5fa', fontWeight: 600, fontFamily: 'monospace' }}>{item.oerdte || '—'}</td>
                   <td style={{ padding: '10px', color: '#f59e0b', fontWeight: 600, fontFamily: 'monospace' }}>{item.batch_id || '—'}</td>
                   <td style={{ padding: '10px', color: 'var(--color-primary)' }}>{item.invc_num_stg}</td>
                   <td style={{ padding: '10px' }}>{item.cust_item_code}</td>
