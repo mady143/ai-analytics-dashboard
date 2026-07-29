@@ -90,3 +90,28 @@ def test_get_results_without_training():
     assert response.status_code == 200
     data = response.json()
     assert "trained_models" in data
+
+
+def test_ai_copilot_endpoint():
+    """Should process natural language AI copilot queries."""
+    response = client.post("/api/analytics/ai-copilot", json={
+        "prompt": "Show Warehouse 58 scratch items",
+        "target_db": "pg_dev",
+        "oerdte": "20260729"
+    })
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "success"
+    assert "summary_answer" in data
+    assert "suggested_actions" in data
+
+
+def test_anomalies_endpoint():
+    """Should return real-time anomaly risk evaluations."""
+    response = client.get("/api/analytics/anomalies?target_db=pg_dev")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "success"
+    assert "anomalies" in data
+    assert len(data["anomalies"]) > 0
+

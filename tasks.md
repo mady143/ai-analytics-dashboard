@@ -41,6 +41,8 @@ The application is structured into distinct, modular UI Screens and Component Se
 - 📄 [`tasks/task_11_inventory_risk_forecast.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_11_inventory_risk_forecast.md) — Inventory Risk Forecast Component (Queued / Hidden from UI for sequential build)
 - 📄 [`tasks/task_12_date_range_parameters.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_12_date_range_parameters.md) — Date Range Parameter Component (Queued / Hidden from UI for sequential build)
 - 📄 [`tasks/task_13_clean_icons_design_system.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_13_clean_icons_design_system.md) — Icon System Cleanup & Standardized Design System
+- 📄 [`tasks/task_14_ai_data_copilot.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_14_ai_data_copilot.md) — Natural Language AI Data Copilot Component & Query Service
+- 📄 [`tasks/task_15_anomaly_alert_panel.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_15_anomaly_alert_panel.md) — Real-Time Anomaly & Risk Alert Panel Component
 
 ---
 

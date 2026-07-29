@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const API = import.meta.env.VITE_API_URL || '';
 
-export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = 'pg_dev' }) {
+export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = 'pg_dev', externalFilters }) {
   const [summary, setSummary] = useState(null);
   const [items, setItems] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -15,6 +15,15 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = '
   const [filterWhs, setFilterWhs] = useState('');
   const [filterBatchId, setFilterBatchId] = useState('');
   const [filterInvoice, setFilterInvoice] = useState('');
+
+  // Handle external filter requests from Copilot or Anomaly panel
+  useEffect(() => {
+    if (externalFilters) {
+      if (externalFilters.whse !== undefined) setFilterWhs(externalFilters.whse);
+      if (externalFilters.batch !== undefined) setFilterBatchId(externalFilters.batch);
+      if (externalFilters.invoice !== undefined) setFilterInvoice(externalFilters.invoice);
+    }
+  }, [externalFilters]);
 
   const LIMIT = 20;
   const oerdte = globalDate ? globalDate.replace(/-/g, '') : '';

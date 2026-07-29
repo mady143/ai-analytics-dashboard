@@ -4,6 +4,8 @@ import axios from 'axios'
 import KPICard from '../components/KPICard'
 import WarehouseSalesAnalytics from '../components/WarehouseSalesAnalytics'
 import WarehouseAnalytics from '../components/WarehouseAnalytics'
+import AiDataCopilot from '../components/AiDataCopilot'
+import AnomalyAlertPanel from '../components/AnomalyAlertPanel'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   ScatterChart, Scatter, Cell
@@ -58,9 +60,16 @@ export default function Dashboard() {
   const [selectedDate, setSelectedDate] = useState(todayISO())
   const [selectedDb, setSelectedDb] = useState('pg_dev')
 
-  // ── Applied State (updated on Submit click or selection change) ──────────
+  // ── Applied State (submitted) ──
   const [appliedDate, setAppliedDate] = useState(todayISO())
   const [appliedTargetDb, setAppliedTargetDb] = useState('pg_dev')
+
+  // ── Table Filter Synchronization State ──
+  const [tableFilters, setTableFilters] = useState(null)
+
+  const handleApplyTableFilter = (filters) => {
+    setTableFilters(filters)
+  }
 
   const [kpis, setKpis] = useState(DEFAULT_KPIS)
   const [barData, setBarData] = useState([])
@@ -195,8 +204,22 @@ export default function Dashboard() {
         </form>
       </div>
 
+      {/* ── AI Data Copilot Feature ── */}
+      <AiDataCopilot
+        globalDate={appliedDate}
+        globalTargetDb={appliedTargetDb}
+        onApplyFilter={handleApplyTableFilter}
+      />
+
+      {/* ── Real-Time Anomaly & Risk Alerts Feature ── */}
+      <AnomalyAlertPanel
+        globalDate={appliedDate}
+        globalTargetDb={appliedTargetDb}
+        onApplyFilter={handleApplyTableFilter}
+      />
+
       {/* ── Warehouse Level KPI Grid ── */}
-      <div className="kpi-grid">
+      <div className="kpi-grid" style={{ marginTop: '24px' }}>
         {kpis.map((kpi, i) => (
           <KPICard key={kpi.title} {...kpi} index={i} />
         ))}
@@ -247,8 +270,12 @@ export default function Dashboard() {
         </motion.div>
       </div>
 
-      {/* ── Warehouse Sales & Invoice Analytics — receives global date & db ── */}
-      <WarehouseSalesAnalytics globalDate={appliedDate} globalTargetDb={appliedTargetDb} />
+      {/* ── Warehouse Sales & Invoice Analytics — receives global date, db & external filters ── */}
+      <WarehouseSalesAnalytics
+        globalDate={appliedDate}
+        globalTargetDb={appliedTargetDb}
+        externalFilters={tableFilters}
+      />
 
       {/* ── Warehouse Inventory Level Statistics ── */}
       <WarehouseAnalytics />
