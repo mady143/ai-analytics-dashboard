@@ -115,17 +115,16 @@ def get_bar_chart(
         stats = get_warehouse_statistics(target_db=target_db_clean, oerdte=oerdte_clean, limit=1000, offset=0)
         items = stats.get("warehouse_items", [])
 
+        whs_totals_map = stats.get("summary", {}).get("warehouse_totals", {})
         distinct_whs = stats.get("summary", {}).get("distinct_warehouses", [])
-        if not distinct_whs and items:
-            distinct_whs = sorted(list({str(item.get("whs_num", "")).strip() for item in items if item.get("whs_num")}))
+        if not distinct_whs and whs_totals_map:
+            distinct_whs = sorted(list(whs_totals_map.keys()))
 
-        whs_totals = {w: 0 for w in distinct_whs}
-        for item in items:
-            whs = str(item.get("whs_num", "")).strip()
-            if whs in whs_totals:
-                whs_totals[whs] += item.get("cases_bld_stg", 0)
-
-        data = [{"label": f"Whse {w}", "value": whs_totals[w], "whs_num": w} for w in distinct_whs]
+        data = []
+        for w in distinct_whs:
+            w_totals = whs_totals_map.get(w, {}) or {}
+            val = w_totals.get("cases_built", 0)
+            data.append({"label": f"Whse {w}", "value": val, "whs_num": w})
 
         return JSONResponse({
             "chart_type": "bar",
