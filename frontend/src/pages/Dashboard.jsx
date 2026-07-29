@@ -222,6 +222,7 @@ export default function Dashboard() {
       <AnomalyAlertPanel
         globalDate={appliedDate}
         globalTargetDb={appliedTargetDb}
+        selectedWhse={tableFilters?.whs_num || ''}
         onApplyFilter={handleApplyTableFilter}
       />
 

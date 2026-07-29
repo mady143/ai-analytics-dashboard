@@ -99,6 +99,9 @@ class SprintWatcherAgent:
         self._last_seen_updated: dict[str, str] = {} # task_id -> last updated_at
         self._last_seen_comment_ids: dict[str, set] = {}  # task_id -> set of seen comment IDs
         self._completed_task_ids: set[str] = set()
+        # Dynamic Test Timeout (None = unlimited dynamic timeout until all tests finish, or int from env)
+        env_timeout = os.getenv("TEST_TIMEOUT_SECONDS", "0").strip()
+        self.test_timeout: Optional[int] = int(env_timeout) if env_timeout and env_timeout.isdigit() and int(env_timeout) > 0 else None
 
     # ── Initialisation ────────────────────────────────────────────────────────
 
@@ -265,16 +268,15 @@ class SprintWatcherAgent:
         task_id: str,
         task_title: str,
         description: str,
-        priority: str,
+        priority: str
     ) -> bool:
         """
         Invoke the Builder Agent as a subprocess.
-        The builder writes/updates code based on the task description.
-        Returns True if it exited successfully.
+        Dynamically updates builder status to running during execution, and idle on completion.
         """
         builder_script = ROOT_DIR / "agents" / "builder_agent.py"
-
         console.print(f"[cyan]🔨 Invoking Builder Agent for: {task_title}[/cyan]")
+        update_agent_status("builder", "running", f"Implementing code for: {task_title}")
 
         try:
             result = subprocess.run(
@@ -287,7 +289,7 @@ class SprintWatcherAgent:
                     "--priority",   priority,
                 ],
                 cwd=str(ROOT_DIR),
-                timeout=300,          # 5-minute timeout per task
+                timeout=300,
                 capture_output=True,
                 text=True,
                 encoding="utf-8",
@@ -299,64 +301,62 @@ class SprintWatcherAgent:
 
             if result.returncode == 0:
                 console.print(f"[green]✅ Builder completed: {task_title}[/green]")
-                log_task_result(
-                    task_id, task_title, "builder", "completed",
-                    stdout[-2000:],
-                )
+                log_task_result(task_id, task_title, "builder", "completed", stdout[-2000:])
+                update_agent_status("builder", "idle")
                 return True
             else:
                 console.print(f"[red]❌ Builder failed: {task_title}[/red]")
                 console.print(stderr[-1000:])
-                log_task_result(
-                    task_id, task_title, "builder", "failed",
-                    stderr[-2000:],
-                )
+                log_task_result(task_id, task_title, "builder", "failed", stderr[-2000:])
+                update_agent_status("builder", "idle")
                 return False
 
         except subprocess.TimeoutExpired:
             console.print(f"[red]⏱️  Builder timed out for: {task_title}[/red]")
             log_task_result(task_id, task_title, "builder", "failed", "Timeout after 300s")
+            update_agent_status("builder", "idle")
             return False
         except FileNotFoundError:
-            # builder_agent.py may not exist yet; log and skip gracefully
-            console.print(
-                f"[yellow]⚠️  builder_agent.py not found — "
-                f"task '{task_title}' will be logged but not auto-implemented.[/yellow]"
-            )
-            log_task_result(task_id, task_title, "builder", "skipped",
-                            "builder_agent.py not yet created")
+            console.print(f"[yellow]⚠️  builder_agent.py not found[/yellow]")
+            log_task_result(task_id, task_title, "builder", "skipped", "builder_agent.py not yet created")
+            update_agent_status("builder", "idle")
             return False
 
     def _run_tests(self) -> tuple[bool, str]:
         """
-        Run unit tests via pytest.
-        Returns (passed: bool, output: str).
+        Run unit tests and Playwright browser tests via pytest.
+        Dynamically updates tester status to running during test execution, and idle on completion.
         """
-        console.print("[cyan]🧪 Running tests after implementation...[/cyan]")
+        timeout_msg = f"{self.test_timeout}s" if self.test_timeout else "unlimited (dynamic)"
+        console.print(f"[cyan]🧪 Running Unit Tests & Playwright Browser Tests (Timeout: {timeout_msg})...[/cyan]")
+        update_agent_status("tester", "running", "Executing Pytest Unit & Playwright Browser tests")
         try:
             result = subprocess.run(
-                [sys.executable, "-m", "pytest", "tests/unit/", "-q", "--tb=short"],
+                [sys.executable, "-m", "pytest", "tests/unit/", "tests/browser/", "-v", "--tb=short"],
                 cwd=str(ROOT_DIR),
                 capture_output=True,
                 text=True,
                 encoding="utf-8",
                 errors="replace",
-                timeout=120,
+                timeout=self.test_timeout,
             )
             stdout = result.stdout or ""
             stderr = result.stderr or ""
             output = stdout + stderr
             passed = result.returncode == 0
             if passed:
-                console.print("[green]✅ Tests PASSED[/green]")
+                console.print("[green]✅ Unit & Playwright Browser Tests PASSED[/green]")
             else:
-                console.print("[red]❌ Tests FAILED[/red]")
+                console.print("[red]❌ Test Execution FAILED[/red]")
+            update_agent_status("tester", "idle")
             return passed, output[-3000:]
         except subprocess.TimeoutExpired:
-            console.print("[yellow]⚠️ Tests TIMED OUT after 120s[/yellow]")
-            return False, "Tests timed out after 120s"
+            console.print(f"[yellow]⚠️ Tests TIMED OUT after {timeout_msg}[/yellow]")
+            update_agent_status("tester", "idle")
+            return False, f"Tests timed out after {timeout_msg}"
         except Exception as e:
             console.print(f"[red]❌ Test execution error: {e}[/red]")
+            update_agent_status("tester", "idle")
             return False, str(e)
 
     def _finalize_task(

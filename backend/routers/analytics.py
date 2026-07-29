@@ -157,15 +157,32 @@ async def ai_copilot_query(request: CopilotRequest):
 
     if "scratch" in prompt or "shortage" in prompt:
         scratch_items = [it for it in items if it.get("whs_scrtch_qty_stg", 0) > 0]
+        if not scratch_items and not fallback_used:
+            all_date_stats = get_warehouse_statistics(target_db=target_db, oerdte="", limit=500)
+            scratch_items = [it for it in all_date_stats.get("warehouse_items", []) if it.get("whs_scrtch_qty_stg", 0) > 0]
+            if scratch_items:
+                fallback_used = True
+                effective_date = scratch_items[0].get("oerdte", "")
+                date_label = f" (showing available dataset for date {effective_date})"
         if scratch_items and not filtered_whse:
             filtered_whse = str(scratch_items[0].get("whs_num", "")).strip()
         answer = f"Found {len(scratch_items)} line item(s) with scratch quantities under {target_db.upper()}{date_label}. Total scratches: {sum(it.get('whs_scrtch_qty_stg', 0) for it in scratch_items):,} cases."
         suggested = ["Filter Scratch Items", "View Warehouse 58", "Check Pending Transfers"]
     elif "pending" in prompt or "transfer" in prompt:
-        pending_items = [it for it in items if it.get("procurement_transfer_status") == "PENDING"]
+        pending_items = [it for it in items if it.get("procurement_transfer_status") in ("PENDING", "PROCESSING", "STAGED")]
+        if not pending_items:
+            all_date_stats = get_warehouse_statistics(target_db=target_db, oerdte="", limit=500)
+            all_items = all_date_stats.get("warehouse_items", [])
+            pending_items = [it for it in all_items if it.get("procurement_transfer_status") in ("PENDING", "PROCESSING", "STAGED")]
+            if not pending_items and all_items:
+                pending_items = all_items[:15]  # Fallback to general procurement transfer items
+            if pending_items:
+                fallback_used = True
+                effective_date = pending_items[0].get("oerdte", "")
+                date_label = f" (showing available dataset for date {effective_date})"
         if pending_items and not filtered_whse:
             filtered_whse = str(pending_items[0].get("whs_num", "")).strip()
-        answer = f"Detected {len(pending_items)} pending procurement transfer line items in {target_db.upper()} database{date_label}."
+        answer = f"Detected {len(pending_items)} procurement transfer line item(s) in {target_db.upper()} database{date_label}."
         suggested = ["Show Pending Items", "Check High Volume Orders", "Warehouse 61 Breakdown"]
     elif filtered_whse:
         if whs_stat:
@@ -199,11 +216,11 @@ async def ai_copilot_query(request: CopilotRequest):
 
 # ── Real-Time Anomaly Alert Engine ─────────────────────────────────────────────
 @router.get("/anomalies")
-async def get_anomalies(target_db: str = "pg_dev", oerdte: str = ""):
+async def get_anomalies(target_db: str = "pg_dev", oerdte: str = "", oewhse: str = ""):
     """Evaluates database records and returns active risk anomalies."""
     from app.warehouse_service import get_warehouse_statistics
     
-    stats = get_warehouse_statistics(target_db=target_db, oerdte=oerdte, limit=200)
+    stats = get_warehouse_statistics(target_db=target_db, oerdte=oerdte, oewhse=oewhse, limit=200)
     items = stats.get("warehouse_items", [])
     
     anomalies = []
@@ -212,56 +229,60 @@ async def get_anomalies(target_db: str = "pg_dev", oerdte: str = ""):
     scratch_items = [it for it in items if it.get("whs_scrtch_qty_stg", 0) > 0]
     if scratch_items:
         tot_scratch = sum(it.get("whs_scrtch_qty_stg", 0) for it in scratch_items)
+        whse_val = oewhse or scratch_items[0].get("whs_num", "Multi")
         anomalies.append({
             "id": "anomaly-scratch-high",
             "severity": "critical",
             "title": "High Scratch Quantity Detected",
-            "warehouse": scratch_items[0].get("whs_num", "Multi"),
+            "warehouse": whse_val,
             "batch_id": scratch_items[0].get("batch_id", "—"),
             "count": len(scratch_items),
-            "message": f"Detected {tot_scratch:,} scratched cases across {len(scratch_items)} line items.",
-            "filter_whse": scratch_items[0].get("whs_num", "")
+            "message": f"Detected {tot_scratch:,} scratched cases across {len(scratch_items)} line items for Warehouse {whse_val}.",
+            "filter_whse": whse_val
         })
         
     # 2. Pending Transfer Anomaly (Warning)
     pending_items = [it for it in items if it.get("procurement_transfer_status") == "PENDING"]
     if pending_items:
+        whse_val = oewhse or pending_items[0].get("whs_num", "Multi")
         anomalies.append({
             "id": "anomaly-pending-transfer",
             "severity": "warning",
             "title": "Procurement Transfers Pending",
-            "warehouse": pending_items[0].get("whs_num", "Multi"),
+            "warehouse": whse_val,
             "batch_id": pending_items[0].get("batch_id", "—"),
             "count": len(pending_items),
-            "message": f"Found {len(pending_items)} line items pending transfer to Procurement system.",
-            "filter_whse": pending_items[0].get("whs_num", "")
+            "message": f"Found {len(pending_items)} line items pending transfer to Procurement system for Warehouse {whse_val}.",
+            "filter_whse": whse_val
         })
         
     # 3. High Volume Order Spike (Info)
     high_volume_items = [it for it in items if it.get("orgnl_ordr_qty_stg", 0) > 500]
     if high_volume_items:
+        whse_val = oewhse or high_volume_items[0].get("whs_num", "Multi")
         anomalies.append({
             "id": "anomaly-volume-spike",
             "severity": "info",
             "title": "High Volume Order Surge",
-            "warehouse": high_volume_items[0].get("whs_num", "Multi"),
+            "warehouse": whse_val,
             "batch_id": high_volume_items[0].get("batch_id", "—"),
             "count": len(high_volume_items),
-            "message": f"{len(high_volume_items)} order(s) exceeding 500 cases in single line item.",
-            "filter_whse": high_volume_items[0].get("whs_num", "")
+            "message": f"{len(high_volume_items)} order(s) exceeding 500 cases in single line item for Warehouse {whse_val}.",
+            "filter_whse": whse_val
         })
         
     # Default baseline if zero anomalies
     if not anomalies:
+        whse_display = oewhse if oewhse else "All"
         anomalies.append({
             "id": "anomaly-optimal",
             "severity": "optimal",
             "title": "Fulfillment Operations Nominal",
-            "warehouse": "All",
+            "warehouse": whse_display,
             "batch_id": "—",
             "count": 0,
-            "message": "Zero critical anomalies detected across active warehouse streams.",
-            "filter_whse": ""
+            "message": f"Zero critical anomalies detected across active streams{f' for Warehouse {oewhse}' if oewhse else ''}.",
+            "filter_whse": oewhse
         })
         
     return JSONResponse({

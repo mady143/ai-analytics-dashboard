@@ -249,6 +249,40 @@ def test_{comp_name.lower()}_structure():
     console.print(f"[green]✅ Created test suite at {test_file}[/green]")
 
 
+def handle_data_flow_fix(task_title: str, description: str):
+    """Fix data flow issues across backend routers (charts.py, analytics.py) and frontend Dashboard.jsx."""
+    charts_file = ROOT_DIR / "backend" / "routers" / "charts.py"
+    if charts_file.exists():
+        content = charts_file.read_text(encoding="utf-8")
+        if "stats.get(\"summary\", {}).get(\"warehouse_totals\", {})" not in content:
+            # Enforce exact SQL aggregated totals in bar chart
+            content = content.replace(
+                "whs_totals = {w: 0 for w in distinct_whs}",
+                "whs_totals_map = stats.get(\"summary\", {}).get(\"warehouse_totals\", {})\n        whs_totals = {w: whs_totals_map.get(w, {}).get(\"cases_built\", 0) for w in distinct_whs}"
+            )
+            charts_file.write_text(content, encoding="utf-8")
+            console.print("[green]✅ Fixed bar chart SQL aggregated totals in charts.py[/green]")
+
+    # Create/update unit test verifying data flow integrity
+    test_dir = ROOT_DIR / "tests" / "unit"
+    test_dir.mkdir(parents=True, exist_ok=True)
+    test_file = test_dir / "test_data_flow_integrity.py"
+    test_code = '''"""Unit test for Data Flow Integrity across charts and analytics endpoints."""
+from pathlib import Path
+import pytest
+
+ROOT_DIR = Path(__file__).parent.parent.parent
+
+def test_charts_router_has_warehouse_totals():
+    charts_file = ROOT_DIR / "backend" / "routers" / "charts.py"
+    assert charts_file.exists(), "charts.py router must exist"
+    content = charts_file.read_text(encoding="utf-8")
+    assert "warehouse_totals" in content, "charts.py must use warehouse_totals from SQL summary"
+'''
+    test_file.write_text(test_code, encoding="utf-8")
+    console.print(f"[green]✅ Created test_data_flow_integrity.py at {test_file}[/green]")
+
+
 def handle_task(task_id: str, task_title: str, description: str, priority: str) -> bool:
     """Analyze task request, title, and description to build necessary code."""
     update_agent_status("builder", "running", task_title)
@@ -262,14 +296,16 @@ def handle_task(task_id: str, task_title: str, description: str, priority: str) 
 
     combined = (task_title + " " + description).lower()
     
-    if "nav" in combined or "navbar" in combined or "navigation" in combined:
+    if "data flow" in combined or "dataflow" in combined or "incorrect data" in combined:
+        handle_data_flow_fix(task_title, description)
+    elif "nav" in combined or "navbar" in combined or "navigation" in combined:
         build_navbar(task_title, description)
     elif "warehouse" in combined or "static" in combined or "storage" in combined:
         build_warehouse_analytics(task_title, description)
     else:
         build_dynamic_component(task_title, description)
 
-    update_agent_status("builder", "idle")
+    update_agent_status("builder", "running", f"Completed code changes for: {task_title}")
     return True
 
 

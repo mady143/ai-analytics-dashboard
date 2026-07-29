@@ -6,9 +6,13 @@ Main application entry point with CORS, routes, and health check.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-import uvicorn
 import os
 from dotenv import load_dotenv
+import sys
+from pathlib import Path
+ROOT_DIR = Path(__file__).parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
 from routers import data, analytics, charts
 
@@ -70,30 +74,23 @@ def warehouse_statistics(
 # ── Agents Status Endpoint ───────────────────────────────────────────────────────
 @app.get("/api/agents/status", tags=["Agents"])
 def get_agents_status():
-    import json
-    from pathlib import Path
-    memory_path = Path(__file__).parent.parent / "memory" / "agent_state.json"
-    if memory_path.exists():
-        try:
-            with open(memory_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                return JSONResponse({
-                    "status": "success",
-                    "agents": data.get("agents", {}),
-                    "last_active": data.get("last_active")
-                })
-        except Exception as e:
-            print(f"[Agents API] Failed to read agent_state.json: {e}")
-    return JSONResponse({
-        "status": "success",
-        "agents": {
-            "orchestrator": {"status": "running"},
-            "builder": {"status": "running"},
-            "tester": {"status": "running"},
-            "git_agent": {"status": "running"},
-            "sprint_watcher": {"status": "running"}
-        }
-    })
+    from agents.memory_manager import get_dynamic_agent_statuses, load_state
+    try:
+        dynamic_agents = get_dynamic_agent_statuses()
+        state = load_state()
+        return JSONResponse({
+            "status": "success",
+            "agents": dynamic_agents,
+            "last_active": state.get("last_active")
+        })
+    except Exception as e:
+        print(f"[Agents API] Failed to compute dynamic agent status: {e}")
+        state = load_state()
+        return JSONResponse({
+            "status": "success",
+            "agents": state.get("agents", {}),
+            "last_active": state.get("last_active")
+        })
 
 
 # ── Health Check ───────────────────────────────────────────────────────────────

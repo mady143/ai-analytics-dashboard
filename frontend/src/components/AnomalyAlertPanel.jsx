@@ -4,7 +4,7 @@ import { AlertTriangle, AlertCircle, Info, CheckCircle2, Filter, RefreshCw } fro
 
 const API = import.meta.env.VITE_API_URL || '';
 
-export default function AnomalyAlertPanel({ globalDate, globalTargetDb = 'pg_dev', onApplyFilter }) {
+export default function AnomalyAlertPanel({ globalDate, globalTargetDb = 'pg_dev', selectedWhse = '', onApplyFilter }) {
   const [anomalies, setAnomalies] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -12,7 +12,7 @@ export default function AnomalyAlertPanel({ globalDate, globalTargetDb = 'pg_dev
     setLoading(true);
     try {
       const oerdte = globalDate ? globalDate.replace(/-/g, '') : '';
-      const res = await axios.get(`${API}/api/analytics/anomalies?target_db=${globalTargetDb}&oerdte=${oerdte}`);
+      const res = await axios.get(`${API}/api/analytics/anomalies?target_db=${globalTargetDb}&oerdte=${oerdte}&oewhse=${selectedWhse || ''}`);
       setAnomalies(res.data.anomalies || []);
     } catch (err) {
       console.error('[AnomalyAlertPanel] Error fetching anomalies:', err);
@@ -24,7 +24,7 @@ export default function AnomalyAlertPanel({ globalDate, globalTargetDb = 'pg_dev
 
   useEffect(() => {
     fetchAnomalies();
-  }, [globalDate, globalTargetDb]);
+  }, [globalDate, globalTargetDb, selectedWhse]);
 
   const getSeverityStyle = (severity) => {
     switch (severity) {
