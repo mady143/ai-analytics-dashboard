@@ -155,7 +155,17 @@ async def ai_copilot_query(request: CopilotRequest):
     # Response generation logic
     date_label = f" (showing available dataset for date {effective_date})" if (fallback_used and effective_date) else f" for date {oerdte or 'all'}"
 
-    if "scratch" in prompt or "shortage" in prompt:
+    # ── Expanded NLP Taxonomy & Keyword Understanding ─────────────────────────
+    prompt_lower = prompt.lower()
+    scratch_keywords = ["scratch", "scratched", "shortage", "damaged", "missing", "unfulfilled", "unshipped", "scrtch"]
+    transfer_keywords = ["pending", "transfer", "procurement", "staged", "processing", "untransferred", "holding", "delayed"]
+    volume_keywords = ["volume", "surge", "spike", "large order", "bulk", "high cases"]
+
+    is_scratch_query = any(kw in prompt_lower for kw in scratch_keywords)
+    is_transfer_query = any(kw in prompt_lower for kw in transfer_keywords)
+    is_volume_query = any(kw in prompt_lower for kw in volume_keywords)
+
+    if is_scratch_query:
         scratch_items = [it for it in items if it.get("whs_scrtch_qty_stg", 0) > 0]
         if not scratch_items and not fallback_used:
             all_date_stats = get_warehouse_statistics(target_db=target_db, oerdte="", limit=500)
@@ -168,7 +178,7 @@ async def ai_copilot_query(request: CopilotRequest):
             filtered_whse = str(scratch_items[0].get("whs_num", "")).strip()
         answer = f"Found {len(scratch_items)} line item(s) with scratch quantities under {target_db.upper()}{date_label}. Total scratches: {sum(it.get('whs_scrtch_qty_stg', 0) for it in scratch_items):,} cases."
         suggested = ["Filter Scratch Items", "View Warehouse 58", "Check Pending Transfers"]
-    elif "pending" in prompt or "transfer" in prompt:
+    elif is_transfer_query:
         pending_items = [it for it in items if it.get("procurement_transfer_status") in ("PENDING", "PROCESSING", "STAGED")]
         if not pending_items:
             all_date_stats = get_warehouse_statistics(target_db=target_db, oerdte="", limit=500)
@@ -184,6 +194,10 @@ async def ai_copilot_query(request: CopilotRequest):
             filtered_whse = str(pending_items[0].get("whs_num", "")).strip()
         answer = f"Detected {len(pending_items)} procurement transfer line item(s) in {target_db.upper()} database{date_label}."
         suggested = ["Show Pending Items", "Check High Volume Orders", "Warehouse 61 Breakdown"]
+    elif is_volume_query:
+        high_vol_items = [it for it in items if it.get("orgnl_ordr_qty_stg", 0) > 500]
+        answer = f"Identified {len(high_vol_items)} high-volume line item(s) exceeding 500 cases in {target_db.upper()}{date_label}."
+        suggested = ["High Scratch Quantity", "Pending Transfers", "Warehouse 58 Overview"]
     elif filtered_whse:
         if whs_stat:
             cases = whs_stat.get("cases_built", 0)

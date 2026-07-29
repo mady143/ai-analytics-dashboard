@@ -80,6 +80,7 @@ The application is structured into distinct, modular UI Screens and Component Se
 - **Sub-Task 4.3:** 📅 **Order Date (`oerdte`) Table Column** — Explicit `Order Date` column rendered directly at table level in `WarehouseSalesAnalytics.jsx`.
 - **Sub-Task 4.4:** 🔴 **Dedicated Scratch Quantity Data Filtering (`only_scratches`)** — When High Scratch Quantity is selected in Copilot or Anomaly panel, the table filters strictly to rows with `whs_scrtch_qty_stg > 0`.
 - **Sub-Task 14.3:** ⚡ **Page-Wide Copilot Filter & Dynamic Date Propagation** — Any AI Copilot prompt or filter directive automatically updates `appliedDate` and `tableFilters` page-wide across KPI Cards, Bar Chart, Scatter Plot, Anomaly Alert Panel, and Data Table.
+- **Sub-Task 14.4:** 🤖 **AI Copilot NLP Keyword Training & Natural Language Query Model Engine** — Train & expand ML model query intent classification across natural language synonyms (scratch, shortage, damaged, missing, transfer, pending, volume spike).
 - **Sub-Task 15.2:** 🚨 **Dynamic Red Critical Anomaly Card for Scratch Quantities** — When scratch items are detected, the Anomaly Alert Panel dynamically renders a **🔴 Critical Red Alert Card** displaying exact Warehouse # and Scratch Count instead of green Nominal baseline.
 
 ---
