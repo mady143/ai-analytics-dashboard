@@ -165,8 +165,10 @@ Whenever the user specifies **"run the application"** (or initiates application 
    - **Builder (`builder`):** Autonomous code implementation and file creation.
    - **Tester (`tester`):** Autonomous unit test (`pytest tests/unit/`) and browser test (`pytest tests/browser/`) execution.
    - **Git Agent (`git_agent`):** Autonomous morning pull (`git pull --rebase`) and commit/push (`git push origin main`).
-3. 💾 **Live Status & Memory State Updates (`memory/agent_state.json` & `memory/conversations/YYYY-MM-DD.md`):**
-   - Every 60 seconds / on each cycle, agents MUST update their active state in [`memory/agent_state.json`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/memory/agent_state.json) (`status: "running"`, `updated_at`, `last_active`, `current_task`).
+3. 💾 **Live Status & Automatic Timestamp Bumping (`memory/agent_state.json` & `memory/conversations/YYYY-MM-DD.md`):**
+   - Every 60 seconds / on each execution poll, agents MUST call `update_agent_status()` via [`agents/memory_manager.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/memory_manager.py).
+   - **Automatic Timestamp Updates:** Bumps `updated_at` (for individual agents), `last_updated`, and `last_active` timestamps in [`memory/agent_state.json`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/memory/agent_state.json) using ISO 8601 format (`YYYY-MM-DDTHH:MM:SS.ffffff`).
+   - The REST API endpoint `GET /api/agents/status` reads `memory/agent_state.json` and serves real-time status and timestamps to the frontend [`Sidebar.jsx`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/frontend/src/components/Sidebar.jsx).
    - Log ongoing updates, test statistics, file modifications, and execution progress in [`memory/conversations/YYYY-MM-DD.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/memory/conversations/2026-07-29.md) and [`memory/task_history/YYYY-MM-DD_task_history.jsonl`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/memory/task_history/2026-07-28_task_history.jsonl).
 
 #### 1. Core Background Application Services:
