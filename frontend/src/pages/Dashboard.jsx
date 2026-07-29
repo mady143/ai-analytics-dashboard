@@ -1,8 +1,6 @@
-import AiAnalyticsDashboardAddingDateParameter from '../components/AiAnalyticsDashboardAddingDateParameter';
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import axios from 'axios'
-import InventoryRiskForecast from '../components/InventoryRiskForecast'
 import KPICard from '../components/KPICard'
 import WarehouseSalesAnalytics from '../components/WarehouseSalesAnalytics'
 import WarehouseAnalytics from '../components/WarehouseAnalytics'
@@ -113,7 +111,7 @@ export default function Dashboard() {
       {/* ── Global Date & DB Selector Header ── */}
       <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 className="page-title">📊 Warehouse Sales &amp; Invoice Analytics Dashboard</h1>
+          <h1 className="page-title">Warehouse Sales &amp; Invoice Analytics Dashboard</h1>
           <p className="page-subtitle">Sprint AAD-5 · Real-time Warehouse Item &amp; Procurement Analytics</p>
         </div>
 
@@ -124,7 +122,7 @@ export default function Dashboard() {
           borderRadius: '10px', padding: '10px 16px'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>📅 Order Date (Global):</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Order Date (Global):</span>
             <input
               id="global-date-picker"
               type="date"
@@ -143,7 +141,7 @@ export default function Dashboard() {
             />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>🗄️ Target DB:</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Target DB:</span>
             <select
               id="global-db-selector"
               value={selectedDb}
@@ -185,14 +183,14 @@ export default function Dashboard() {
               boxShadow: '0 2px 6px rgba(124, 58, 237, 0.4)'
             }}
           >
-            🚀 Submit
+            Submit
           </button>
 
           <span style={{
             fontSize: '11px', color: '#34d399', fontWeight: 700,
             background: 'rgba(52,211,153,0.1)', padding: '3px 8px', borderRadius: '4px'
           }}>
-            ⚡ Active: {appliedTargetDb.toUpperCase()}
+            Active: {appliedTargetDb.toUpperCase()}
           </span>
         </form>
       </div>
@@ -213,7 +211,7 @@ export default function Dashboard() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <div className="chart-title">🔥 Cases Built by Warehouse</div>
+          <div className="chart-title">Cases Built by Warehouse</div>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={barData} margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -227,8 +225,7 @@ export default function Dashboard() {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-          <AiAnalyticsDashboardAddingDateParameter />
-    </motion.div>
+        </motion.div>
 
         {/* Scatter Chart */}
         <motion.div
@@ -237,7 +234,7 @@ export default function Dashboard() {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <div className="chart-title">📈 Original Order Qty vs Cases Built</div>
+          <div className="chart-title">Original Order Qty vs Cases Built</div>
           <ResponsiveContainer width="100%" height={280}>
             <ScatterChart margin={{ top: 5, right: 10, bottom: 5, left: 10 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
@@ -247,8 +244,7 @@ export default function Dashboard() {
               <Scatter name="Order vs Built" data={scatterData} fill="#06B6D4" opacity={0.8} />
             </ScatterChart>
           </ResponsiveContainer>
-          <AiAnalyticsDashboardAddingDateParameter />
-    </motion.div>
+        </motion.div>
       </div>
 
       {/* ── Warehouse Sales & Invoice Analytics — receives global date & db ── */}
@@ -256,13 +252,8 @@ export default function Dashboard() {
 
       {/* ── Warehouse Inventory Level Statistics ── */}
       <WarehouseAnalytics />
-
-      {/* ── Inventory Risk Anomaly Forecast ── */}
-      <div style={{ marginTop: '24px' }}>
-        <InventoryRiskForecast />
-      </div>
-      <AiAnalyticsDashboardAddingDateParameter />
     </motion.div>
   )
 }
+
 

@@ -29,7 +29,9 @@ export default function Sidebar() {
     <aside className="sidebar">
       {/* Logo */}
       <div className="sidebar-logo">
-        <div className="logo-icon">📊</div>
+        <div className="logo-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <BarChart3 size={20} color="#7C3AED" />
+        </div>
         <div>
           <div className="logo-text">AI Analytics</div>
           <div className="logo-subtitle">Agentic Dashboard</div>

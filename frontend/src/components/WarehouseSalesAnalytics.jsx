@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const API = import.meta.env.VITE_API_URL || '';
 
-export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = 'pg_prod' }) {
+export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = 'pg_dev' }) {
   const [summary, setSummary] = useState(null);
   const [items, setItems] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -85,7 +85,7 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = '
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
         <div>
           <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            🏢 Warehouse & Invoice Sales Analytics
+            Warehouse & Invoice Sales Analytics
           </h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '4px' }}>
             Identifies sales information for warehouse item level and invoice level transfer to Procurement systems.
@@ -177,7 +177,7 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = '
             borderRadius: '6px',
             fontWeight: 700
           }}>
-            ⚡ Target DB: {globalTargetDb.toUpperCase()}
+            Target DB: {globalTargetDb.toUpperCase()}
           </span>
         </div>
       </div>
@@ -215,7 +215,7 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = '
       {/* Row Count Badge & Query Status */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
         <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-          📊 Data Table Rows: <span style={{ color: 'var(--color-primary-light)', fontWeight: 700 }}>{items.length}</span> / {totalCount} Loaded
+          Data Table Rows: <span style={{ color: 'var(--color-primary-light)', fontWeight: 700 }}>{items.length}</span> / {totalCount} Loaded
         </div>
       </div>
 
@@ -249,13 +249,12 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = '
             {loading ? (
               <tr>
                 <td colSpan={10} style={{ textAlign: 'center', padding: '24px', color: 'var(--color-primary-light)', fontWeight: 600 }}>
-                  ⚡ Querying PostgreSQL Warehouse Statistics...
+                  Querying PostgreSQL Warehouse Statistics...
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
                 <td colSpan={10} style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--text-secondary)' }}>
-                  <div style={{ fontSize: '24px', marginBottom: '8px' }}>📭</div>
                   <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px' }}>
                     No Database Records Found for Selected Date ({globalDate || 'No Date'})
                   </div>
@@ -293,7 +292,7 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = '
 
         {loadingMore && (
           <div style={{ textAlign: 'center', padding: '12px', fontSize: '12px', color: 'var(--color-primary-light)', fontWeight: 600 }}>
-            ⚡ Querying next 20 rows...
+            Querying next 20 rows...
           </div>
         )}
       </div>

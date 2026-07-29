@@ -30,8 +30,8 @@ def test_inventory_risk_forecast_component():
 
 
 def test_warehouse_sales_analytics_backend_service():
-    assert "pg_prod" in DB_CONFIGURATIONS
-    assert "oracle_prod" in DB_CONFIGURATIONS
+    assert "pg_dev" in DB_CONFIGURATIONS
+    assert "oracle_dev" in DB_CONFIGURATIONS
     stats = get_warehouse_statistics("pg_dev")
     assert stats["status"] == "success"
 

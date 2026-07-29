@@ -9,8 +9,8 @@ from app.warehouse_service import get_warehouse_statistics, DB_CONFIGURATIONS
 
 
 def test_prod_target_warehouse_service():
-    """PROD target DB query executes successfully and returns valid summary schema."""
-    res = get_warehouse_statistics(target_db="pg_prod", limit=20)
+    """DEV target DB query executes successfully and returns valid summary schema."""
+    res = get_warehouse_statistics(target_db="pg_dev", limit=20)
     assert res["status"] == "success"
     assert "summary" in res
     assert "warehouse_items" in res
@@ -70,7 +70,7 @@ def test_bar_chart_total_warehouses_alignment():
     from routers.charts import get_bar_chart
     import json
 
-    for db in ["pg_prod", "pg_dev"]:
+    for db in ["pg_dev"]:
         resp = get_bar_chart(column="warehouse", target_db=db)
         chart_data = json.loads(resp.body)
 

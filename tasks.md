@@ -38,6 +38,9 @@ The application is structured into distinct, modular UI Screens and Component Se
 - 📄 [`tasks/task_8_parallel_background_agents.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_8_parallel_background_agents.md) — Continuous Parallel Background Agent Fleet
 - 📄 [`tasks/task_9_continuous_application_uptime.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_9_continuous_application_uptime.md) — Continuous Application Server Uptime
 - 📄 [`tasks/task_10_end_to_end_parameter_testing.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_10_end_to_end_parameter_testing.md) — Interactive Browser Parameter Combination Testing & Strict Quality Gate Push Policy
+- 📄 [`tasks/task_11_inventory_risk_forecast.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_11_inventory_risk_forecast.md) — Inventory Risk Forecast Component (Queued / Hidden from UI for sequential build)
+- 📄 [`tasks/task_12_date_range_parameters.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_12_date_range_parameters.md) — Date Range Parameter Component (Queued / Hidden from UI for sequential build)
+- 📄 [`tasks/task_13_clean_icons_design_system.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_13_clean_icons_design_system.md) — Icon System Cleanup & Standardized Design System
 
 ---
 
@@ -95,6 +98,30 @@ The application is structured into distinct, modular UI Screens and Component Se
 
 ---
 
+### 📌 TASK 11 — Inventory Risk Forecast Component (`#inventory-risk-forecast`)
+- **Dedicated Task File:** [`tasks/task_11_inventory_risk_forecast.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_11_inventory_risk_forecast.md)
+- **Status:** Hidden from active UI layout (`Dashboard.jsx`) and queued in `tasks.md` for step-by-step sequential build.
+- **Sub-Task 11.1:** Backend risk calculation endpoint `/api/analytics/inventory-risk`.
+- **Sub-Task 11.2:** Inventory stockout anomaly index gauge and alert table per warehouse ID.
+
+---
+
+### 📌 TASK 12 — Date Range Parameter Component (`#date-range-parameters`)
+- **Dedicated Task File:** [`tasks/task_12_date_range_parameters.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_12_date_range_parameters.md)
+- **Status:** Hidden from active UI layout (`Dashboard.jsx`) and queued in `tasks.md` for step-by-step sequential build.
+- **Sub-Task 12.1:** From-Date (`from_date`) and To-Date (`to_date`) multi-date range picker integration.
+- **Sub-Task 12.2:** SQL query support for `oerdte BETWEEN from_date AND to_date` across all analytics endpoints.
+
+---
+
+### 📌 TASK 13 — Icon System Cleanup & Standardized Design System (`#icon-design-system`)
+- **Dedicated Task File:** [`tasks/task_13_clean_icons_design_system.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_13_clean_icons_design_system.md)
+- **Status:** In Progress — Informal emojis removed from UI headers, labels, and table badges; standardizing on modern `lucide-react` SVG vector icon system.
+- **Sub-Task 13.1:** Clean up informal emoji icons in `Dashboard.jsx`, `Sidebar.jsx`, `WarehouseSalesAnalytics.jsx`, and `WarehouseAnalytics.jsx`.
+- **Sub-Task 13.2:** Maintain consistent 16-20px Lucide vector icon sizing with design token colors.
+
+---
+
 ---
 
 ### 2. 60-Second Continuous Sprint Watcher Monitoring (ALWAYS RUNNING)
@@ -127,6 +154,21 @@ The application is structured into distinct, modular UI Screens and Component Se
 ### 2b. Mandatory Continuous Background Services, Agents & MCP Servers (ALWAYS RUNNING)
 The AI AGENT is 100% responsible for keeping ALL background services, autonomous agents, and MCP servers continuously running in active background mode **WITHOUT manual user intervention**:
 
+#### ⚡ Mandatory "run the application" Execution & 60-Second Agent Loop Directive:
+Whenever the user specifies **"run the application"** (or initiates application execution), the system MUST autonomously execute the following complete workflow:
+1. 🚀 **Launch Core Servers:**
+   - **Frontend Dev Server:** `npm run dev` (inside `frontend/`) ➔ [http://localhost:5173](http://localhost:5173)
+   - **Backend FastAPI Server:** `python -m uvicorn main:app --host 127.0.0.1 --port 8000` (inside `backend/`) ➔ [http://127.0.0.1:8000](http://127.0.0.1:8000)
+2. 🔄 **Activate 60-Second Agent Fleet Loop (`agents` in `memory/agent_state.json`):**
+   - **Sprint Watcher (`sprint_watcher`):** `python scripts/run_sprint_watcher.py --interval 60` — continuous 60s polling of Plane tasks, user comments, and task state changes.
+   - **Master Orchestrator (`orchestrator`):** Continuous task coordination and lifecycle management.
+   - **Builder (`builder`):** Autonomous code implementation and file creation.
+   - **Tester (`tester`):** Autonomous unit test (`pytest tests/unit/`) and browser test (`pytest tests/browser/`) execution.
+   - **Git Agent (`git_agent`):** Autonomous morning pull (`git pull --rebase`) and commit/push (`git push origin main`).
+3. 💾 **Live Status & Memory State Updates (`memory/agent_state.json` & `memory/conversations/YYYY-MM-DD.md`):**
+   - Every 60 seconds / on each cycle, agents MUST update their active state in [`memory/agent_state.json`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/memory/agent_state.json) (`status: "running"`, `updated_at`, `last_active`, `current_task`).
+   - Log ongoing updates, test statistics, file modifications, and execution progress in [`memory/conversations/YYYY-MM-DD.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/memory/conversations/2026-07-29.md) and [`memory/task_history/YYYY-MM-DD_task_history.jsonl`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/memory/task_history/2026-07-28_task_history.jsonl).
+
 #### 1. Core Background Application Services:
 - **Frontend Dashboard Dev Server:** `npm run dev` (inside `frontend/`) ➔ [http://localhost:5173](http://localhost:5173)
 - **Backend FastAPI API Server:** `python -m uvicorn main:app --host 127.0.0.1 --port 8000` (inside `backend/`) ➔ [http://127.0.0.1:8000](http://127.0.0.1:8000)
@@ -148,24 +190,29 @@ The AI AGENT is 100% responsible for keeping ALL background services, autonomous
 
 ---
 
-### 3. Automatic Sprint Task Detection & Execution (Sequential Execution Flow)
-- **Mandatory Autonomous Workflow Directive (2026-07-28):** Before executing ANY code changes, user requests, or sprint tasks, the agent MUST follow this **exact 7-step sequential workflow**:
+### 3. End-to-End Autonomous Sprint Task Lifecycle & Sub-Task Execution Workflow
+
+- **Mandatory End-to-End Lifecycle Mandate:** Whenever a new task or update is created/updated in the Plane sprint cycle (or requested by the user), the autonomous agent fleet MUST execute this exact **8-stage end-to-end lifecycle**:
 
   ```mermaid
   graph TD
-      A0[0. Pre-Execution Agent & Server Health Check] --> A1[1. Code Implementation & Changes]
-      A1 --> B[2. Server Reload & Re-Deploy]
-      B --> C[3. Run Unit Test Suite pytest tests/unit/]
-      C --> D[4. Reload Browser & Run Playwright UI Tests pytest tests/browser/]
-      D --> E[5. Git Pull Rebase, Stage, Commit & Push git push origin main]
-      E --> F[6. Sync Plane Task Status Done & Update Docs]
+      S1[1. Requirement Intake & Plane Sprint Polling] --> S2[2. Task Segregation into Modular Sub-Tasks]
+      S2 --> S3[3. Builder Code Implementation]
+      S3 --> S4[4. Application Server Launch & Reload]
+      S4 --> S5[5. Automated Unit & Playwright Browser Testing]
+      S5 --> S6[6. User Verification Request & Testing Review]
+      S6 --> S7[7. Git Stage, Commit & Push to Remote Main]
+      S7 --> S8[8. Close Task as Done in Plane Sprint & Update Memory]
   ```
 
-  0. 🩺 **Step 0 — Pre-Execution Background Agent & Server Watcher Health Check (MANDATORY FIRST STEP):**
-     - **BEFORE** making any code changes or processing requests, inspect running background tasks (`manage_task list`).
-     - Verify that:
-       1. `Sprint Watcher` agent (`python scripts/run_sprint_watcher.py --interval 60`) is running.
-       2. `FastAPI Backend API Server` (`python -m uvicorn main:app`) is running on port `8000`.
+  - **Stage 1 — Requirement Intake & Sprint Watching:** `sprint_watcher` polls Plane workspace every 60 seconds detecting new tasks, user comments, or updated issue descriptions.
+  - **Stage 2 — Sub-Task Segregation & Architecture Breakdown:** `orchestrator` breaks down the main task into modular component sub-tasks (Backend APIs, Database SQL queries, Frontend Components, Unit & Browser Test specifications). Creates/updates dedicated task files in [`tasks/`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/) and logs sub-tasks in [`tasks.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks.md).
+  - **Stage 3 — Code Implementation:** `builder` agent writes/modifies source code in `backend/` and `frontend/` components.
+  - **Stage 4 — Application Server Launch & Verification:** Launch/verify FastAPI Backend (`:8000`) and Vite React Frontend (`:5173`) are running and reloaded without runtime errors.
+  - **Stage 5 — Automated Test Suite Execution:** `tester` agent executes `pytest tests/unit/ -v` and Playwright browser tests `pytest tests/browser/ -v` (100% PASS requirement).
+  - **Stage 6 — User Testing & Verification Prompt:** Present completed sub-tasks and test results to the user for interactive testing review.
+  - **Stage 7 — Git Automation & Remote Sync:** `git_agent` stages files (`git add .`), creates descriptive commit message, and pushes to remote GitHub repository (`git push origin main`).
+  - **Stage 8 — Plane Task Closure & Memory Update:** Mark task status as **`Done` / `Completed`** in Plane sprint cycle, update [`memory/agent_state.json`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/memory/agent_state.json), and record session details in [`memory/conversations/YYYY-MM-DD.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/memory/conversations/2026-07-29.md).
        3. `Vite Frontend Dev Server` (`npm run dev`) is running on port `5173`.
        4. MCP Servers (`plane`, `github`, `memory`, `browser`) are active.
      - **Auto-Restart Rule:** If ANY process or agent is stopped, offline, or killed, the system MUST **automatically launch/restart it in background mode immediately** before touching any source code!
@@ -522,22 +569,24 @@ Agents **cannot carry full conversation history** between sessions. To maintain 
 - **Open issues / blockers** — anything the next agent session must know
 - **Manager instructions** — any user directives that must not be forgotten
 
-#### 📂 Memory File Locations:
-| File | Purpose |
-| :--- | :--- |
-| `memory/conversations/YYYY-MM-DD.md` | **Daily human-readable session log** ← agents read this first |
-| `memory/agent_state.json` | Machine-readable agent status + Plane project IDs |
-| `memory/task_history/YYYY-MM-DD_task_history.jsonl` | Append-only task execution records |
+#### 📂 Memory File Locations & Conversation Memory Index:
+| Memory File | Date | Key Features & Session Memory Summary |
+| :--- | :--- | :--- |
+| 📄 [`memory/conversations/2026-07-27.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/memory/conversations/2026-07-27.md) | 2026-07-27 | Initial Sprint AAD-5 Warehouse Analytics, 6 KPI cards, data table, infinite scroll, UTF-8 Sprint Watcher fix, 41/41 unit & browser tests passed. |
+| 📄 [`memory/conversations/2026-07-28.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/memory/conversations/2026-07-28.md) | 2026-07-28 | Header controls `onClick` & `onChange` handlers, PostgreSQL DEV record verification, dynamic test protocol, SQL VARCHAR SUM type casting fix, 36/36 unit & 13/13 browser tests passed. |
+| 📄 [`memory/conversations/2026-07-29.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/memory/conversations/2026-07-29.md) | 2026-07-29 | Hidden `InventoryRiskForecast` & `AiAnalyticsDashboardAddingDateParameter` from active UI, created Task 11, 12, 13 specs, cleaned informal emoji icons, removed `pg_prod` & `oracle_prod` DB configs, 36/36 unit tests passed (100%). |
+| 📄 [`memory/agent_state.json`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/memory/agent_state.json) | Persistent | Machine-readable agent status + Plane project IDs |
+| 📁 `memory/task_history/*.jsonl` | Append-only | Append-only task execution history logs |
 
 ---
 
 ### 8d. Mandatory Test Execution, Statistics Reporting & Memory Session Log Policy
 - **Mandatory Directive:** After running application test commands (`pytest tests/unit/ -v`) and browser automation commands (`pytest tests/browser/ -v`), the agent MUST:
   1. 📊 **Report Detailed Statistics:** Output pass/fail counts, total duration, test suite breakdown, and pass rate to the user.
-  2. 📝 **Update Memory Conversation Log:** Update [`memory/conversations/YYYY-MM-DD.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/memory/conversations/2026-07-27.md) with the latest test statistics, code modifications, service statuses, and task context.
+  2. 📝 **Update Memory Conversation Log:** Update [`memory/conversations/YYYY-MM-DD.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/memory/conversations/2026-07-29.md) with the latest test statistics, code modifications, service statuses, and task context.
 - **Enforcement:** Never complete a test execution cycle or session without updating `memory/conversations/YYYY-MM-DD.md` and providing the full statistics summary to the user.
 
-> **Example:** When a new agent session starts tomorrow (2026-07-28), it MUST read [`memory/conversations/2026-07-27.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/memory/conversations/2026-07-27.md) to understand what was completed today before doing any work.
+> **Example:** When a new agent session starts tomorrow (2026-07-30), it MUST read [`memory/conversations/2026-07-29.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/memory/conversations/2026-07-29.md) to understand what was completed today before doing any work.
 
 ### 9. Plane Task State Transitions (`Unstarted` ➔ `In Progress` ➔ `Done`)
 - **State Mapping:**

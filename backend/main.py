@@ -43,7 +43,7 @@ app.include_router(charts.router, prefix="/api/charts", tags=["Charts"])
 # ── Warehouse Statistics Endpoint (AAD-5 Specification) ─────────────────────────
 @app.get("/api/warehouse/statistics", tags=["Warehouse"])
 def warehouse_statistics(
-    target_db: str = "pg_prod",
+    target_db: str = "pg_dev",
     oerdte: str = "",
     batch_id: str = "",
     oewhse: str = "",

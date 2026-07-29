@@ -16,7 +16,7 @@ from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeou
 # Global threadpool for non-blocking DB execution
 db_executor = ThreadPoolExecutor(max_workers=10)
 
-# Target DB Configurations with strictly separated PROD and DEV credentials
+# Target DB Configurations with DEV and F1 credentials
 DB_CONFIGURATIONS = {
     "pg_dev": {
         "type": "PostgreSQL",
@@ -41,14 +41,6 @@ DB_CONFIGURATIONS = {
         "host": "csebsf1db.cswg.com",
         "port": 1521,
         "service_name": "csebsf1",
-        "user": "apps"
-    },
-    "oracle_prod": {
-        "type": "Oracle",
-        "env": "DEV",
-        "host": "csebsd2db.cswg.com",
-        "port": 1521,
-        "service_name": "CSEBSD2",
         "user": "apps"
     }
 }
