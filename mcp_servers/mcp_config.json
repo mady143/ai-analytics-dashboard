@@ -1,63 +1,47 @@
 {
+  "$schema": "https://json.schemastore.org/mcp-config.json",
   "mcpServers": {
     "plane": {
-      "description": "Plane task management MCP server",
       "command": "python",
-      "args": ["-m", "agents.plane_agent"],
+      "args": [
+        "-m",
+        "agents.plane_agent"
+      ],
       "env": {
         "PLANE_API_TOKEN": "${PLANE_API_TOKEN}",
         "PLANE_WORKSPACE_SLUG": "${PLANE_WORKSPACE_SLUG}"
-      },
-      "tools": [
-        "create_task",
-        "update_task_status",
-        "create_sprint",
-        "list_tasks",
-        "add_comment"
-      ]
+      }
     },
     "github": {
-      "description": "GitHub operations via CLI",
-      "command": "github-mcp-server",
-      "args": [],
+      "command": "python",
+      "args": [
+        "-m",
+        "agents.git_agent"
+      ],
       "env": {
         "GITHUB_TOKEN": "${GITHUB_TOKEN}",
         "GITHUB_REPO": "${GITHUB_REPO}"
-      },
-      "tools": [
-        "git_commit",
-        "git_push",
-        "create_pull_request",
-        "list_commits"
-      ]
+      }
     },
     "memory": {
-      "description": "Persistent agent memory MCP",
       "command": "python",
-      "args": ["-m", "agents.memory_manager"],
-      "env": {},
-      "tools": [
-        "save_conversation",
-        "load_last_conversation",
-        "log_task_result",
-        "get_todays_summary"
-      ]
+      "args": [
+        "-m",
+        "agents.memory_manager"
+      ],
+      "env": {}
     },
     "browser": {
-      "description": "Playwright browser automation MCP",
       "command": "python",
-      "args": ["-m", "playwright"],
+      "args": [
+        "-m",
+        "pytest",
+        "tests/browser/"
+      ],
       "env": {
         "FRONTEND_URL": "${FRONTEND_URL}",
         "BACKEND_URL": "${BACKEND_URL}"
-      },
-      "tools": [
-        "navigate",
-        "click",
-        "screenshot",
-        "get_text",
-        "fill_form"
-      ]
+      }
     }
   }
 }
