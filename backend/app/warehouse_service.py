@@ -84,7 +84,7 @@ def _raw_postgres_query(config: Dict[str, Any], oerdte: str = "", batch_id: str 
             conditions.append("oeinvo = %s")
             params.append(str(oeinv).strip())
         if only_scratches:
-            conditions.append("COALESCE(CAST(NULLIF(oeqtys, '') AS NUMERIC), 0) > 0")
+            conditions.append("(COALESCE(CAST(NULLIF(oeqscr, '') AS NUMERIC), 0) > 0 OR (COALESCE(CAST(NULLIF(oeqtyo, '') AS NUMERIC), 0) - COALESCE(CAST(NULLIF(oeqtys, '') AS NUMERIC), 0)) > 0)")
 
         where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
 
@@ -155,7 +155,8 @@ def _raw_postgres_query(config: Dict[str, Any], oerdte: str = "", batch_id: str 
             inv_num = str(r[5] or "").strip()
             built = _safe_int(r[6])
             ordr = _safe_int(r[7])
-            scratch = _safe_int(r[8]) if r[8] is not None else max(0, ordr - built)
+            scratch_val = _safe_int(r[8])
+            scratch = scratch_val if scratch_val > 0 else max(0, ordr - built)
             ind = str(r[9] or "S").strip() or "S"
             status_code = str(r[10] or "P").strip()
             status = "COMPLETED" if status_code == "P" else "PENDING"
@@ -201,6 +202,9 @@ CACHE_TTL = 15.0  # 15 seconds TTL cache
 
 def _fetch_from_postgres_cached(config: Dict[str, Any], oerdte: str = "", batch_id: str = "", oewhse: str = "", oeinv: str = "", only_scratches: bool = False, limit: int = 500) -> Tuple[List[Dict[str, Any]], List[str], Dict[str, Dict[str, int]]]:
     """Caches query results for 15 seconds to prevent parallel API requests from blocking database execution."""
+    if only_scratches:
+        return _fetch_from_postgres(config, oerdte=oerdte, batch_id=batch_id, oewhse=oewhse, oeinv=oeinv, only_scratches=only_scratches, limit=limit)
+
     cache_key = f"{config.get('host')}:{oerdte}:{batch_id}:{oewhse}:{oeinv}:{only_scratches}:{limit}"
     now = time.time()
     with _CACHE_LOCK:
@@ -246,8 +250,9 @@ def get_warehouse_statistics(
     if config["type"] == "PostgreSQL":
         all_items, distinct_warehouses, whs_totals_map = _fetch_from_postgres_cached(config, oerdte=oerdte, batch_id=batch_id, oewhse=oewhse, oeinv=oeinv, only_scratches=only_scratches, limit=500)
         
-        # If no items match the exact oerdte, fallback to all available dates for dynamic query resiliency
-        if not all_items and oerdte:
+        # If no items (or 0 scratch items when only_scratches=True) match the exact oerdte, fallback to all available dates
+        has_scratch = any(it.get("whs_scrtch_qty_stg", 0) > 0 for it in all_items)
+        if (not all_items or (only_scratches and not has_scratch)) and oerdte:
             fallback_items, fallback_whs, fallback_totals = _fetch_from_postgres_cached(config, oerdte="", batch_id=batch_id, oewhse=oewhse, oeinv=oeinv, only_scratches=only_scratches, limit=500)
             if fallback_items:
                 all_items = fallback_items
@@ -268,9 +273,22 @@ def get_warehouse_statistics(
     if oeinv:
         all_items = [it for it in all_items if str(it.get("invc_num_stg", "")).strip() == str(oeinv).strip()]
         distinct_warehouses = sorted(list({item["whs_num"] for item in all_items if item.get("whs_num")}))
+    if only_scratches:
+        filtered_scratch_list = []
+        for it in all_items:
+            built_qty = int(it.get("cases_bld_stg", 0) or 0)
+            ordr_qty = int(it.get("orgnl_ordr_qty_stg", 0) or 0)
+            cur_scratch = int(it.get("whs_scrtch_qty_stg", 0) or 0)
+            calc_scratch = max(cur_scratch, max(0, ordr_qty - built_qty))
+            if calc_scratch > 0:
+                it["whs_scrtch_qty_stg"] = calc_scratch
+                filtered_scratch_list.append(it)
+        filtered_scratch_list.sort(key=lambda x: x.get("whs_scrtch_qty_stg", 0), reverse=True)
+        all_items = filtered_scratch_list
+        distinct_warehouses = sorted(list({item["whs_num"] for item in all_items if item.get("whs_num")}))
 
-    # Interleave line items round-robin across distinct warehouses so all warehouses are represented in table view
-    if distinct_warehouses and not oewhse:
+    # Interleave line items round-robin across distinct warehouses so all warehouses are represented in table view (unless filtering scratches)
+    if distinct_warehouses and not oewhse and not only_scratches:
         by_whs: Dict[str, List[Dict[str, Any]]] = {}
         for it in all_items:
             w = str(it.get("whs_num", "")).strip()

@@ -271,6 +271,7 @@ async def ai_copilot_query(request: CopilotRequest):
         "filtered_whse": filtered_whse,
         "filtered_batch": filtered_batch,
         "filtered_invoice": filtered_invoice,
+        "filter_scratch": is_scratch_query,
         "effective_date": effective_date,
         "suggested_actions": suggested,
         "metrics_found": {

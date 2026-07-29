@@ -71,7 +71,7 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = '
     };
     fetchInitial();
     return () => { isSubscribed = false; };
-  }, [globalTargetDb, oerdte, filterWhs, filterBatchId, filterInvoice]);
+  }, [globalTargetDb, oerdte, filterWhs, filterBatchId, filterInvoice, filterOnlyScratches]);
 
   // Load next batch on scroll down
   const loadMoreData = async () => {
@@ -183,6 +183,27 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = '
               }}
             />
           </div>
+
+          <button
+            type="button"
+            onClick={() => setFilterOnlyScratches(!filterOnlyScratches)}
+            style={{
+              background: filterOnlyScratches ? 'rgba(239, 68, 68, 0.25)' : 'var(--bg-secondary)',
+              color: filterOnlyScratches ? '#fca5a5' : 'var(--text-secondary)',
+              border: filterOnlyScratches ? '1px solid rgba(239, 68, 68, 0.6)' : '1px solid var(--border-color)',
+              padding: '4px 10px',
+              borderRadius: '6px',
+              fontSize: '11px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            🔴 {filterOnlyScratches ? 'Scratch Items Only ✓' : 'Filter Scratches'}
+          </button>
 
           <span style={{
             fontSize: '12px',

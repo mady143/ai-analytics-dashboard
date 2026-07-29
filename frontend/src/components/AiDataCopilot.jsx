@@ -41,7 +41,8 @@ export default function AiDataCopilot({ globalDate, globalTargetDb = 'pg_dev', o
           whse: res.data.filtered_whse || '',
           batch: res.data.filtered_batch || '',
           invoice: res.data.filtered_invoice || '',
-          effectiveDate: res.data.effective_date || ''
+          effectiveDate: res.data.effective_date || '',
+          onlyScratches: res.data.filter_scratch || false
         });
       }
     } catch (err) {
@@ -62,7 +63,8 @@ export default function AiDataCopilot({ globalDate, globalTargetDb = 'pg_dev', o
         whse: copilotResult.filtered_whse || '',
         batch: copilotResult.filtered_batch || '',
         invoice: copilotResult.filtered_invoice || '',
-        effectiveDate: copilotResult.effective_date || ''
+        effectiveDate: copilotResult.effective_date || '',
+        onlyScratches: copilotResult.filter_scratch || false
       });
     }
   };

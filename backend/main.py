@@ -54,6 +54,7 @@ def warehouse_statistics(
     oeinv: str = "",
     from_date: str = "",
     to_date: str = "",
+    only_scratches: bool = False,
     limit: int = 20,
     offset: int = 0
 ):
@@ -66,6 +67,7 @@ def warehouse_statistics(
         oeinv=oeinv,
         from_date=from_date,
         to_date=to_date,
+        only_scratches=only_scratches,
         limit=limit,
         offset=offset
     )
