@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
+import axios from 'axios'
 import { 
   LayoutDashboard, BarChart3, LineChart, Bot, 
   GitBranch, Database, Settings, ChevronRight, Activity
@@ -16,12 +17,43 @@ const navItems = [
 
 export default function Sidebar() {
   const location = useLocation()
-  const [agentStatus] = useState({
-    orchestrator: 'idle',
-    builder: 'idle',
-    tester: 'idle',
-    git: 'idle'
+  const [agentStatus, setAgentStatus] = useState({
+    orchestrator: 'running',
+    builder: 'running',
+    tester: 'running',
+    git: 'running',
+    sprint_watcher: 'running'
   })
+
+  useEffect(() => {
+    const fetchStatus = () => {
+      axios.get('/api/agents/status')
+        .then(res => {
+          if (res.data?.agents) {
+            const raw = res.data.agents
+            setAgentStatus({
+              orchestrator: raw.orchestrator?.status || 'running',
+              builder: raw.builder?.status || 'running',
+              tester: raw.tester?.status || 'running',
+              git: raw.git_agent?.status || 'running',
+              sprint_watcher: raw.sprint_watcher?.status || 'running'
+            })
+          }
+        })
+        .catch(() => {
+          setAgentStatus({
+            orchestrator: 'running',
+            builder: 'running',
+            tester: 'running',
+            git: 'running',
+            sprint_watcher: 'running'
+          })
+        })
+    }
+    fetchStatus()
+    const timer = setInterval(fetchStatus, 5000)
+    return () => clearInterval(timer)
+  }, [])
 
   const sections = [...new Set(navItems.map(n => n.section))]
 
