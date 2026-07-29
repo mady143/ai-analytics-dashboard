@@ -1,0 +1,20 @@
+{
+  "last_updated": "2026-07-29T15:35:00.000000",
+  "taxonomy": {
+    "scratch": [
+      "scratch", "scratched", "shortage", "damaged", "missing", "unfulfilled",
+      "unshipped", "scrtch", "defect", "broken", "zero built", "unsupplied", "scratch rate"
+    ],
+    "transfer": [
+      "pending", "transfer", "procurement", "staged", "processing", "untransferred",
+      "holding", "delayed", "late transfer", "in transit", "awaiting transfer"
+    ],
+    "volume": [
+      "volume", "surge", "spike", "large order", "bulk", "high cases", "heavy order", "capacity"
+    ],
+    "warehouse": [
+      "warehouse", "whse", "facility", "loc", "site", "depot", "distribution center"
+    ]
+  },
+  "learned_keywords": []
+}

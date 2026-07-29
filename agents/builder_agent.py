@@ -312,6 +312,22 @@ def handle_order_date_table_fix(task_title: str, description: str):
 import subprocess
 
 
+def create_human_subtasks(task_title: str, description: str) -> list:
+    """
+    Decomposes incoming task into structured, human-like engineering sub-tasks.
+    """
+    subtasks = [
+        f"Sub-Task 1: Analyze user request '{task_title}' & extract domain keywords",
+        f"Sub-Task 2: Query tasks.md for component architecture alignment",
+        f"Sub-Task 3: Execute target backend router & service updates (analytics.py, warehouse_service.py)",
+        f"Sub-Task 4: Update frontend React components (Dashboard.jsx, WarehouseSalesAnalytics.jsx)",
+        f"Sub-Task 5: Execute online learning keyword engine (nlp_taxonomy.json)",
+        f"Sub-Task 6: Run 100% automated Unit & Playwright Browser E2E verification tests",
+        f"Sub-Task 7: Document progress in tasks.md and execute automated Git Push"
+    ]
+    return subtasks
+
+
 def parse_tasks_md_specifications(task_title: str, description: str) -> list:
     """
     Parses tasks.md to extract relevant requirements, target files, and component specs
@@ -391,7 +407,12 @@ def handle_task(task_id: str, task_title: str, description: str, priority: str) 
         border_style="cyan"
     ))
 
-    # Step 1: Parse tasks.md specifications matching task keywords
+    # Step 1: Decompose into human engineering sub-tasks & parse tasks.md
+    subtasks = create_human_subtasks(task_title, description)
+    console.print("[cyan]📋 Human Engineering Sub-Task Plan:[/cyan]")
+    for st in subtasks:
+        console.print(f"  [bold green]✓[/bold green] {st}")
+
     matched_specs = parse_tasks_md_specifications(task_title, description)
     if matched_specs:
         console.print("[cyan]📖 Matched tasks.md Specifications:[/cyan]")

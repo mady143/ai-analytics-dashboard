@@ -7,6 +7,54 @@ from fastapi.responses import JSONResponse
 from models.schemas import TrainRequest, PredictRequest
 from services import data_service, ml_service
 
+import json
+import difflib
+from pathlib import Path
+from datetime import datetime
+
+ROOT_DIR = Path(__file__).parent.parent.parent
+TAXONOMY_FILE = ROOT_DIR / "memory" / "nlp_taxonomy.json"
+
+def load_nlp_taxonomy() -> dict:
+    """Loads persistent NLP keyword taxonomy from memory/nlp_taxonomy.json."""
+    if TAXONOMY_FILE.exists():
+        try:
+            data = json.loads(TAXONOMY_FILE.read_text(encoding="utf-8"))
+            return data.get("taxonomy", {})
+        except Exception:
+            pass
+    return {
+        "scratch": ["scratch", "scratched", "shortage", "damaged", "missing", "unfulfilled", "unshipped", "scrtch", "defect"],
+        "transfer": ["pending", "transfer", "procurement", "staged", "processing", "untransferred", "holding", "delayed"],
+        "volume": ["volume", "surge", "spike", "large order", "bulk", "high cases"],
+        "warehouse": ["warehouse", "whse", "facility", "loc", "site"]
+    }
+
+def learn_unknown_keywords(prompt_text: str, detected_intent: str) -> None:
+    """Dynamically learns unknown words from user queries and appends them to memory/nlp_taxonomy.json."""
+    if not TAXONOMY_FILE.exists() or not detected_intent:
+        return
+    try:
+        data = json.loads(TAXONOMY_FILE.read_text(encoding="utf-8"))
+        taxonomy = data.get("taxonomy", {})
+        learned = set(data.get("learned_keywords", []))
+        words = [w.strip().lower() for w in prompt_text.split() if len(w) > 3]
+        
+        category_words = taxonomy.get(detected_intent, [])
+        for word in words:
+            if word not in category_words:
+                matches = difflib.get_close_matches(word, category_words, n=1, cutoff=0.7)
+                if matches or any(kw in word for kw in ["scratch", "short", "trans", "vol", "whs"]):
+                    taxonomy[detected_intent].append(word)
+                    learned.add(word)
+                    
+        data["taxonomy"] = taxonomy
+        data["learned_keywords"] = list(learned)
+        data["last_updated"] = datetime.now().isoformat()
+        TAXONOMY_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    except Exception as e:
+        print(f"[NLP Engine] Failed to record learned keywords: {e}")
+
 router = APIRouter()
 
 
@@ -155,17 +203,20 @@ async def ai_copilot_query(request: CopilotRequest):
     # Response generation logic
     date_label = f" (showing available dataset for date {effective_date})" if (fallback_used and effective_date) else f" for date {oerdte or 'all'}"
 
-    # ── Expanded NLP Taxonomy & Keyword Understanding ─────────────────────────
+    # ── Expanded Dynamic NLP Taxonomy & Online Learning Engine ─────────────────
+    taxonomy = load_nlp_taxonomy()
     prompt_lower = prompt.lower()
-    scratch_keywords = ["scratch", "scratched", "shortage", "damaged", "missing", "unfulfilled", "unshipped", "scrtch"]
-    transfer_keywords = ["pending", "transfer", "procurement", "staged", "processing", "untransferred", "holding", "delayed"]
-    volume_keywords = ["volume", "surge", "spike", "large order", "bulk", "high cases"]
+    
+    scratch_keywords = taxonomy.get("scratch", ["scratch", "scratched", "shortage", "damaged", "missing", "unfulfilled"])
+    transfer_keywords = taxonomy.get("transfer", ["pending", "transfer", "procurement", "staged", "processing", "untransferred"])
+    volume_keywords = taxonomy.get("volume", ["volume", "surge", "spike", "large order", "bulk", "high cases"])
 
     is_scratch_query = any(kw in prompt_lower for kw in scratch_keywords)
     is_transfer_query = any(kw in prompt_lower for kw in transfer_keywords)
     is_volume_query = any(kw in prompt_lower for kw in volume_keywords)
 
     if is_scratch_query:
+        learn_unknown_keywords(prompt, "scratch")
         scratch_items = [it for it in items if it.get("whs_scrtch_qty_stg", 0) > 0]
         if not scratch_items and not fallback_used:
             all_date_stats = get_warehouse_statistics(target_db=target_db, oerdte="", limit=500)
@@ -179,6 +230,7 @@ async def ai_copilot_query(request: CopilotRequest):
         answer = f"Found {len(scratch_items)} line item(s) with scratch quantities under {target_db.upper()}{date_label}. Total scratches: {sum(it.get('whs_scrtch_qty_stg', 0) for it in scratch_items):,} cases."
         suggested = ["Filter Scratch Items", "View Warehouse 58", "Check Pending Transfers"]
     elif is_transfer_query:
+        learn_unknown_keywords(prompt, "transfer")
         pending_items = [it for it in items if it.get("procurement_transfer_status") in ("PENDING", "PROCESSING", "STAGED")]
         if not pending_items:
             all_date_stats = get_warehouse_statistics(target_db=target_db, oerdte="", limit=500)
