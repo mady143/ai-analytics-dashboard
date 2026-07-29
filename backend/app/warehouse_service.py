@@ -75,8 +75,11 @@ def _raw_postgres_query(config: Dict[str, Any], oerdte: str = "", batch_id: str 
             conditions.append("batch_id = %s")
             params.append(str(batch_id).strip())
         if oewhse:
-            conditions.append("oewhse = %s")
-            params.append(str(oewhse).strip())
+            raw_w = str(oewhse).strip()
+            unpadded_w = raw_w.lstrip("0") or "0"
+            padded_w = unpadded_w.zfill(2)
+            conditions.append("(oewhse = %s OR oewhse = %s OR TRIM(LEADING '0' FROM oewhse) = %s)")
+            params.extend([raw_w, padded_w, unpadded_w])
         if oeinv:
             conditions.append("oeinvo = %s")
             params.append(str(oeinv).strip())
@@ -239,9 +242,10 @@ def get_warehouse_statistics(
 
     # Strict filtering for batch_id, oewhse, and oeinv
     if oewhse:
-        all_items = [it for it in all_items if str(it.get("whs_num", "")).strip() == str(oewhse).strip()]
+        target_w_clean = str(oewhse).strip().lstrip("0")
+        all_items = [it for it in all_items if str(it.get("whs_num", "")).strip().lstrip("0") == target_w_clean]
         distinct_warehouses = [str(oewhse).strip()] if len(all_items) > 0 else []
-        whs_totals_map = {k: v for k, v in whs_totals_map.items() if k == str(oewhse).strip()}
+        whs_totals_map = {k: v for k, v in whs_totals_map.items() if str(k).strip().lstrip("0") == target_w_clean}
     if batch_id:
         all_items = [it for it in all_items if str(it.get("batch_id", "")).strip() == str(batch_id).strip()]
         distinct_warehouses = sorted(list({item["whs_num"] for item in all_items if item.get("whs_num")}))

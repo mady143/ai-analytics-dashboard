@@ -39,10 +39,10 @@ def test_ai_copilot_interactive_prompt_and_ask_ai(page: Page):
     expect(finding_card).to_be_visible()
 
     # 4. Click 'Apply Filter to Table' button if present
-    apply_btn = page.locator("button:has-text('Apply Filter to Table')")
+    apply_btn = page.locator("#copilot-apply-filter-btn, button:has-text('Apply Filter')")
     if apply_btn.count() > 0:
-        expect(apply_btn).to_be_visible()
-        apply_btn.click()
+        expect(apply_btn.first).to_be_visible()
+        apply_btn.first.click()
         page.wait_for_timeout(1000)
 
         # 5. Verify table updates with filtered data

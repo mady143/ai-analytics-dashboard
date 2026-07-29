@@ -39,7 +39,8 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = '
         
         let fetchedItems = res.data?.warehouse_items || [];
         if (filterWhs) {
-          fetchedItems = fetchedItems.filter(it => String(it.whs_num).trim() === String(filterWhs).trim());
+          const targetClean = String(filterWhs).trim().replace(/^0+/, '');
+          fetchedItems = fetchedItems.filter(it => String(it.whs_num).trim().replace(/^0+/, '') === targetClean);
         }
         if (filterBatchId) {
           fetchedItems = fetchedItems.filter(it => String(it.batch_id).trim().includes(String(filterBatchId).trim()));
@@ -90,7 +91,7 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = '
   };
 
   return (
-    <div className="card" style={{ marginTop: '24px', padding: '24px' }}>
+    <div className="card" id="warehouse-table-card" style={{ marginTop: '24px', padding: '24px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
         <div>
           <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>

@@ -1,3 +1,4 @@
+import CopilotSearchFixes from '../components/CopilotSearchFixes';
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import axios from 'axios'
@@ -68,7 +69,13 @@ export default function Dashboard() {
   const [tableFilters, setTableFilters] = useState(null)
 
   const handleApplyTableFilter = (filters) => {
-    setTableFilters(filters)
+    setTableFilters({ ...filters, _ts: Date.now() })
+    setTimeout(() => {
+      const tableEl = document.getElementById('warehouse-table-card') || document.getElementById('warehouse-analytics-table')
+      if (tableEl) {
+        tableEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }, 100)
   }
 
   const [kpis, setKpis] = useState(DEFAULT_KPIS)
@@ -248,7 +255,8 @@ export default function Dashboard() {
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-        </motion.div>
+          <CopilotSearchFixes />
+    </motion.div>
 
         {/* Scatter Chart */}
         <motion.div
@@ -267,7 +275,8 @@ export default function Dashboard() {
               <Scatter name="Order vs Built" data={scatterData} fill="#06B6D4" opacity={0.8} />
             </ScatterChart>
           </ResponsiveContainer>
-        </motion.div>
+          <CopilotSearchFixes />
+    </motion.div>
       </div>
 
       {/* ── Warehouse Sales & Invoice Analytics — receives global date, db & external filters ── */}
@@ -279,6 +288,7 @@ export default function Dashboard() {
 
       {/* ── Warehouse Inventory Level Statistics ── */}
       <WarehouseAnalytics />
+      <CopilotSearchFixes />
     </motion.div>
   )
 }

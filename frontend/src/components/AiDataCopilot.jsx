@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Sparkles, Send, Bot, Zap, Search, CheckCircle, Filter } from 'lucide-react';
 
@@ -15,6 +15,13 @@ export default function AiDataCopilot({ globalDate, globalTargetDb = 'pg_dev', o
     "Pending Procurement Transfers",
     "Whse 61 Cases Built"
   ];
+
+  // Automatically refresh AI response when global date or target DB changes
+  useEffect(() => {
+    if (prompt && copilotResult) {
+      handleQuery(prompt);
+    }
+  }, [globalDate, globalTargetDb]);
 
   const handleQuery = async (queryText) => {
     const q = queryText || prompt;
@@ -36,8 +43,12 @@ export default function AiDataCopilot({ globalDate, globalTargetDb = 'pg_dev', o
     }
   };
 
+  const [filterApplied, setFilterApplied] = useState(false);
+
   const handleApplyFilter = () => {
     if (!copilotResult) return;
+    setFilterApplied(true);
+    setTimeout(() => setFilterApplied(false), 2500);
     if (onApplyFilter) {
       onApplyFilter({
         whse: copilotResult.filtered_whse || '',
@@ -46,6 +57,12 @@ export default function AiDataCopilot({ globalDate, globalTargetDb = 'pg_dev', o
       });
     }
   };
+
+  const hasFilterDirectives = copilotResult && (
+    Boolean(copilotResult.filtered_whse) ||
+    Boolean(copilotResult.filtered_batch) ||
+    Boolean(copilotResult.filtered_invoice)
+  );
 
   return (
     <div className="card" style={{ marginTop: '20px', padding: '20px', background: 'linear-gradient(135deg, rgba(30,27,75,0.6) 0%, rgba(15,23,42,0.8) 100%)', border: '1px solid rgba(124,58,237,0.3)' }}>
@@ -148,25 +165,28 @@ export default function AiDataCopilot({ globalDate, globalTargetDb = 'pg_dev', o
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 700, color: '#c084fc' }}>
               <Bot size={16} /> AI Copilot Finding
             </div>
-            {copilotResult.filtered_whse && (
+            {hasFilterDirectives && (
               <button
                 type="button"
+                id="copilot-apply-filter-btn"
                 onClick={handleApplyFilter}
                 style={{
-                  background: 'rgba(52,211,153,0.15)',
-                  color: '#34d399',
-                  border: '1px solid rgba(52,211,153,0.3)',
-                  padding: '3px 10px',
+                  background: filterApplied ? 'rgba(52,211,153,0.3)' : 'rgba(52,211,153,0.15)',
+                  color: filterApplied ? '#ffffff' : '#34d399',
+                  border: '1px solid rgba(52,211,153,0.5)',
+                  padding: '4px 12px',
                   borderRadius: '6px',
                   fontSize: '12px',
                   fontWeight: 700,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '4px'
+                  gap: '5px',
+                  transition: 'all 0.2s ease'
                 }}
               >
-                <Filter size={12} /> Apply Filter to Table
+                {filterApplied ? <CheckCircle size={14} /> : <Filter size={12} />}
+                {filterApplied ? 'Filter Applied to Table ✓' : 'Apply Filter to Table'}
               </button>
             )}
           </div>

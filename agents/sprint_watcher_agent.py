@@ -98,6 +98,7 @@ class SprintWatcherAgent:
         self._last_seen_state: dict[str, str] = {}   # task_id -> last state string
         self._last_seen_updated: dict[str, str] = {} # task_id -> last updated_at
         self._last_seen_comment_ids: dict[str, set] = {}  # task_id -> set of seen comment IDs
+        self._completed_task_ids: set[str] = set()
 
     # ── Initialisation ────────────────────────────────────────────────────────
 
@@ -392,6 +393,8 @@ class SprintWatcherAgent:
         # Update state tracking so this task isn't re-triggered until Plane changes it again
         self._last_seen_state[task_id] = STATE_DONE if success else STATE_FAILED
         self._last_seen_updated[task_id] = datetime.now().isoformat()
+        if success:
+            self._completed_task_ids.add(task_id)
 
         # ── Step 5: Automatically commit and push code if task passed ──────────
         if success:
@@ -552,9 +555,8 @@ class SprintWatcherAgent:
                         last_state    = self._last_seen_state.get(task_id)
                         last_updated  = self._last_seen_updated.get(task_id)
 
-                        # Skip tasks that are done/completed (no action needed)
-                        if current_state in (STATE_DONE, "completed", "done"):
-                            # Update tracking so we don't re-process if already done
+                        # Skip tasks that are already completed by agent or in done/completed state
+                        if task_id in self._completed_task_ids or current_state in (STATE_DONE, "completed", "done", "cancelled"):
                             self._last_seen_state[task_id] = current_state
                             self._last_seen_updated[task_id] = updated_at
                             continue
@@ -563,9 +565,10 @@ class SprintWatcherAgent:
                         is_new          = last_state is None
                         state_changed   = last_state and last_state != current_state
                         content_updated = last_updated and updated_at and last_updated != updated_at
+                        is_open_task    = task_id not in self._completed_task_ids
 
-                        if is_new or state_changed or content_updated:
-                            reason = "new" if is_new else ("state changed" if state_changed else "content updated")
+                        if is_new or state_changed or content_updated or is_open_task:
+                            reason = "new task" if is_new else ("state changed" if state_changed else ("content updated" if content_updated else "active task"))
                             console.print(
                                 f"[bold yellow]⚡ Task update detected ({reason}): "
                                 f"{t.get('name', task_id)[:50]}[/bold yellow]"

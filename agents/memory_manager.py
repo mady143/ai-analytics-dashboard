@@ -48,13 +48,20 @@ def save_state(state: dict):
 
 def update_agent_status(agent_name: str, status: str, current_task: Optional[str] = None):
     state = load_state()
+    now_iso = datetime.now().isoformat()
     if "agents" not in state:
         state["agents"] = {}
-    state["agents"][agent_name] = {
+    
+    agent_info = state["agents"].get(agent_name, {})
+    agent_info.update({
         "status": status,
-        "current_task": current_task,
-        "updated_at": datetime.now().isoformat()
-    }
+        "current_task": current_task or agent_info.get("current_task", "Active"),
+        "updated_at": now_iso,
+        "last_run": now_iso
+    })
+    state["agents"][agent_name] = agent_info
+    state["last_updated"] = now_iso
+    state["last_active"] = now_iso
     save_state(state)
 
 

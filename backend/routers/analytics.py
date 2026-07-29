@@ -99,36 +99,58 @@ async def ai_copilot_query(request: CopilotRequest):
     target_db = request.target_db or "pg_dev"
     oerdte = request.oerdte or ""
     
-    stats = get_warehouse_statistics(target_db=target_db, oerdte=oerdte, limit=100)
+    stats = get_warehouse_statistics(target_db=target_db, oerdte=oerdte, limit=500)
     items = stats.get("warehouse_items", [])
     summary = stats.get("summary", {})
+    whs_totals_map = summary.get("warehouse_totals", {})
     
     filtered_whse = ""
     filtered_batch = ""
     filtered_invoice = ""
     
+    import re
     # Keyword detection for warehouses
     for w in ["58", "61", "71", "01", "02"]:
-        if f"whse {w}" in prompt or f"warehouse {w}" in prompt or f"whs {w}" in prompt or prompt == w:
+        if f"whse {w}" in prompt or f"warehouse {w}" in prompt or f"whs {w}" in prompt or prompt == w or w in prompt:
             filtered_whse = w
             break
-            
-    # Keyword detection for batch / invoice / scratch
+
+    # Regex detection for batch ID and invoice #
+    batch_match = re.search(r'(?:batch|batch_id)\s*#?\s*(\d+)', prompt)
+    if batch_match:
+        filtered_batch = batch_match.group(1)
+
+    inv_match = re.search(r'(?:invoice|inv|oeinv)\s*#?\s*(\d+)', prompt)
+    if inv_match:
+        filtered_invoice = inv_match.group(1)
+
+    # Response generation logic
     if "scratch" in prompt or "shortage" in prompt:
         scratch_items = [it for it in items if it.get("whs_scrtch_qty_stg", 0) > 0]
-        answer = f"Found {len(scratch_items)} line item(s) with scratch quantities under {target_db.upper()} for date {oerdte or 'all'}. Total scratches: {sum(it.get('whs_scrtch_qty_stg', 0) for it in scratch_items)} cases."
+        if scratch_items and not filtered_whse:
+            filtered_whse = str(scratch_items[0].get("whs_num", "")).strip()
+        answer = f"Found {len(scratch_items)} line item(s) with scratch quantities under {target_db.upper()} for date {oerdte or 'all'}. Total scratches: {sum(it.get('whs_scrtch_qty_stg', 0) for it in scratch_items):,} cases."
         suggested = ["Filter Scratch Items", "View Warehouse 58", "Check Pending Transfers"]
     elif "pending" in prompt or "transfer" in prompt:
         pending_items = [it for it in items if it.get("procurement_transfer_status") == "PENDING"]
-        answer = f"Detected {len(pending_items)} pending procurement transfer line items in {target_db.upper()} database."
+        if pending_items and not filtered_whse:
+            filtered_whse = str(pending_items[0].get("whs_num", "")).strip()
+        answer = f"Detected {len(pending_items)} pending procurement transfer line items in {target_db.upper()} database for date {oerdte or 'all'}."
         suggested = ["Show Pending Items", "Check High Volume Orders", "Warehouse 61 Breakdown"]
     elif filtered_whse:
-        whs_items = [it for it in items if str(it.get("whs_num")).strip() == filtered_whse]
-        cases = sum(it.get("cases_bld_stg", 0) for it in whs_items)
-        answer = f"Warehouse {filtered_whse} has {len(whs_items)} items loaded with {cases:,} cases built for target DB {target_db.upper()}."
+        whs_stat = whs_totals_map.get(filtered_whse, {}) or whs_totals_map.get(filtered_whse.zfill(2), {})
+        if whs_stat:
+            cases = whs_stat.get("cases_built", 0)
+            item_count = whs_stat.get("invoices", 0)
+        else:
+            whs_items = [it for it in items if str(it.get("whs_num")).strip().lstrip("0") == filtered_whse.lstrip("0")]
+            cases = sum(it.get("cases_bld_stg", 0) for it in whs_items)
+            item_count = len(whs_items)
+            
+        answer = f"Warehouse {filtered_whse} has {item_count} items loaded with {cases:,} cases built for target DB {target_db.upper()} for date {oerdte or 'all'}."
         suggested = [f"Focus Warehouse {filtered_whse}", "Clear Filters", "Show Scratch Rates"]
     else:
-        answer = f"Analyzed database query for '{request.prompt}'. Connected to {target_db.upper()} database with {summary.get('total_warehouses', 0)} active warehouses and {summary.get('total_cases_built', 0):,} total cases built."
+        answer = f"Analyzed database query for '{request.prompt}'. Connected to {target_db.upper()} database for date {oerdte or 'all'} with {summary.get('total_warehouses', 0)} active warehouses and {summary.get('total_cases_built', 0):,} total cases built."
         suggested = ["High Scratch Quantity", "Pending Transfers", "Warehouse 58 Overview"]
         
     return JSONResponse({
