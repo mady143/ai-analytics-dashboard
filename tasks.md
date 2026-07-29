@@ -127,6 +127,14 @@ The application is structured into distinct, modular UI Screens and Component Se
 
 ---
 
+### 📌 TASK 16 — Human Engineering Sub-Task Decomposition & Online Model Learning Engine (`#subtask-decomposition-engine`)
+- **Service Location:** Agent & Router Layer ([`agents/builder_agent.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/builder_agent.py), [`backend/routers/analytics.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/backend/routers/analytics.py), [`memory/nlp_taxonomy.json`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/memory/nlp_taxonomy.json))
+- **Sub-Task 16.1:** 📋 **Human-Like 7-Step Sub-Task Decomposition** — Automatically break down incoming Plane tasks into 7 structured engineering sub-tasks (`create_human_subtasks`) before execution.
+- **Sub-Task 16.2:** 🧠 **Online NLP Keyword Learning & Taxonomy Storage** — Dynamically capture unknown user prompt terms (`memory/nlp_taxonomy.json`) and retrain intent classification live (`learn_unknown_keywords`).
+- **Sub-Task 16.3:** ⚡ **Dynamic Real-Time OS Process Status Scanning** — OS process table inspection (`psutil`) dynamically updates status (`running`/`idle`) in `agent_state.json` and UI sidebar.
+- **Sub-Task 16.4:** 📅 **Order Date (`oerdte`) Column at Table Level** — Explicit `Order Date` column rendered directly beside Warehouse in `WarehouseSalesAnalytics.jsx`.
+- **Sub-Task 16.5:** 🔴 **Real-Time Red Critical Scratch Anomaly Card** — Render 🔴 Critical Red Alert card for scratch items displaying exact warehouse and date instead of green Nominal baseline.
+
 ---
 
 ### 2. 60-Second Continuous Sprint Watcher Monitoring (ALWAYS RUNNING)
