@@ -109,11 +109,18 @@ async def ai_copilot_query(request: CopilotRequest):
     filtered_invoice = ""
     
     import re
-    # Keyword detection for warehouses
-    for w in ["58", "61", "71", "01", "02"]:
-        if f"whse {w}" in prompt or f"warehouse {w}" in prompt or f"whs {w}" in prompt or prompt == w or w in prompt:
-            filtered_whse = w
-            break
+    # 100% Dynamic warehouse extraction via regex (matches 'warehouse 58', 'whse 58', 'whs #58', or standalone warehouse numbers)
+    whs_match = re.search(r'(?:warehouse|whse|whs|facility|loc|w)\s*#?\s*(\d+)', prompt, re.IGNORECASE)
+    if whs_match:
+        filtered_whse = whs_match.group(1).lstrip("0") or "0"
+    else:
+        # Dynamic fallback: check against distinct warehouses returned from active DB query
+        distinct_whs_list = summary.get("distinct_warehouses", [])
+        for w in distinct_whs_list:
+            w_clean = str(w).strip().lstrip("0")
+            if w_clean and re.search(r'\b0*' + re.escape(w_clean) + r'\b', prompt):
+                filtered_whse = w_clean
+                break
 
     # Regex detection for batch ID and invoice #
     batch_match = re.search(r'(?:batch|batch_id)\s*#?\s*(\d+)', prompt)
@@ -124,33 +131,54 @@ async def ai_copilot_query(request: CopilotRequest):
     if inv_match:
         filtered_invoice = inv_match.group(1)
 
+    # If warehouse is specified, do a targeted query to ensure accurate totals with dynamic date fallback
+    whs_stat = whs_totals_map.get(filtered_whse, {}) or whs_totals_map.get(filtered_whse.zfill(2), {})
+    whs_items = [it for it in items if str(it.get("whs_num")).strip().lstrip("0") == filtered_whse.lstrip("0")]
+    
+    # Check if fallback is needed when selected date has 0 records
+    fallback_used = stats.get("filters_applied", {}).get("fallback_used", False)
+    effective_date = stats.get("filters_applied", {}).get("effective_date", oerdte)
+
+    if filtered_whse and not whs_items and not whs_stat:
+        # Perform explicit warehouse lookup without date constraint
+        whs_specific_stats = get_warehouse_statistics(target_db=target_db, oerdte="", oewhse=filtered_whse, limit=500)
+        whs_specific_items = whs_specific_stats.get("warehouse_items", [])
+        if whs_specific_items:
+            items = whs_specific_items
+            summary = whs_specific_stats.get("summary", {})
+            whs_totals_map = summary.get("warehouse_totals", {})
+            whs_stat = whs_totals_map.get(filtered_whse, {}) or whs_totals_map.get(filtered_whse.zfill(2), {})
+            whs_items = [it for it in items if str(it.get("whs_num")).strip().lstrip("0") == filtered_whse.lstrip("0")]
+            fallback_used = True
+            effective_date = items[0].get("oerdte", "")
+
     # Response generation logic
+    date_label = f" (showing available dataset for date {effective_date})" if (fallback_used and effective_date) else f" for date {oerdte or 'all'}"
+
     if "scratch" in prompt or "shortage" in prompt:
         scratch_items = [it for it in items if it.get("whs_scrtch_qty_stg", 0) > 0]
         if scratch_items and not filtered_whse:
             filtered_whse = str(scratch_items[0].get("whs_num", "")).strip()
-        answer = f"Found {len(scratch_items)} line item(s) with scratch quantities under {target_db.upper()} for date {oerdte or 'all'}. Total scratches: {sum(it.get('whs_scrtch_qty_stg', 0) for it in scratch_items):,} cases."
+        answer = f"Found {len(scratch_items)} line item(s) with scratch quantities under {target_db.upper()}{date_label}. Total scratches: {sum(it.get('whs_scrtch_qty_stg', 0) for it in scratch_items):,} cases."
         suggested = ["Filter Scratch Items", "View Warehouse 58", "Check Pending Transfers"]
     elif "pending" in prompt or "transfer" in prompt:
         pending_items = [it for it in items if it.get("procurement_transfer_status") == "PENDING"]
         if pending_items and not filtered_whse:
             filtered_whse = str(pending_items[0].get("whs_num", "")).strip()
-        answer = f"Detected {len(pending_items)} pending procurement transfer line items in {target_db.upper()} database for date {oerdte or 'all'}."
+        answer = f"Detected {len(pending_items)} pending procurement transfer line items in {target_db.upper()} database{date_label}."
         suggested = ["Show Pending Items", "Check High Volume Orders", "Warehouse 61 Breakdown"]
     elif filtered_whse:
-        whs_stat = whs_totals_map.get(filtered_whse, {}) or whs_totals_map.get(filtered_whse.zfill(2), {})
         if whs_stat:
             cases = whs_stat.get("cases_built", 0)
             item_count = whs_stat.get("invoices", 0)
         else:
-            whs_items = [it for it in items if str(it.get("whs_num")).strip().lstrip("0") == filtered_whse.lstrip("0")]
             cases = sum(it.get("cases_bld_stg", 0) for it in whs_items)
             item_count = len(whs_items)
             
-        answer = f"Warehouse {filtered_whse} has {item_count} items loaded with {cases:,} cases built for target DB {target_db.upper()} for date {oerdte or 'all'}."
+        answer = f"Warehouse {filtered_whse} has {item_count} items loaded with {cases:,} cases built for target DB {target_db.upper()}{date_label}."
         suggested = [f"Focus Warehouse {filtered_whse}", "Clear Filters", "Show Scratch Rates"]
     else:
-        answer = f"Analyzed database query for '{request.prompt}'. Connected to {target_db.upper()} database for date {oerdte or 'all'} with {summary.get('total_warehouses', 0)} active warehouses and {summary.get('total_cases_built', 0):,} total cases built."
+        answer = f"Analyzed database query for '{request.prompt}'. Connected to {target_db.upper()} database{date_label} with {summary.get('total_warehouses', 0)} active warehouses and {summary.get('total_cases_built', 0):,} total cases built."
         suggested = ["High Scratch Quantity", "Pending Transfers", "Warehouse 58 Overview"]
         
     return JSONResponse({

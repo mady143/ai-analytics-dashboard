@@ -98,3 +98,31 @@ def test_page_scroll_and_data_table_dynamic_validation(page: Page):
     page.wait_for_selector("table tbody tr", timeout=10000)
     rows = page.locator("table tbody tr")
     assert rows.count() >= 1, "Data table rows failed to populate dynamically"
+
+
+def test_header_controls_interactive(page: Page):
+    """Test date selection, database switching, and form submission in header bar."""
+    page.goto(BASE_URL)
+    page.wait_for_selector("#global-header-controls, input[type='date']", timeout=15000)
+
+    # 1. Change date picker value to 2026-07-28
+    date_input = page.locator("input[type='date']")
+    expect(date_input).to_be_visible()
+    date_input.fill("2026-07-28")
+
+    # 2. Change Target DB dropdown to PostgreSQL DEV
+    db_select = page.locator("select")
+    if db_select.count() > 0:
+        expect(db_select.first).to_be_visible()
+        db_select.first.select_option("pg_dev")
+
+    # 3. Click Submit button
+    submit_btn = page.locator("button:has-text('Submit'), #submit-db-btn")
+    if submit_btn.count() > 0:
+        expect(submit_btn.first).to_be_visible()
+        submit_btn.first.click()
+        page.wait_for_timeout(1000)
+
+    # 4. Verify Active DB Badge displays PG_DEV
+    active_badge = page.locator("text=PG_DEV")
+    expect(active_badge.first).to_be_visible()

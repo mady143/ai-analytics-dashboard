@@ -237,8 +237,21 @@ def get_warehouse_statistics(
     distinct_warehouses = []
     whs_totals_map = {}
 
+    effective_date = oerdte
+    fallback_used = False
+
     if config["type"] == "PostgreSQL":
         all_items, distinct_warehouses, whs_totals_map = _fetch_from_postgres_cached(config, oerdte=oerdte, batch_id=batch_id, oewhse=oewhse, oeinv=oeinv, limit=500)
+        
+        # If no items match the exact oerdte, fallback to all available dates for dynamic query resiliency
+        if not all_items and oerdte:
+            fallback_items, fallback_whs, fallback_totals = _fetch_from_postgres_cached(config, oerdte="", batch_id=batch_id, oewhse=oewhse, oeinv=oeinv, limit=500)
+            if fallback_items:
+                all_items = fallback_items
+                distinct_warehouses = fallback_whs
+                whs_totals_map = fallback_totals
+                fallback_used = True
+                effective_date = fallback_items[0].get("oerdte", "")
 
     # Strict filtering for batch_id, oewhse, and oeinv
     if oewhse:
@@ -292,6 +305,8 @@ def get_warehouse_statistics(
         },
         "filters_applied": {
             "oerdte": oerdte,
+            "effective_date": effective_date,
+            "fallback_used": fallback_used,
             "batch_id": batch_id,
             "oewhse": oewhse,
             "oeinv": oeinv

@@ -4,7 +4,7 @@ export default function WarehouseAnalytics() {
   return (
     <div className="warehouse-card card" style={{ marginTop: '20px' }}>
       <h3 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '12px' }}>
-        Warehouse Level Statistics &amp; Metrics
+        🏢 Warehouse Level Statistics & Metrics
       </h3>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
         <div style={{ background: 'var(--bg-card)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
