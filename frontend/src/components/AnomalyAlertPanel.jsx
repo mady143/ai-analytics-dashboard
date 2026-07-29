@@ -137,7 +137,7 @@ export default function AnomalyAlertPanel({ globalDate, globalTargetDb = 'pg_dev
                   {item.filter_whse && onApplyFilter && (
                     <button
                       type="button"
-                      onClick={() => onApplyFilter({ whse: item.filter_whse })}
+                      onClick={() => onApplyFilter({ whse: item.filter_whse, effectiveDate: item.effective_date || '', onlyScratches: item.filter_scratch || false })}
                       style={{
                         background: 'rgba(255,255,255,0.1)',
                         color: 'var(--text-primary)',

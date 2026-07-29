@@ -77,10 +77,10 @@ The application is structured into distinct, modular UI Screens and Component Se
 ### 📌 TASK 4 — Warehouse Item Level & Procurement Data Table (`#warehouse-table-container`)
 - **Screen / Component Location:** Detailed Data View ([`WarehouseSalesAnalytics.jsx`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/frontend/src/components/WarehouseSalesAnalytics.jsx))
 - **Sub-Task 4.1:** 📋 **Line Items Data Grid** — Displays `Warehouse #`, `Order Date (oerdte)`, `Batch ID`, `Invoice #`, `Customer Item Code`, `C&S Item Code`, `Cases Built`, `Order Qty`, `Scratch Qty`, `Sub Item (sl_itm_ind)`, `Fulfillment Status`.
-- **Sub-Task 4.2:** 🔍 **Table Level Parameters & Search Filters** — Live filter inputs for `Warehouse #`, `Batch ID`, and `Invoice #`.
 - **Sub-Task 4.3:** 📅 **Order Date (`oerdte`) Table Column** — Explicit `Order Date` column rendered directly at table level in `WarehouseSalesAnalytics.jsx`.
+- **Sub-Task 4.4:** 🔴 **Dedicated Scratch Quantity Data Filtering (`only_scratches`)** — When High Scratch Quantity is selected in Copilot or Anomaly panel, the table filters strictly to rows with `whs_scrtch_qty_stg > 0`.
 - **Sub-Task 14.3:** ⚡ **Page-Wide Copilot Filter & Dynamic Date Propagation** — Any AI Copilot prompt or filter directive automatically updates `appliedDate` and `tableFilters` page-wide across KPI Cards, Bar Chart, Scatter Plot, Anomaly Alert Panel, and Data Table.
-- **Sub-Task 4.3:** ♾️ **Infinite Scroll & Pagination Batching** — Smooth scrolling batch loader for large datasets.
+- **Sub-Task 15.2:** 🚨 **Dynamic Red Critical Anomaly Card for Scratch Quantities** — When scratch items are detected, the Anomaly Alert Panel dynamically renders a **🔴 Critical Red Alert Card** displaying exact Warehouse # and Scratch Count instead of green Nominal baseline.
 
 ---
 

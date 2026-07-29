@@ -15,6 +15,7 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = '
   const [filterWhs, setFilterWhs] = useState('');
   const [filterBatchId, setFilterBatchId] = useState('');
   const [filterInvoice, setFilterInvoice] = useState('');
+  const [filterOnlyScratches, setFilterOnlyScratches] = useState(false);
 
   // Handle external filter requests from Copilot or Anomaly panel
   useEffect(() => {
@@ -22,6 +23,7 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = '
       if (externalFilters.whse !== undefined) setFilterWhs(externalFilters.whse);
       if (externalFilters.batch !== undefined) setFilterBatchId(externalFilters.batch);
       if (externalFilters.invoice !== undefined) setFilterInvoice(externalFilters.invoice);
+      if (externalFilters.onlyScratches !== undefined) setFilterOnlyScratches(Boolean(externalFilters.onlyScratches));
     }
   }, [externalFilters]);
 
@@ -34,7 +36,8 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = '
     const fetchInitial = async () => {
       setLoading(true);
       try {
-        const res = await axios.get(`${API}/api/warehouse/statistics?target_db=${globalTargetDb}&oerdte=${oerdte}&batch_id=${filterBatchId}&oewhse=${filterWhs}&oeinv=${filterInvoice}&limit=${LIMIT}&offset=0`);
+        const scratchParam = filterOnlyScratches ? '&only_scratches=true' : '';
+        const res = await axios.get(`${API}/api/warehouse/statistics?target_db=${globalTargetDb}&oerdte=${oerdte}&batch_id=${filterBatchId}&oewhse=${filterWhs}&oeinv=${filterInvoice}${scratchParam}&limit=${LIMIT}&offset=0`);
         if (!isSubscribed) return;
         
         let fetchedItems = res.data?.warehouse_items || [];
@@ -47,6 +50,9 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = '
         }
         if (filterInvoice) {
           fetchedItems = fetchedItems.filter(it => String(it.invc_num_stg).trim().includes(String(filterInvoice).trim()));
+        }
+        if (filterOnlyScratches) {
+          fetchedItems = fetchedItems.filter(it => (it.whs_scrtch_qty_stg || 0) > 0);
         }
         
         setSummary(res.data.summary || null);

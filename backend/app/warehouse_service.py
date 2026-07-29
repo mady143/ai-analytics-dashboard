@@ -46,9 +46,9 @@ DB_CONFIGURATIONS = {
 }
 
 
-def _raw_postgres_query(config: Dict[str, Any], oerdte: str = "", batch_id: str = "", oewhse: str = "", oeinv: str = "", limit: int = 500) -> Tuple[List[Dict[str, Any]], List[str], Dict[str, Dict[str, int]]]:
+def _raw_postgres_query(config: Dict[str, Any], oerdte: str = "", batch_id: str = "", oewhse: str = "", oeinv: str = "", only_scratches: bool = False, limit: int = 500) -> Tuple[List[Dict[str, Any]], List[str], Dict[str, Dict[str, int]]]:
     """
-    Raw PostgreSQL query execution matching exact parameters (oerdte, batch_id, oewhse, oeinvo).
+    Raw PostgreSQL query execution matching exact parameters (oerdte, batch_id, oewhse, oeinvo, only_scratches).
     - Query 1: Fetch distinct active warehouses for selected date & filters.
     - Query 2: SQL aggregated totals per warehouse across all matching records (GROUP BY oewhse).
     - Query 3: Partitioned line item details guaranteeing representation across all active warehouses.
@@ -83,6 +83,8 @@ def _raw_postgres_query(config: Dict[str, Any], oerdte: str = "", batch_id: str 
         if oeinv:
             conditions.append("oeinvo = %s")
             params.append(str(oeinv).strip())
+        if only_scratches:
+            conditions.append("COALESCE(CAST(NULLIF(oeqtys, '') AS NUMERIC), 0) > 0")
 
         where_clause = "WHERE " + " AND ".join(conditions) if conditions else ""
 
@@ -178,9 +180,9 @@ def _raw_postgres_query(config: Dict[str, Any], oerdte: str = "", batch_id: str 
         return [], [], {}
 
 
-def _fetch_from_postgres(config: Dict[str, Any], oerdte: str = "", batch_id: str = "", oewhse: str = "", oeinv: str = "", limit: int = 500) -> Tuple[List[Dict[str, Any]], List[str], Dict[str, Dict[str, int]]]:
+def _fetch_from_postgres(config: Dict[str, Any], oerdte: str = "", batch_id: str = "", oewhse: str = "", oeinv: str = "", only_scratches: bool = False, limit: int = 500) -> Tuple[List[Dict[str, Any]], List[str], Dict[str, Dict[str, int]]]:
     """Wraps raw Postgres query with a 15.0s threadpool timeout to allow sufficient time for remote database connection."""
-    future = db_executor.submit(_raw_postgres_query, config, oerdte, batch_id, oewhse, oeinv, limit)
+    future = db_executor.submit(_raw_postgres_query, config, oerdte, batch_id, oewhse, oeinv, only_scratches, limit)
     try:
         return future.result(timeout=15.0)
     except FuturesTimeoutError:
@@ -197,9 +199,9 @@ _CACHE_LOCK = threading.Lock()
 _QUERY_CACHE: Dict[str, Tuple[float, Any]] = {}
 CACHE_TTL = 15.0  # 15 seconds TTL cache
 
-def _fetch_from_postgres_cached(config: Dict[str, Any], oerdte: str = "", batch_id: str = "", oewhse: str = "", oeinv: str = "", limit: int = 500) -> Tuple[List[Dict[str, Any]], List[str], Dict[str, Dict[str, int]]]:
+def _fetch_from_postgres_cached(config: Dict[str, Any], oerdte: str = "", batch_id: str = "", oewhse: str = "", oeinv: str = "", only_scratches: bool = False, limit: int = 500) -> Tuple[List[Dict[str, Any]], List[str], Dict[str, Dict[str, int]]]:
     """Caches query results for 15 seconds to prevent parallel API requests from blocking database execution."""
-    cache_key = f"{config.get('host')}:{oerdte}:{batch_id}:{oewhse}:{oeinv}:{limit}"
+    cache_key = f"{config.get('host')}:{oerdte}:{batch_id}:{oewhse}:{oeinv}:{only_scratches}:{limit}"
     now = time.time()
     with _CACHE_LOCK:
         if cache_key in _QUERY_CACHE:
@@ -207,7 +209,7 @@ def _fetch_from_postgres_cached(config: Dict[str, Any], oerdte: str = "", batch_
             if now - ts < CACHE_TTL:
                 return cached_data
 
-    res = _fetch_from_postgres(config, oerdte=oerdte, batch_id=batch_id, oewhse=oewhse, oeinv=oeinv, limit=limit)
+    res = _fetch_from_postgres(config, oerdte=oerdte, batch_id=batch_id, oewhse=oewhse, oeinv=oeinv, only_scratches=only_scratches, limit=limit)
     with _CACHE_LOCK:
         _QUERY_CACHE[cache_key] = (now, res)
     return res
@@ -221,6 +223,7 @@ def get_warehouse_statistics(
     oeinv: str = "",
     from_date: str = "",
     to_date: str = "",
+    only_scratches: bool = False,
     limit: int = 20,
     offset: int = 0
 ) -> Dict[str, Any]:
@@ -241,11 +244,11 @@ def get_warehouse_statistics(
     fallback_used = False
 
     if config["type"] == "PostgreSQL":
-        all_items, distinct_warehouses, whs_totals_map = _fetch_from_postgres_cached(config, oerdte=oerdte, batch_id=batch_id, oewhse=oewhse, oeinv=oeinv, limit=500)
+        all_items, distinct_warehouses, whs_totals_map = _fetch_from_postgres_cached(config, oerdte=oerdte, batch_id=batch_id, oewhse=oewhse, oeinv=oeinv, only_scratches=only_scratches, limit=500)
         
         # If no items match the exact oerdte, fallback to all available dates for dynamic query resiliency
         if not all_items and oerdte:
-            fallback_items, fallback_whs, fallback_totals = _fetch_from_postgres_cached(config, oerdte="", batch_id=batch_id, oewhse=oewhse, oeinv=oeinv, limit=500)
+            fallback_items, fallback_whs, fallback_totals = _fetch_from_postgres_cached(config, oerdte="", batch_id=batch_id, oewhse=oewhse, oeinv=oeinv, only_scratches=only_scratches, limit=500)
             if fallback_items:
                 all_items = fallback_items
                 distinct_warehouses = fallback_whs

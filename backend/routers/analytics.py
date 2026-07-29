@@ -205,6 +205,7 @@ async def ai_copilot_query(request: CopilotRequest):
         "filtered_whse": filtered_whse,
         "filtered_batch": filtered_batch,
         "filtered_invoice": filtered_invoice,
+        "effective_date": effective_date,
         "suggested_actions": suggested,
         "metrics_found": {
             "total_warehouses": summary.get("total_warehouses", 0),
@@ -227,9 +228,15 @@ async def get_anomalies(target_db: str = "pg_dev", oerdte: str = "", oewhse: str
     
     # 1. High Scratch Rate Anomaly (Critical)
     scratch_items = [it for it in items if it.get("whs_scrtch_qty_stg", 0) > 0]
+    if not scratch_items:
+        # Check across available dates if selected date has 0 scratch items
+        all_scratch_stats = get_warehouse_statistics(target_db=target_db, oerdte="", oewhse=oewhse, only_scratches=True, limit=200)
+        scratch_items = all_scratch_stats.get("warehouse_items", [])
+
     if scratch_items:
         tot_scratch = sum(it.get("whs_scrtch_qty_stg", 0) for it in scratch_items)
         whse_val = oewhse or scratch_items[0].get("whs_num", "Multi")
+        eff_date = scratch_items[0].get("oerdte", "")
         anomalies.append({
             "id": "anomaly-scratch-high",
             "severity": "critical",
@@ -237,8 +244,10 @@ async def get_anomalies(target_db: str = "pg_dev", oerdte: str = "", oewhse: str
             "warehouse": whse_val,
             "batch_id": scratch_items[0].get("batch_id", "—"),
             "count": len(scratch_items),
-            "message": f"Detected {tot_scratch:,} scratched cases across {len(scratch_items)} line items for Warehouse {whse_val}.",
-            "filter_whse": whse_val
+            "message": f"Detected {tot_scratch:,} scratched cases across {len(scratch_items)} line items for Warehouse {whse_val}{f' (Date {eff_date})' if eff_date else ''}.",
+            "filter_whse": whse_val,
+            "filter_scratch": True,
+            "effective_date": eff_date
         })
         
     # 2. Pending Transfer Anomaly (Warning)
