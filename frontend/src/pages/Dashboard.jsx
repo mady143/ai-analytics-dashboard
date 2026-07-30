@@ -86,8 +86,12 @@ export default function Dashboard() {
   const [scatterData, setScatterData] = useState([])
 
   const fetchAll = (dateVal, dbVal, whseVal = '') => {
-    const oerdte = toOerdte(dateVal)
-    const whseParam = whseVal ? `&oewhse=${whseVal}` : ''
+    // ✅ User Rule: If Copilot filter is active, do NOT use default date (oerdte=""). Pull requested warehouse/results across overall page.
+    // If Copilot is NOT active, use the default header date.
+    const isCopilotActive = Boolean(tableFilters?.active || tableFilters?._ts || tableFilters?.oewhse || tableFilters?.filterScratch);
+    const effectiveDateVal = isCopilotActive ? '' : dateVal;
+    const oerdte = effectiveDateVal ? toOerdte(effectiveDateVal) : '';
+    const whseParam = whseVal ? `&oewhse=${whseVal}` : '';
 
     axios.get(`/api/charts/kpi?oerdte=${oerdte}&target_db=${dbVal}${whseParam}`)
       .then(res => {
@@ -110,10 +114,12 @@ export default function Dashboard() {
 
   // Initial fetch and on submission or filter change
   useEffect(() => {
-    fetchAll(appliedDate, appliedTargetDb, tableFilters?.whs_num || '')
-    const timer = setInterval(() => fetchAll(appliedDate, appliedTargetDb, tableFilters?.whs_num || ''), 15000)
+    const activeWhse = tableFilters?.oewhse || tableFilters?.whs_num || '';
+    fetchAll(appliedDate, appliedTargetDb, activeWhse)
+    const timer = setInterval(() => fetchAll(appliedDate, appliedTargetDb, activeWhse), 15000)
     return () => clearInterval(timer)
-  }, [appliedDate, appliedTargetDb, tableFilters?.whs_num])
+  }, [appliedDate, appliedTargetDb, tableFilters])
+
 
   const handleSubmit = (e) => {
     if (e) e.preventDefault()
