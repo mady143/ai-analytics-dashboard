@@ -19,6 +19,20 @@
 
 ---
 
+## 🤖 Autonomous Agent Fleet & LLM Model Allocation
+
+| Agent Name | Script | LLM Model | Role & Responsibilities | Key Tools / Capabilities |
+|---|---|---|---|---|
+| **Orchestrator Agent** | [`agents/orchestrator_agent.py`](agents/orchestrator_agent.py) | `Claude 3.5 Opus` (`claude-opus-4-5`) | Master coordinator; task decomposition, sprint planning, and high-level workflow decisions | Plane API, GitHub API, Memory, Agent Inspector |
+| **Builder Agent** | [`agents/builder_agent.py`](agents/builder_agent.py) | `Claude 3.5 Opus` (`claude-opus-4-5`) | Autonomous code generation (FastAPI backend & React components), bug fixing, and NLP taxonomy expansion | File System, Plane, Memory Manager |
+| **Tester Agent** | [`agents/tester_agent.py`](agents/tester_agent.py) | `Claude 3.5 Sonnet` (`claude-sonnet-4-5`) | Precision test execution (`pytest` unit tests & `Playwright` browser E2E tests), quality gate validation | Terminal, Playwright Browser, Pytest, Plane |
+| **Sprint Watcher** | [`agents/sprint_watcher_agent.py`](agents/sprint_watcher_agent.py) | `Claude 3.5 Haiku` (`claude-haiku-4-5`) | Continuous 60s background loop polling Plane tasks, detecting status updates, triggering automated builds/tests | Plane REST API, Subprocess Hooks |
+| **Git Agent** | [`agents/git_agent.py`](agents/git_agent.py) | `Claude 3.5 Haiku` (`claude-haiku-4-5`) | Automated staging, committing, and End-of-Day pushing to GitHub repository | Git CLI, GitHub MCP, Memory |
+| **Plane Agent** | [`agents/plane_agent.py`](agents/plane_agent.py) | `Claude 3.5 Haiku` (`claude-haiku-4-5`) | Task creation, cycle/sprint management, and issue comments updating | Plane REST API |
+| **Memory Manager** | [`agents/memory_manager.py`](agents/memory_manager.py) | Rule-Based State Engine | Process inspector (`psutil`), dynamic self-healing agent watchdog, persistent state storage (`agent_state.json`) | OS Process Table (`psutil`), File I/O |
+
+---
+
 ## 🗂️ Project Structure
 
 ```
