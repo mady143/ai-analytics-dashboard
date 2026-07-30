@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import os
+import uvicorn
 from dotenv import load_dotenv
 import sys
 from pathlib import Path

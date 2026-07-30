@@ -100,9 +100,6 @@ def train_models(
     max_depth: Optional[int] = None,
     lr_max_iter: int = 1000
 ) -> dict:
-    """Train one or both models and return metrics."""
-    global _models
-
     start_time = time.time()
     X_train, X_test, y_train, y_test = preprocess(df, target_col)
 

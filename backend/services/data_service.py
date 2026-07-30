@@ -42,7 +42,6 @@ def generate_sample_data() -> pd.DataFrame:
 
 def load_dataframe() -> Optional[pd.DataFrame]:
     """Get the current in-memory dataframe."""
-    global _dataframe_store
     return _dataframe_store
 
 
