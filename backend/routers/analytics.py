@@ -259,12 +259,22 @@ async def ai_copilot_query(request: CopilotRequest):
         else:
             cases = sum(it.get("cases_bld_stg", 0) for it in whs_items)
             item_count = len(whs_items)
-            
-        answer = f"Warehouse {filtered_whse} has {item_count} items loaded with {cases:,} cases built in {target_db.upper()} across all available dates."
-        suggested = [f"Focus Warehouse {filtered_whse}", "Clear Filters", "Show Scratch Rates"]
-        answer = f"Analyzed query for '{request.prompt}'. Connected to {target_db.upper()} with {summary.get('total_warehouses', 0)} active warehouses and {summary.get('total_cases_built', 0):,} total cases built across all dates."
+
+        scratch_total = sum(it.get("whs_scrtch_qty_stg", 0) for it in whs_items)
+        answer = (
+            f"Warehouse {filtered_whse}: {item_count} invoice line item(s), "
+            f"{cases:,} cases built, {scratch_total:,} scratch qty — "
+            f"sourced from {target_db.upper()} across all available dates."
+        )
+        suggested = [f"Focus Warehouse {filtered_whse}", "High Scratch Quantity", "Show All Warehouses"]
+    else:
+        answer = (
+            f"Analyzed query for '{request.prompt}'. Connected to {target_db.upper()} with "
+            f"{summary.get('total_warehouses', 0)} active warehouses and "
+            f"{summary.get('total_cases_built', 0):,} total cases built across all dates."
+        )
         suggested = ["High Scratch Quantity", "Pending Transfers", "Warehouse 58 Overview"]
-        
+
     # Build per-warehouse chart breakdown data for Copilot visualization cards
     chart_data = []
     if whs_totals_map:

@@ -104,6 +104,37 @@ The application is structured into distinct, modular UI Screens and Component Se
 > - [`agents/builder_agent.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/builder_agent.py)
 
 
+
+
+---
+
+> ### ⚠️ TASK 25 — MANDATORY: Non-Destructive Development & Copilot/Date Filter Fixes [ALWAYS ENFORCE]
+>
+> **Rule: NEVER delete or change existing functionality. Treat any broken existing feature as a bug fix, NOT a removal.**
+>
+> **Fixes Applied 2026-07-30:**
+> 1. **Copilot Q&A Answer Overwrite Bug** (`analytics.py`): The warehouse-specific answer at line 263 was immediately overwritten by a generic answer at line 265. Fixed so each intent branch (`scratch`, `transfer`, `volume`, `warehouse`, `general`) produces its own specific answer string.
+> 2. **isCopilotActive Always-True Bug** (`Dashboard.jsx`): `tableFilters?._ts` was always truthy after first use, causing the date filter to NEVER be applied. Replaced with explicit `copilotFilterActive` state that is only `true` when the Copilot fires `onApplyFilter()`.
+> 3. **Copilot Mode Active Banner**: Added visible banner in `AiDataCopilot.jsx` showing "Copilot Mode Active — Full Dataset" with a "Clear & Use Date Filter" button that resets Copilot mode.
+> 4. **Auto-Apply Filter on Query**: Copilot now auto-applies the filter immediately when a query returns results (no separate "Apply Filter" click needed).
+> 5. **Date Filter Restore on Submit**: When user clicks Submit on the date picker, `copilotFilterActive` is reset to `false` and `tableFilters` is cleared — so the date filter takes effect across ALL widgets.
+>
+> **Data Population Rules (ALWAYS ENFORCE):**
+> - **Without date filter (Copilot Mode)**: KPI Cards + Bar Chart + Scatter + Table + Anomaly all show full dataset from ALL dates
+> - **With date filter**: KPI Cards + Bar Chart + Scatter + Table + Anomaly all filter by selected `oerdte`
+> - **Both modes MUST show data in ALL sections** — no blank/empty widgets
+>
+> **Testing Mandate (ALWAYS ENFORCE):**
+> - After every code change, run `pytest tests/unit/ -v --tb=short`
+> - All filters (date, warehouse, scratch, batch, invoice) must be tested at browser level with Playwright
+> - Maintain Excel test case sheet at `tests/TEST_CASES.xlsx` with columns:
+>   - **Case ID** (unique, e.g., `TC-UNIT-01`)
+>   - **Case Name** (descriptive)
+>   - **Functionality** (what feature is tested)
+>   - **Expected Result** (what should happen)
+>   - **Actual Result** (observed behavior)
+>   - **Result** (PASS / FAIL — green/red color coded)
+
 ---
 
 ### 📌 TASK 20 — Full E2E + Unit Test Suite: Component Validation & Regression Prevention (`#full-e2e-testing`) [HIGH PRIORITY]

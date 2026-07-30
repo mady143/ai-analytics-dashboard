@@ -68,9 +68,14 @@ export default function Dashboard() {
 
   // ── Table Filter Synchronization State ──
   const [tableFilters, setTableFilters] = useState(null)
+  // Tracks whether the Copilot has pushed an ACTIVE filter to the page
+  // (distinct from any random tableFilters change — only true when Copilot fired onApplyFilter)
+  const [copilotFilterActive, setCopilotFilterActive] = useState(false)
 
   const handleApplyTableFilter = (filters) => {
     setTableFilters(prev => ({ ...(prev || {}), ...filters, _ts: Date.now() }))
+    // Mark copilot as active when it pushes a filter
+    setCopilotFilterActive(true)
     if (filters.effectiveDate || filters.date) {
       const d = filters.effectiveDate || filters.date;
       if (d) {
@@ -86,10 +91,11 @@ export default function Dashboard() {
   const [scatterData, setScatterData] = useState([])
 
   const fetchAll = (dateVal, dbVal, whseVal = '') => {
-    // ✅ User Rule: If Copilot filter is active, do NOT use default date (oerdte=""). Pull requested warehouse/results across overall page.
-    // If Copilot is NOT active, use the default header date.
-    const isCopilotActive = Boolean(tableFilters?.active || tableFilters?._ts || tableFilters?.oewhse || tableFilters?.filterScratch);
-    const effectiveDateVal = isCopilotActive ? '' : dateVal;
+    // ✅ Rule (TASK 19 & TASK 24):
+    // - When Copilot filter is EXPLICITLY active → bypass date (oerdte='') so full dataset is shown
+    // - When using normal date picker → always send the selected date so all widgets are date-filtered
+    // - Both modes must populate KPI, Bar Chart, Scatter, and Table correctly
+    const effectiveDateVal = copilotFilterActive ? '' : dateVal;
     const oerdte = effectiveDateVal ? toOerdte(effectiveDateVal) : '';
     const whseParam = whseVal ? `&oewhse=${whseVal}` : '';
 
@@ -118,11 +124,14 @@ export default function Dashboard() {
     fetchAll(appliedDate, appliedTargetDb, activeWhse)
     const timer = setInterval(() => fetchAll(appliedDate, appliedTargetDb, activeWhse), 15000)
     return () => clearInterval(timer)
-  }, [appliedDate, appliedTargetDb, tableFilters])
+  }, [appliedDate, appliedTargetDb, tableFilters, copilotFilterActive])
 
 
   const handleSubmit = (e) => {
     if (e) e.preventDefault()
+    // When user manually submits date — deactivate Copilot filter so date is respected
+    setCopilotFilterActive(false)
+    setTableFilters(null)
     setAppliedDate(selectedDate)
     setAppliedTargetDb(selectedDb)
     fetchAll(selectedDate, selectedDb)
@@ -226,6 +235,11 @@ export default function Dashboard() {
         globalDate={appliedDate}
         globalTargetDb={appliedTargetDb}
         onApplyFilter={handleApplyTableFilter}
+        onClearFilter={() => {
+          setCopilotFilterActive(false)
+          setTableFilters(null)
+        }}
+        copilotFilterActive={copilotFilterActive}
       />
 
       {/* ── Real-Time Anomaly & Risk Alerts Feature ── */}

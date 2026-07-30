@@ -5,11 +5,13 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 
 
 const API = import.meta.env.VITE_API_URL || '';
 
-export default function AiDataCopilot({ globalDate, globalTargetDb = 'pg_dev', onApplyFilter }) {
+export default function AiDataCopilot({ globalDate, globalTargetDb = 'pg_dev', onApplyFilter, onClearFilter, copilotFilterActive }) {
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
   const [copilotResult, setCopilotResult] = useState(null);
+  const [lastQuery, setLastQuery] = useState('');
   const [showChart, setShowChart] = useState(true);
+  const [filterApplied, setFilterApplied] = useState(false);
 
   const quickPills = [
     "Warehouse 58 Overview",
@@ -29,6 +31,7 @@ export default function AiDataCopilot({ globalDate, globalTargetDb = 'pg_dev', o
     const q = queryText || prompt;
     if (!q.trim()) return;
 
+    setLastQuery(q);
     setLoading(true);
     try {
       // ✅ Copilot intentionally sends NO date — it queries the full dataset across all dates.
@@ -39,6 +42,7 @@ export default function AiDataCopilot({ globalDate, globalTargetDb = 'pg_dev', o
         oerdte: ''  // Always blank: copilot is date-agnostic by design
       });
       setCopilotResult(res.data);
+      // Auto-apply filter immediately when Copilot returns result
       if (res.data && onApplyFilter) {
         onApplyFilter({
           whse: res.data.filtered_whse || '',
@@ -47,6 +51,8 @@ export default function AiDataCopilot({ globalDate, globalTargetDb = 'pg_dev', o
           effectiveDate: res.data.effective_date || '',
           onlyScratches: res.data.filter_scratch || false
         });
+        setFilterApplied(true);
+        setTimeout(() => setFilterApplied(false), 2500);
       }
     } catch (err) {
       console.error('[AiDataCopilot] Query error:', err);
@@ -54,8 +60,6 @@ export default function AiDataCopilot({ globalDate, globalTargetDb = 'pg_dev', o
       setLoading(false);
     }
   };
-
-  const [filterApplied, setFilterApplied] = useState(false);
 
   const handleApplyFilter = () => {
     if (!copilotResult) return;
@@ -72,10 +76,18 @@ export default function AiDataCopilot({ globalDate, globalTargetDb = 'pg_dev', o
     }
   };
 
+  const handleClearCopilot = () => {
+    setCopilotResult(null);
+    setLastQuery('');
+    setPrompt('');
+    if (onClearFilter) onClearFilter();
+  };
+
   const hasFilterDirectives = copilotResult && (
     Boolean(copilotResult.filtered_whse) ||
     Boolean(copilotResult.filtered_batch) ||
-    Boolean(copilotResult.filtered_invoice)
+    Boolean(copilotResult.filtered_invoice) ||
+    Boolean(copilotResult.filter_scratch)
   );
 
   return (
@@ -99,6 +111,43 @@ export default function AiDataCopilot({ globalDate, globalTargetDb = 'pg_dev', o
           <Zap size={12} /> Active Agent Engine
         </span>
       </div>
+
+      {/* Copilot Mode Active Banner */}
+      {copilotFilterActive && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.4)',
+          borderRadius: '8px', padding: '8px 14px', marginBottom: '12px', gap: '10px', flexWrap: 'wrap'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Sparkles size={14} color="#c084fc" />
+            <span style={{ fontSize: '12px', fontWeight: 700, color: '#c084fc' }}>
+              Copilot Mode Active
+            </span>
+            <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+              — Dashboard showing full dataset (date filter bypassed)
+            </span>
+            {lastQuery && (
+              <span style={{ fontSize: '11px', color: '#94a3b8', fontStyle: 'italic' }}>
+                | Query: "{lastQuery}"
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            id="copilot-clear-btn"
+            onClick={handleClearCopilot}
+            style={{
+              background: 'rgba(239,68,68,0.15)', color: '#f87171',
+              border: '1px solid rgba(239,68,68,0.4)', padding: '4px 12px',
+              borderRadius: '6px', fontSize: '11px', fontWeight: 700,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px'
+            }}
+          >
+            ✕ Clear &amp; Use Date Filter
+          </button>
+        </div>
+      )}
 
       {/* Quick Prompt Pills */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
