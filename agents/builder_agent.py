@@ -545,14 +545,25 @@ def classify_task_intent_and_intent_map(task_title: str, description: str) -> di
         intents.append("NAVBAR_AND_SIDEBAR_NAVIGATION")
         actions.append("BUILD_OR_UPDATE_NAVBAR_SIDEBAR_COMPONENTS")
 
+    # 7. Multi-Target Database Architecture (handles: database, target db, postgres, oracle, db switch)
+    db_keywords = ["database", "target db", "postgres", "oracle", "db switch"]
+    if any(k in text_clean for k in db_keywords):
+        intents.append("MULTI_TARGET_DATABASE_ARCHITECTURE")
+        actions.append("ENFORCE_MULTI_TARGET_DATABASE_CONFIGURATIONS")
+
+    # 8. Dynamic NLP Intent Extractor (Fallback for ANY arbitrary user request, statement, or screenshot note)
     if not intents:
-        intents.append("GENERAL_DASHBOARD_ENHANCEMENT_AND_VERIFICATION")
-        actions.append("EXECUTE_GENERAL_SYSTEM_INTEGRITY_AND_UI_VERIFICATION")
+        # Extract meaningful nouns/verbs from statement
+        raw_words = [w for w in text_clean.split() if len(w) > 3 and w not in ["the", "this", "that", "from", "with", "have", "need", "please", "make", "will", "your"]]
+        intent_tag = f"DYNAMIC_FEATURE_INTENT_{'_'.join([w.upper() for w in raw_words[:3]])}" if raw_words else "GENERAL_DASHBOARD_ENHANCEMENT"
+        intents.append(intent_tag)
+        actions.append(f"EXECUTE_DYNAMIC_LLM_CODE_GENERATION_FOR_{intent_tag}")
 
     return {
         "intents": intents,
         "actions": actions
     }
+
 
 
 def handle_task(task_id: str, task_title: str, description: str, priority: str) -> bool:
