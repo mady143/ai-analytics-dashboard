@@ -53,6 +53,61 @@ The application is structured into distinct, modular UI Screens and Component Se
 
 ---
 
+### 📌 TASK 20 — Full E2E + Unit Test Suite: Component Validation & Regression Prevention (`#full-e2e-testing`) [HIGH PRIORITY]
+
+**Goal:** Run automated tests against every UI component and API endpoint to catch regressions. Must be run after every code change.
+
+#### 20.1 — Unit Test Cases (`tests/unit/test_task19_20_copilot_date_rules.py`)
+
+| # | Test Case | Rule Verified |
+|---|-----------|---------------|
+| TC-UNIT-01 | Copilot ignores date `19990101` → returns real data across all dates | Copilot is date-agnostic |
+| TC-UNIT-02 | Copilot with `oerdte=""` returns full dataset results | Frontend sends empty date correctly |
+| TC-UNIT-03 | KPI API with `oerdte=KNOWN_DATE` returns >= 4 KPIs | Dashboard uses date param |
+| TC-UNIT-04 | Bar chart API with `oerdte` returns chart data | Dashboard uses date param |
+| TC-UNIT-05 | Scatter chart API with `oerdte` returns scatter data | Dashboard uses date param |
+| TC-UNIT-06 | Warehouse stats API with `oerdte` returns paginated items | Dashboard uses date param |
+| TC-UNIT-07 | Warehouse stats with `oerdte=""` returns full all-dates data | Empty date = full dataset |
+| TC-UNIT-08 | Anomaly API with `oerdte` returns alerts | Anomaly uses date param |
+| TC-UNIT-09 | `/api/agents/status` returns >= 5 agents all `status=running` | Self-healing agent watchdog |
+| TC-UNIT-10 | `/api/health` returns `status=healthy` | Server health |
+| TC-UNIT-11 | Copilot "Warehouse 58" query returns `filtered_whse=58` | NLP warehouse extraction |
+| TC-UNIT-12 | Copilot "High Scratch" returns `filter_scratch=True` | NLP scratch extraction |
+
+#### 20.2 — Browser (Playwright) Test Cases (`tests/browser/test_full_e2e_component_suite.py`)
+
+| # | Test Case | Validates |
+|---|-----------|-----------|
+| TC-01 | Default date auto-applied on page load (today's date pre-filled) | Default date behavior |
+| TC-02 | KPI cards show real numbers (not `...` placeholder) | KPI data load |
+| TC-03 | Bar chart + Scatter chart render SVG elements | Chart rendering |
+| TC-04 | Changing date → Submit triggers API calls with new date | Date change propagation |
+| TC-05 | Warehouse filter input narrows table to matching rows | Whse filter |
+| TC-06 | **CRITICAL**: Copilot sends `oerdte=''` — never the global date | TASK 19 rule |
+| TC-07 | Copilot query returns "AI Copilot Finding" result card | Copilot result |
+| TC-08 | Quick pills (High Scratch, Pending Transfers) trigger copilot | Copilot pills |
+| TC-09 | Data table has >= 1 row for known-data date | Table population |
+| TC-10 | Agent status sidebar shows all agents visible | Agent monitoring |
+| TC-11 | Anomaly & Risk Alerts panel renders | Anomaly panel |
+| TC-12 | DB switch pg_dev → oracle_dev triggers API calls with oracle_dev | DB switch |
+| TC-13 | Copilot "Apply Filter" button updates data table | Copilot→Table filter |
+| TC-14 | Bar chart X-axis ticks == Total Warehouses KPI count | Chart/KPI alignment |
+
+#### 20.3 — How to Run All Tests
+```bash
+# Unit tests
+cd backend && python -m pytest ../tests/unit/ -v --tb=short
+
+# Browser tests (requires backend + frontend running)
+python -m pytest tests/browser/ -v --tb=short
+```
+
+#### 20.4 — Test Files
+- [`tests/unit/test_task19_20_copilot_date_rules.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tests/unit/test_task19_20_copilot_date_rules.py) — 12 unit tests
+- [`tests/browser/test_full_e2e_component_suite.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tests/browser/test_full_e2e_component_suite.py) — 14 browser tests
+
+---
+
 ### 📌 TASK 1 — Global Parameter & Header Control Panel (`#global-header-controls`)
 - **Dedicated Task File:** [`tasks/task_1_header_controls.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_1_header_controls.md)
 - **Screen / Component Location:** Top Navigation Header ([`Dashboard.jsx`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/frontend/src/pages/Dashboard.jsx))
