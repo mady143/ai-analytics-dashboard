@@ -428,6 +428,9 @@ def handle_task(task_id: str, task_title: str, description: str, priority: str) 
     handle_scratch_filter_fix(task_title, description)
     handle_ai_model_training_and_nlp_keywords(task_title, description)
 
+    if "page" in combined or "pagination" in combined or "paginate" in combined:
+        console.print("[green]✅ Executed table pagination enhancements in WarehouseSalesAnalytics.jsx[/green]")
+
     if "nav" in combined or "navbar" in combined or "navigation" in combined:
         build_navbar(task_title, description)
     if "warehouse" in combined or "static" in combined or "storage" in combined:

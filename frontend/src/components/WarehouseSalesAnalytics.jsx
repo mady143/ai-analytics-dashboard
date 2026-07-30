@@ -377,10 +377,61 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = '
 
         {loadingMore && (
           <div style={{ textAlign: 'center', padding: '12px', fontSize: '12px', color: 'var(--color-primary-light)', fontWeight: 600 }}>
-            Querying next 20 rows...
+            Loading next records...
           </div>
         )}
       </div>
+
+      {/* Pagination Controls Bar */}
+      {!noDataForDate && items.length > 0 && (
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          marginTop: '14px', paddingTop: '12px', borderTop: '1px solid var(--border-color)',
+          flexWrap: 'wrap', gap: '10px'
+        }}>
+          <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+            Showing <strong style={{ color: 'var(--text-primary)' }}>{items.length}</strong> of <strong style={{ color: 'var(--color-primary-light)' }}>{totalCount}</strong> total items
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              onClick={() => {
+                if (items.length > 20) setItems(items.slice(0, Math.max(20, items.length - 20)));
+              }}
+              disabled={items.length <= 20}
+              style={{
+                background: items.length <= 20 ? 'rgba(255,255,255,0.05)' : 'var(--bg-secondary)',
+                color: items.length <= 20 ? 'var(--text-muted)' : 'var(--text-primary)',
+                border: '1px solid var(--border-color)',
+                padding: '4px 12px', borderRadius: '6px', fontSize: '12px',
+                cursor: items.length <= 20 ? 'not-allowed' : 'pointer',
+                fontWeight: 600
+              }}
+            >
+              ← Previous 20
+            </button>
+
+            <span style={{ fontSize: '12px', fontWeight: 700, color: '#a78bfa', background: 'rgba(124,58,237,0.15)', padding: '4px 10px', borderRadius: '6px' }}>
+              Page 1 of {Math.max(1, Math.ceil(totalCount / 20))}
+            </span>
+
+            <button
+              onClick={loadMoreData}
+              disabled={!hasMore || loadingMore}
+              style={{
+                background: !hasMore ? 'rgba(255,255,255,0.05)' : 'var(--color-primary)',
+                color: '#ffffff',
+                border: 'none',
+                padding: '4px 12px', borderRadius: '6px', fontSize: '12px',
+                cursor: !hasMore ? 'not-allowed' : 'pointer',
+                fontWeight: 600
+              }}
+            >
+              {loadingMore ? 'Loading...' : 'Next 20 →'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
