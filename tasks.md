@@ -106,6 +106,46 @@ python -m pytest tests/browser/ -v --tb=short
 - [`tests/unit/test_task19_20_copilot_date_rules.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tests/unit/test_task19_20_copilot_date_rules.py) — 12 unit tests
 - [`tests/browser/test_full_e2e_component_suite.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tests/browser/test_full_e2e_component_suite.py) — 14 browser tests
 
+#### 20.5 — ✅ Live Test Results (2026-07-30 09:49 EST)
+
+**Unit Tests — 12/12 PASSED ✅** (`9.95s`)
+
+| # | Test | Result |
+|---|------|--------|
+| TC-UNIT-01 | Copilot ignores past date `19990101` → queries full dataset | ✅ PASSED |
+| TC-UNIT-02 | Copilot with `oerdte=""` returns full dataset | ✅ PASSED |
+| TC-UNIT-03 | KPI API with date param returns >= 4 KPIs | ✅ PASSED |
+| TC-UNIT-04 | Bar chart API with date returns chart data | ✅ PASSED |
+| TC-UNIT-05 | Scatter chart API with date returns scatter data | ✅ PASSED |
+| TC-UNIT-06 | Warehouse stats API with date returns items | ✅ PASSED |
+| TC-UNIT-07 | Warehouse stats no-date returns full data | ✅ PASSED |
+| TC-UNIT-08 | Anomaly API with date returns alerts | ✅ PASSED |
+| TC-UNIT-09 | `/api/agents/status` → all 6 agents `running` | ✅ PASSED |
+| TC-UNIT-10 | `/api/health` returns `healthy` | ✅ PASSED |
+| TC-UNIT-11 | Copilot Warehouse 58 query → `filtered_whse=58` | ✅ PASSED |
+| TC-UNIT-12 | Copilot scratch query → `filter_scratch=True` | ✅ PASSED |
+
+**Browser E2E Tests — 14/14 PASSED ✅** (`63.00s`, Chromium)
+
+| # | Test | Result |
+|---|------|--------|
+| TC-01 | Default date auto-applied on page load (dynamic from UI) | ✅ PASSED |
+| TC-02 | KPI cards show real numbers (not `...` placeholder) | ✅ PASSED |
+| TC-03 | Bar + Scatter charts render SVG | ✅ PASSED |
+| TC-04 | Date change → Submit → API calls fired with new date | ✅ PASSED |
+| TC-05 | Warehouse 58 filter narrows table rows | ✅ PASSED |
+| TC-06 | **CRITICAL**: Copilot sends `oerdte=''` NOT the UI date | ✅ PASSED |
+| TC-07 | Copilot returns "AI Copilot Finding" result card | ✅ PASSED |
+| TC-08 | Quick pills trigger copilot results | ✅ PASSED |
+| TC-09 | Data table has >= 1 row for UI-selected date | ✅ PASSED |
+| TC-10 | Agent status sidebar visible with all agents | ✅ PASSED |
+| TC-11 | Anomaly & Risk Alerts panel renders | ✅ PASSED |
+| TC-12 | DB switch pg_dev → oracle_dev triggers API reload | ✅ PASSED |
+| TC-13 | Copilot "Apply Filter" button updates data table | ✅ PASSED |
+| TC-14 | Bar chart ticks == Total Warehouses KPI count | ✅ PASSED |
+
+> **Total: 26/26 tests PASSED — 0 FAILED — 0 ERRORS** 🎉
+
 ---
 
 ### 📌 TASK 1 — Global Parameter & Header Control Panel (`#global-header-controls`)
