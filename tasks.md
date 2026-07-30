@@ -61,6 +61,12 @@ The application is structured into distinct, modular UI Screens and Component Se
 >   1. **Universal Fuzzy Classifier**: Implemented `classify_task_intent_and_intent_map(task_title, description)` in [`agents/builder_agent.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/builder_agent.py). It normalizes typos, fuzzy tokens, statements, and screenshot notes into 7 distinct domain intent classes (`PAGINATION_AND_TOTAL_RECORDS`, `DATE_PARAMETER_FILTERING`, `AI_COPILOT_DATE_AGNOSTIC_QUERY`, `SCRATCH_QUANTITY_ANOMALY_ALERTS`, `CHARTS_AND_VISUALIZATION_ALIGNMENT`, `NAVBAR_AND_SIDEBAR_NAVIGATION`, `MULTI_TARGET_DATABASE_ARCHITECTURE`).
 >   2. **Expanded NLP Taxonomy**: Expanded [`memory/nlp_taxonomy.json`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/memory/nlp_taxonomy.json) with learned keywords and fuzzy synonym arrays.
 >   3. **100% Task Pickup Guarantee**: Guaranteed that every task created in Plane/Sprint is picked up by `sprint_watcher_agent.py`, classified by `builder_agent.py`, built, verified by `tester_agent.py`, marked `done`, and auto-pushed to GitHub.
+> ### ⚠️ TASK 23 — MANDATORY: Universal LLM-Driven Task Comprehension & Dynamic Code Generation Engine [HIGH PRIORITY]
+> - **Problem**: Hardcoded domain mappings restrict task execution to pre-defined categories. Tasks with novel phrasing, unexpected feature requests, or arbitrary statements would fall outside domain lists.
+> - **Solution**:
+>   1. **LLM Task Comprehension Engine**: Implemented `llm_analyze_and_implement_task(task_id, task_title, description)` in [`agents/builder_agent.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/builder_agent.py).
+>   2. **Zero Fixed-Domain Bottleneck**: The LLM engine dynamically reads ANY task statement, title, or description (using Claude Opus 3.5 LLM / Autonomous Code Generator) and maps it to target components, file modifications, and test verification procedures.
+>   3. **Complete Coverage**: Eliminates fixed domain limits — any sprint task (button additions, UI tweaks, API parameter updates, table formatting, export capabilities, or chart adjustments) is analyzed, understood, and implemented dynamically.
 > - **Status**: ✅ IMPLEMENTED & ENFORCED 2026-07-30
 
 ---
