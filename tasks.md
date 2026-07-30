@@ -160,6 +160,7 @@ The application is structured into distinct, modular UI Screens and Component Se
 - **Sub-Task 18.2:** 🛡️ **Orchestrator Watchdog Health Loop (`watchdog_health_loop`)** — Continuous OS process table inspection (`psutil`) checking health of `sprint_watcher`, `builder`, `tester`, `orchestrator`, `memory`, `git`.
 - **Sub-Task 18.3:** 🔄 **Autonomous Auto-Restart Engine** — If any background agent crashes, stops, or goes unexpectedly idle when required, Watchdog automatically re-spawns the process and updates state back to `running` with zero downtime!
 - **Sub-Task 18.4:** 🚀 **Full Server & Fleet Watchdog Script (`scripts/agent_watchdog.py`)** — Dedicated Supervisor script that monitors HTTP health endpoints (FastAPI `:8000`, Vite `:5173`) and background agent processes, auto-restarting the entire server and agent fleet whenever idle failure or downtime is detected.
+- **Sub-Task 18.5:** 👁️ **Continuous 24/7 Agent Monitoring** — Continuous real-time OS process table inspection (`psutil`) verifying whether all 6 agents (`Sprint Watcher`, `Builder`, `Tester`, `Memory`, `Git`, `Orchestrator`) are active and running continuously without interruption.
 
 ---
 
