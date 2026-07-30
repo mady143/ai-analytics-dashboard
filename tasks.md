@@ -137,6 +137,32 @@ The application is structured into distinct, modular UI Screens and Component Se
 
 ---
 
+### 📌 TASK 17 — Autonomous Fleet Launcher & Sequential Startup Script (`#autonomous-launcher-script`)
+- **Script Location:** Deployment Layer ([`start_all_services.bat`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/start_all_services.bat) & [`start_all_services.sh`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/start_all_services.sh))
+- **Sub-Task 17.1:** 📦 **Sequential Step 1 — Python Dependencies** — `pip install -r requirements.txt`.
+- **Sub-Task 17.2:** 🟢 **Sequential Step 2 — Frontend Node Modules** — `npm install` inside `frontend/` directory.
+- **Sub-Task 17.3:** 🎭 **Sequential Step 3 — Playwright Browser Binaries** — `python -m playwright install chromium`.
+- **Sub-Task 17.4:** 🔀 **Sequential Step 4 — Git Sync & Remote Pull** — `git pull origin main`.
+- **Sub-Task 17.5:** 🌙 **Sequential Step 5 — End-of-Day Git Push Script** — `python scripts/end_of_day.py`.
+- **Sub-Task 17.6:** ⚙️ **Sequential Step 6 — FastAPI Backend Server** — `python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000`.
+- **Sub-Task 17.7:** 💻 **Sequential Step 7 — Vite Frontend Server** — `npm run dev -- --host 0.0.0.0`.
+- **Sub-Task 17.8:** 🤖 **Sequential Step 8 — Sprint Watcher Agent** — `python scripts/run_sprint_watcher.py --interval 60`.
+- **Sub-Task 17.9:** 🔀 **Sequential Step 9 — Orchestrator Agent** — `python agents/orchestrator_agent.py`.
+- **Sub-Task 17.10:** 🔨 **Sequential Step 10 — Builder Agent** — `python agents/builder_agent.py --task-id AAD-AUTO`.
+- **Sub-Task 17.11:** 🧪 **Sequential Step 11 — Tester Agent Test Runner** — `python agents/tester_agent.py` (Pytest Unit + Playwright Browser E2E).
+- **Sub-Task 17.12:** 🔌 **Sequential Step 12 — MCP Server Fleet** — `plane_agent`, `git_agent`, `memory_manager`, `browser`.
+
+---
+
+### 📌 TASK 18 — Mandatory Agent Health Watchdog & Auto-Restart System (`#agent-health-watchdog`) [HIGH PRIORITY]
+- **Service Location:** Agent Layer ([`agents/orchestrator_agent.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/orchestrator_agent.py), [`agents/memory_manager.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/memory_manager.py))
+- **Sub-Task 18.1:** 🧠 **Memory Agent Persistent Tracking** — Add Memory Agent (`python -m agents.memory_manager`) to startup launchers (`.bat` / `.sh`) and process status monitor.
+- **Sub-Task 18.2:** 🛡️ **Orchestrator Watchdog Health Loop (`watchdog_health_loop`)** — Continuous OS process table inspection (`psutil`) checking health of `sprint_watcher`, `builder`, `tester`, `orchestrator`, `memory`, `git`.
+- **Sub-Task 18.3:** 🔄 **Autonomous Auto-Restart Engine** — If any background agent crashes, stops, or goes unexpectedly idle when required, Watchdog automatically re-spawns the process and updates state back to `running` with zero downtime!
+- **Sub-Task 18.4:** 🚀 **Full Server & Fleet Watchdog Script (`scripts/agent_watchdog.py`)** — Dedicated Supervisor script that monitors HTTP health endpoints (FastAPI `:8000`, Vite `:5173`) and background agent processes, auto-restarting the entire server and agent fleet whenever idle failure or downtime is detected.
+
+---
+
 ### 2. 60-Second Continuous Sprint Watcher Monitoring (ALWAYS RUNNING)
 - **Schedule:** Runs continuously in background every **60 seconds** — ALWAYS ALLOWED, ALWAYS AUTO-RESTART:
   ```bash

@@ -35,7 +35,7 @@ echo [STEP 5/6] 🌙 Running End of Day Git Push Script...
 python scripts/end_of_day.py
 
 echo.
-echo [STEP 6/6] 🚀 Launching All Autonomous Fleet Services & Agent Loops...
+echo [STEP 6/6] 🚀 Launching All Autonomous Fleet Services, Agents, Memory & Watchdog...
 
 echo 1. Launching FastAPI Backend API Server (Port 8000)...
 start "FastAPI Backend Server" cmd /k "cd /d %APP_ROOT%\backend && python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000"
@@ -46,14 +46,31 @@ start "Vite Frontend Dev Server" cmd /k "cd /d %APP_ROOT%\frontend && npm run de
 echo 3. Launching Sprint Watcher Continuous Agent Loop (60s Interval)...
 start "Sprint Watcher Agent" cmd /k "cd /d %APP_ROOT% && python scripts/run_sprint_watcher.py --interval 60"
 
-echo 4. Launching Orchestrator Agent State Coordinator...
-start "Orchestrator Agent" cmd /k "cd /d %APP_ROOT% && python agents/orchestrator_agent.py"
+echo 4. Launching Agent & Server Health Watchdog Supervisor...
+start "Agent Watchdog Supervisor" cmd /k "cd /d %APP_ROOT% && python scripts/agent_watchdog.py"
+
+echo 5. Launching Builder Agent System Builder...
+start "Builder Agent" cmd /k "cd /d %APP_ROOT% && python agents/builder_agent.py --task-id AAD-AUTO --task-title System_Integrity_Verification --description Autonomous_Fleet_Worker"
+
+echo 6. Launching Tester Agent Test Suite Runner (Unit + Playwright E2E)...
+start "Tester Agent" cmd /k "cd /d %APP_ROOT% && python agents/tester_agent.py"
+
+echo 7. Launching Memory Agent Persistent State Manager...
+start "Memory Agent" cmd /k "cd /d %APP_ROOT% && python -m agents.memory_manager"
+
+echo 8. Launching MCP Server Fleet (Plane, GitHub, Memory, Browser)...
+start "MCP Plane Agent" cmd /k "cd /d %APP_ROOT% && python -m agents.plane_agent"
+start "MCP Git Agent" cmd /k "cd /d %APP_ROOT% && python -m agents.git_agent"
 
 echo =========================================================================
-echo 🎉 Autonomous Agent Fleet Fully Deployed & Operational!
+echo 🎉 Autonomous Agent Fleet, Watchdog, Memory & MCP Servers Fully Active!
 echo -------------------------------------------------------------------------
 echo 🌐 Frontend UI:     http://localhost:5173
 echo ⚙️ Backend API:     http://localhost:8000 (Swagger docs: http://localhost:8000/docs)
+echo 🛡️ Watchdog:        Agent Watchdog Supervisor monitoring servers & agents (auto-restarting on failure)
+echo 🧠 Memory Agent:    Persistent State & Context Storage active
+echo 🧪 Tester Agent:    Automated Pytest Unit + Playwright Browser E2E Runner active
+echo 🔌 MCP Servers:     Plane, GitHub, Memory, Browser MCP Servers active
 echo 🤖 Active Agents:   Sprint Watcher (60s), Builder Agent, Tester Agent, Orchestrator
 echo 🌙 EOD Push Script: python scripts/end_of_day.py executed automatically!
 echo 🔄 Auto-Git Push:   Enabled background auto-commit & push to origin/main

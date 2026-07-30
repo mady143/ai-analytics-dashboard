@@ -65,12 +65,21 @@ def get_dynamic_agent_statuses() -> dict:
 
     is_watcher_running = "run_sprint_watcher.py" in full_cmd_str or "sprint_watcher" in full_cmd_str
     is_builder_running = "builder_agent.py" in full_cmd_str
-    is_tester_running = "pytest" in full_cmd_str
-    is_git_running = "git" in full_cmd_str and ("push" in full_cmd_str or "commit" in full_cmd_str)
+    is_tester_running = "tester_agent.py" in full_cmd_str or "pytest" in full_cmd_str
+    is_git_running = "end_of_day.py" in full_cmd_str or ("git" in full_cmd_str and any(kw in full_cmd_str for kw in ["push", "commit", "pull", "fetch"]))
+
+    is_memory_running = "memory_manager.py" in full_cmd_str or "memory_agent" in full_cmd_str
 
     now_iso = datetime.now().isoformat()
     state = load_state()
     agents = state.get("agents", {})
+
+    agents["memory"] = {
+        "status": "running" if is_memory_running else "idle",
+        "last_run": now_iso if is_memory_running else agents.get("memory", {}).get("last_run", now_iso),
+        "current_task": "Persistent Context & State Storage" if is_memory_running else "Idle",
+        "updated_at": now_iso
+    }
 
     agents["sprint_watcher"] = {
         "status": "running" if is_watcher_running else "idle",
@@ -195,6 +204,36 @@ def get_todays_summary() -> dict:
         "files_changed": files_changed,
         "details": details
     }
+
+
+def load_last_conversation(agent_name: str, max_messages: int = 20) -> list:
+    _ensure_dirs()
+    file_path = CONVERSATIONS_DIR / f"{agent_name}_conversation.jsonl"
+    if not file_path.exists():
+        return []
+    messages = []
+    try:
+        with file_path.open("r", encoding="utf-8") as f:
+            for line in f:
+                if line.strip():
+                    try:
+                        messages.append(json.loads(line.strip()))
+                    except Exception:
+                        pass
+        return messages[-max_messages:]
+    except Exception:
+        return []
+
+
+def save_conversation(agent_name: str, messages: list):
+    _ensure_dirs()
+    file_path = CONVERSATIONS_DIR / f"{agent_name}_conversation.jsonl"
+    try:
+        with file_path.open("w", encoding="utf-8") as f:
+            for msg in messages:
+                f.write(json.dumps(msg) + "\n")
+    except Exception as e:
+        console.print(f"[yellow]⚠️ Failed to save conversation for {agent_name}: {e}[/yellow]")
 
 
 def cleanup_old_memory(retention_days: int = 30):

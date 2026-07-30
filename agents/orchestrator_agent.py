@@ -7,6 +7,14 @@ import os
 import json
 import time
 from pathlib import Path
+import sys
+ROOT_DIR = Path(__file__).parent.parent
+AGENTS_DIR = Path(__file__).parent
+if str(AGENTS_DIR) not in sys.path:
+    sys.path.insert(0, str(AGENTS_DIR))
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
 from typing import Optional
 from datetime import datetime
 import anthropic
@@ -14,7 +22,6 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 from dotenv import load_dotenv
-
 from memory_manager import (
     load_state, save_state, update_agent_status,
     load_last_conversation, save_conversation,
@@ -212,10 +219,89 @@ Keep your response concise and actionable.
                         f"Task completed successfully at {datetime.now().isoformat()}")
 
 
+    def watchdog_health_loop(self, poll_interval: int = 30):
+        """
+        Continuous Watchdog Monitor: Keeps an eye on all agents & servers.
+        If any agent or server (FastAPI Backend / Vite Frontend) is stopped, crashed, or idle,
+        Watchdog automatically restarts them and transitions everything back to RUNNING state!
+        """
+        import subprocess, sys, httpx
+        console.print(Panel.fit(
+            "[bold green]🛡️ Orchestrator Watchdog Active — Monitoring Server & Agent Fleet Health...[/bold green]",
+            border_style="green"
+        ))
+
+        agent_scripts = {
+            "sprint_watcher": ROOT_DIR / "scripts" / "run_sprint_watcher.py",
+            "builder": ROOT_DIR / "agents" / "builder_agent.py",
+            "tester": ROOT_DIR / "agents" / "tester_agent.py",
+            "memory": ROOT_DIR / "agents" / "memory_manager.py",
+            "git_agent": ROOT_DIR / "agents" / "git_agent.py"
+        }
+
+        try:
+            while True:
+                # ── 1. Check Server Endpoints ─────────────────────────────────────
+                backend_healthy = False
+                frontend_healthy = False
+                try:
+                    res = httpx.get("http://127.0.0.1:8000/docs", timeout=3.0)
+                    backend_healthy = res.status_code == 200
+                except Exception:
+                    backend_healthy = False
+
+                try:
+                    res = httpx.get("http://127.0.0.1:5173", timeout=3.0)
+                    frontend_healthy = res.status_code == 200
+                except Exception:
+                    frontend_healthy = False
+
+                if not backend_healthy:
+                    console.print("[bold red]🚨 Watchdog Alert: Backend FastAPI Server on :8000 is down! Auto-restarting server...[/bold red]")
+                    try:
+                        subprocess.Popen([sys.executable, "-m", "uvicorn", "main:app", "--reload", "--host", "127.0.0.1", "--port", "8000"], cwd=str(ROOT_DIR / "backend"))
+                        console.print("[bold green]✅ FastAPI Backend Server auto-restarted on port 8000![/bold green]")
+                    except Exception as ex:
+                        console.print(f"[red]Failed to auto-restart backend server: {ex}[/red]")
+
+                if not frontend_healthy:
+                    console.print("[bold red]🚨 Watchdog Alert: Frontend Vite Server on :5173 is down! Auto-restarting server...[/bold red]")
+                    try:
+                        subprocess.Popen(["npm", "run", "dev", "--", "--host", "127.0.0.1"], cwd=str(ROOT_DIR / "frontend"), shell=True)
+                        console.print("[bold green]✅ Vite Frontend Server auto-restarted on port 5173![/bold green]")
+                    except Exception as ex:
+                        console.print(f"[red]Failed to auto-restart frontend server: {ex}[/red]")
+
+                # ── 2. Check Agent Fleet Status ──────────────────────────────────
+                from memory_manager import get_dynamic_agent_statuses
+                statuses = get_dynamic_agent_statuses()
+
+                for agent_name, script_path in agent_scripts.items():
+                    info = statuses.get(agent_name, {})
+                    status = info.get("status", "idle")
+
+                    # If an essential background agent is idle or stopped, auto-trigger/restart it!
+                    if status != "running" and agent_name in ("sprint_watcher", "memory"):
+                        console.print(f"[bold yellow]⚠️ Watchdog Alert: Agent '{agent_name}' is {status}. Auto-restarting...[/bold yellow]")
+                        update_agent_status(agent_name, "running", f"Auto-restarted by Orchestrator Watchdog at {datetime.now().strftime('%H:%M:%S')}")
+                        try:
+                            if script_path.exists():
+                                subprocess.Popen([sys.executable, str(script_path)])
+                                console.print(f"[bold green]✅ Agent '{agent_name}' successfully restarted and transitioned to RUNNING state![/bold green]")
+                        except Exception as ex:
+                            console.print(f"[red]❌ Watchdog failed to restart {agent_name}: {ex}[/red]")
+
+                time.sleep(poll_interval)
+        except KeyboardInterrupt:
+            console.print("[yellow]Watchdog stopped by user.[/yellow]")
+
+
 if __name__ == "__main__":
-    if not ANTHROPIC_API_KEY:
-        console.print("[red]❌ ANTHROPIC_API_KEY not set in .env[/red]")
-        console.print("[yellow]Please add your Claude API key to the .env file[/yellow]")
+    agent = OrchestratorAgent()
+    if len(sys.argv) > 1 and sys.argv[1] == "--watchdog":
+        agent.watchdog_health_loop(poll_interval=30)
+    elif not ANTHROPIC_API_KEY:
+        console.print("[yellow]⚠️ ANTHROPIC_API_KEY not set — starting Watchdog mode autonomously...[/yellow]")
+        agent.watchdog_health_loop(poll_interval=30)
     else:
-        agent = OrchestratorAgent()
         agent.run_daily_session()

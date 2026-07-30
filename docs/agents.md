@@ -34,7 +34,16 @@
            │  plane_agent.py  │   │  git_agent.py │
            │  Mark task Done/ │   │  EOD commit + │
            │  Failed + comment│   │  push to GitHub│
-           └──────────────────┘   └──────────────┘
+           └──────────────────┘   └──────┬───────┘
+                                         │
+                     ┌───────────────────┘
+                     ▼
+           ┌──────────────────────────────────────┐
+           │        scripts/agent_watchdog.py      │
+           │  Supervisor: Monitors servers & ALL   │
+           │  6 agents (incl. git_agent), auto-   │
+           │  restarts on downtime/idle failure    │
+           └──────────────────────────────────────┘
                      ▲
            ┌──────────────────────────────────────┐
            │      orchestrator_agent.py            │
