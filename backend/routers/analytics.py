@@ -262,10 +262,40 @@ async def ai_copilot_query(request: CopilotRequest):
             
         answer = f"Warehouse {filtered_whse} has {item_count} items loaded with {cases:,} cases built in {target_db.upper()} across all available dates."
         suggested = [f"Focus Warehouse {filtered_whse}", "Clear Filters", "Show Scratch Rates"]
-    else:
         answer = f"Analyzed query for '{request.prompt}'. Connected to {target_db.upper()} with {summary.get('total_warehouses', 0)} active warehouses and {summary.get('total_cases_built', 0):,} total cases built across all dates."
         suggested = ["High Scratch Quantity", "Pending Transfers", "Warehouse 58 Overview"]
         
+    # Build per-warehouse chart breakdown data for Copilot visualization cards
+    chart_data = []
+    if whs_totals_map:
+        for w_num, w_info in whs_totals_map.items():
+            w_clean = str(w_num).strip()
+            cb = w_info.get("cases_built", 0)
+            oq = w_info.get("original_order_qty", 0)
+            sq = oq - cb if oq > cb else 0
+            chart_data.append({
+                "warehouse": f"WHS {w_clean}",
+                "cases_built": cb,
+                "order_qty": oq,
+                "scratch_qty": sq
+            })
+    elif items:
+        whs_agg = {}
+        for it in items:
+            wn = str(it.get("whs_num", "")).strip()
+            if wn not in whs_agg:
+                whs_agg[wn] = {"cb": 0, "oq": 0, "sq": 0}
+            whs_agg[wn]["cb"] += it.get("cases_bld_stg", 0)
+            whs_agg[wn]["oq"] += it.get("orgnl_ordr_qty_stg", 0)
+            whs_agg[wn]["sq"] += it.get("whs_scrtch_qty_stg", 0)
+        for wn, agg in whs_agg.items():
+            chart_data.append({
+                "warehouse": f"WHS {wn}",
+                "cases_built": agg["cb"],
+                "order_qty": agg["oq"],
+                "scratch_qty": agg["sq"]
+            })
+
     return JSONResponse({
         "status": "success",
         "prompt": request.prompt,
@@ -276,12 +306,14 @@ async def ai_copilot_query(request: CopilotRequest):
         "filter_scratch": is_scratch_query,
         "effective_date": effective_date,
         "suggested_actions": suggested,
+        "chart_data": chart_data[:10],
         "metrics_found": {
             "total_warehouses": summary.get("total_warehouses", 0),
             "total_cases_built": summary.get("total_cases_built", 0),
             "fulfillment_rate": summary.get("procurement_fulfillment_rate", "100.0%")
         }
     })
+
 
 
 # ── Real-Time Anomaly Alert Engine ─────────────────────────────────────────────

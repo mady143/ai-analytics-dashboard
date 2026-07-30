@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Sparkles, Send, Bot, Zap, Search, CheckCircle, Filter } from 'lucide-react';
+import { Sparkles, Send, Bot, Zap, Search, CheckCircle, Filter, BarChart3 } from 'lucide-react';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts';
 
 const API = import.meta.env.VITE_API_URL || '';
 
@@ -8,6 +9,7 @@ export default function AiDataCopilot({ globalDate, globalTargetDb = 'pg_dev', o
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
   const [copilotResult, setCopilotResult] = useState(null);
+  const [showChart, setShowChart] = useState(true);
 
   const quickPills = [
     "Warehouse 58 Overview",
@@ -206,6 +208,45 @@ export default function AiDataCopilot({ globalDate, globalTargetDb = 'pg_dev', o
             {copilotResult.summary_answer}
           </p>
 
+          {/* AI Copilot Bar Chart & Plotting Visualization Card */}
+          {copilotResult.chart_data && copilotResult.chart_data.length > 0 && (
+            <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#a78bfa', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <BarChart3 size={14} /> AI Copilot Data Plotting & Bar Chart Breakdown
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowChart(!showChart)}
+                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '11px', cursor: 'pointer', textDecoration: 'underline' }}
+                >
+                  {showChart ? 'Hide Plotting' : 'Show Bar Chart'}
+                </button>
+              </div>
+
+              {showChart && (
+                <div style={{ height: '160px', width: '100%', marginTop: '6px' }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={copilotResult.chart_data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <XAxis dataKey="warehouse" stroke="#94a3b8" fontSize={10} tickLine={false} />
+                      <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} />
+                      <Tooltip
+                        contentStyle={{ background: '#0f172a', border: '1px solid #7c3aed', borderRadius: '8px', color: '#fff', fontSize: '12px' }}
+                        formatter={(val, name) => [val.toLocaleString() + ' cases', name === 'cases_built' ? 'Cases Built' : 'Scratch Qty']}
+                      />
+                      <Bar dataKey="cases_built" name="Cases Built" radius={[4, 4, 0, 0]}>
+                        {copilotResult.chart_data.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#8b5cf6' : '#6366f1'} />
+                        ))}
+                      </Bar>
+                      <Bar dataKey="scratch_qty" name="Scratch Qty" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+          )}
+
           {copilotResult.suggested_actions && (
             <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
               {copilotResult.suggested_actions.map((act) => (
@@ -217,6 +258,7 @@ export default function AiDataCopilot({ globalDate, globalTargetDb = 'pg_dev', o
           )}
         </div>
       )}
+
     </div>
   );
 }
