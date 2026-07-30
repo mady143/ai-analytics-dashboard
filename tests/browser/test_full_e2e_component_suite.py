@@ -1,20 +1,23 @@
 """
 TASK 19 & 20 — Full E2E Component Test Suite (Playwright Browser Tests)
 ==========================================================================
-Tests every UI component interaction:
-  - Default date auto-applied on load
-  - Date change propagation to all views
-  - Warehouse filter changes reflected in table + charts
-  - AI Data Copilot: must NOT use date (verified via API call intercept)
-  - Copilot quick pills trigger results
-  - Data table pagination and row data
-  - Agent status sidebar shows all agents as 'running'
-  - KPI cards populated with real numbers (not '...')
-  - Bar chart + scatter chart rendered with SVG
-  - Anomaly panel renders alerts
+KEY RULE — FALLBACK DATE BEHAVIOR (warehouse_service.py L255):
+  When the selected date has NO data in the DB (e.g. today = 2026-07-30 is empty),
+  the backend automatically falls back to the most recent date WITH data.
+  This is CORRECT behavior. Tests MUST NOT fail when today has no data.
+  Tests verify that DATA is always shown — not that it matches today's exact date.
 
-NOTE: All dates are read DYNAMICALLY from the live UI (#global-date-picker).
-No hardcoded dates — tests use whatever date is actually selected in the browser.
+Tests cover:
+  - Default date auto-applied on load (today's date pre-filled)
+  - Data always renders (via fallback when needed)
+  - Date change propagation fires API calls with the new date
+  - Warehouse filter narrows table rows
+  - AI Copilot: NEVER sends date (verified via request intercept)
+  - Copilot quick pills, result card, apply-filter
+  - Data table always populated (from real date, via fallback if needed)
+  - Agent status sidebar, Anomaly panel, DB switch, chart ticks vs KPI alignment
+
+All dates read DYNAMICALLY from the live UI #global-date-picker.
 """
 
 import re
@@ -62,19 +65,25 @@ def test_tc01_default_date_auto_applied_on_load(page: Page):
 # TC-02: KPI cards load with real numbers (not placeholder '...')
 # ─────────────────────────────────────────────────────────────
 def test_tc02_kpi_cards_populated_with_real_data(page: Page):
-    """TC-02: All KPI cards must show real numeric values, not placeholder '...'."""
+    """
+    TC-02: All KPI cards must show real numeric values (not '...').
+    FALLBACK RULE: Even if today has no data, backend falls back to last date with data.
+    Real numbers MUST appear regardless — showing '...' forever is a failure.
+    """
     page.goto(BASE_URL)
     page.wait_for_selector(".kpi-card", timeout=15000)
+    # Longer wait: fallback query may take extra round-trip
     page.wait_for_function(
         "() => !document.querySelector('.kpi-card')?.innerText.includes('...')",
-        timeout=15000
+        timeout=20000
     )
     kpi_cards = page.locator(".kpi-card")
     count = kpi_cards.count()
     assert count >= 6, f"TC-02 FAIL: Expected >= 6 KPI cards, got {count}"
     for i in range(count):
         expect(kpi_cards.nth(i)).to_be_visible()
-    print(f"TC-02 PASS: {count} KPI cards populated for UI date = {page.locator('#global-date-picker').input_value()}")
+    ui_date = page.locator("#global-date-picker").input_value()
+    print(f"TC-02 PASS: {count} KPI cards populated for UI date={ui_date} (fallback applies if today empty)")
 
 
 # ─────────────────────────────────────────────────────────────
@@ -242,15 +251,23 @@ def test_tc08_copilot_quick_pills_trigger_results(page: Page):
 # TC-09: Data table has rows for the UI-selected date
 # ─────────────────────────────────────────────────────────────
 def test_tc09_data_table_has_rows(page: Page):
-    """TC-09: The warehouse data table populates with >= 1 row for the currently selected UI date."""
+    """
+    TC-09: Data table MUST always show >= 1 row.
+    FALLBACK RULE: When today has no data, backend falls back to most recent date WITH data.
+    Showing 0 rows is always a failure — the fallback should have supplied data.
+    """
     page.goto(BASE_URL)
     page.wait_for_selector("#global-date-picker", timeout=12000)
     ui_iso, _ = get_ui_date(page)
     page.click("#submit-db-btn")
-    page.wait_for_selector("table tbody tr", timeout=20000)
+    # Extra timeout: fallback query needs two DB round-trips
+    page.wait_for_selector("table tbody tr", timeout=25000)
     count = page.locator("table tbody tr").count()
-    assert count >= 1, f"TC-09 FAIL: Table has {count} rows for UI date {ui_iso}"
-    print(f"TC-09 PASS: Data table shows {count} rows for UI date {ui_iso}")
+    assert count >= 1, (
+        f"TC-09 FAIL: Table has {count} rows for UI date {ui_iso}. "
+        f"Backend fallback should return data from most recent available date when today is empty."
+    )
+    print(f"TC-09 PASS: {count} rows for UI date {ui_iso} (fallback applied if today had no data)")
 
 
 # ─────────────────────────────────────────────────────────────

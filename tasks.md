@@ -57,6 +57,18 @@ The application is structured into distinct, modular UI Screens and Component Se
 
 **Goal:** Run automated tests against every UI component and API endpoint to catch regressions. Must be run after every code change.
 
+> ### ⚠️ MANDATORY: Fallback Date Behavior Rule (ALWAYS ENFORCE — DO NOT BREAK)
+> **Source:** [`backend/app/warehouse_service.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/backend/app/warehouse_service.py) line 255
+>
+> **Rule:** When the selected `oerdte` has **NO records** in the DB (e.g., today `20260730` returns empty from `SELECT DISTINCT oewhse FROM sptn_sales_data WHERE oerdte='20260730'`):
+> - The backend automatically re-queries with `oerdte=""` (all dates) and returns the **most recent date with data**
+> - `filters_applied.fallback_used = True` and `filters_applied.effective_date` = the actual date used
+> - The UI **must still show real data** — showing zeros or blank KPIs is a BUG
+>
+> **Tests MUST account for this:** Never fail a test just because today has no data — verify that the FALLBACK delivers data.
+>
+> **AI Copilot is different:** It ALWAYS queries `oerdte=""` directly — it never needs the fallback path because it bypasses date filtering entirely.
+
 #### 20.1 — Unit Test Cases (`tests/unit/test_task19_20_copilot_date_rules.py`)
 
 | # | Test Case | Rule Verified |
