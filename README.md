@@ -14,7 +14,7 @@
 - 💾 **Persistent Memory & Taxonomy** — Agent state (`memory/agent_state.json`) and online NLP taxonomy (`memory/nlp_taxonomy.json`)
 - 🏃 **Sprint Watcher** — Continuous 60s background polling of Plane tasks and comment updates with automated Git push hooks
 - 🧪 **Auto Testing** — pytest unit tests + Playwright browser automation tests
-- 🔀 **Git Automation & EOD Push** — Automatic pull, stage, commit, and push to GitHub (`mady143/ai-analytics-dashboard`)
+- 🔀 **Git Automation & EOD Push** — Automatic pull, stage, commit, and push to GitHub (`mmusunur/ai-analytics-dashboard`)
 - 🔌 **MCP Integration** — Plane, GitHub, Memory, Browser MCP servers
 
 ---
@@ -85,7 +85,7 @@ python -m agents.git_agent
 | `python -m agents.git_agent` | Git MCP Server & Git Agent automation handler |
 | `git pull origin main` | Synchronizes local workspace with latest remote commits |
 | `git status --porcelain` | Used by agents to detect changed files in real time |
-| `git push origin main` | Pushes staged commits to GitHub repository (`mady143/ai-analytics-dashboard`) |
+| `git push origin main` | Pushes staged commits to GitHub repository (`mmusunur/ai-analytics-dashboard`) |
 
 ---
 

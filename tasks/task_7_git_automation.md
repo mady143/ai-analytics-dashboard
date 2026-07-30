@@ -5,7 +5,7 @@
   - [`scripts/start_of_day.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/start_of_day.py)
   - [`scripts/end_of_day.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/end_of_day.py)
   - [`agents/git_agent.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/git_agent.py)
-- **Repository:** `mady143/ai-analytics-dashboard` (`main` branch)
+- **Repository:** `mmusunur/ai-analytics-dashboard` (`main` branch)
 
 ---
 
