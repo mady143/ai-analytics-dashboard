@@ -82,7 +82,12 @@ def trigger_automated_git_push():
     try:
         eod_script = ROOT_DIR / "scripts" / "end_of_day.py"
         if eod_script.exists():
-            proc = subprocess.run([sys.executable, str(eod_script)], capture_output=True, text=True, timeout=60)
+            env = dict(os.environ)
+            env["PYTHONIOENCODING"] = "utf-8"
+            proc = subprocess.run(
+                [sys.executable, str(eod_script)],
+                capture_output=True, text=True, encoding="utf-8", errors="replace", env=env, timeout=60
+            )
             if proc.returncode == 0:
                 console.print("[bold green]🚀 Dynamic Continuous Background Git Push completed successfully![/bold green]")
     except Exception as e:
