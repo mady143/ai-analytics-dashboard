@@ -17,12 +17,12 @@ const navItems = [
 
 export default function Sidebar() {
   const location = useLocation()
-  const [agentStatus, setAgentStatus] = useState({
-    orchestrator: 'running',
-    builder: 'running',
-    tester: 'running',
-    git: 'running',
-    sprint_watcher: 'running'
+  const [agentsData, setAgentsData] = useState({
+    orchestrator: { status: 'running', current_task: 'Task & Agent State Coordination Active' },
+    builder: { status: 'running', current_task: 'Autonomous Builder Agent Active' },
+    tester: { status: 'running', current_task: 'Automated Pytest & Playwright Suite Active' },
+    git: { status: 'running', current_task: 'Continuous EOD Auto-Push Active' },
+    sprint_watcher: { status: 'running', current_task: 'Watching sprint (60s Polling Loop Active)' }
   })
 
   useEffect(() => {
@@ -31,27 +31,19 @@ export default function Sidebar() {
         .then(res => {
           if (res.data?.agents) {
             const raw = res.data.agents
-            setAgentStatus({
-              orchestrator: raw.orchestrator?.status || 'running',
-              builder: raw.builder?.status || 'running',
-              tester: raw.tester?.status || 'running',
-              git: raw.git_agent?.status || 'running',
-              sprint_watcher: raw.sprint_watcher?.status || 'running'
+            setAgentsData({
+              orchestrator: raw.orchestrator || { status: 'running', current_task: 'Task & Agent State Coordination Active' },
+              builder: raw.builder || { status: 'running', current_task: 'Autonomous Builder Agent Active' },
+              tester: raw.tester || { status: 'running', current_task: 'Automated Pytest & Playwright Suite Active' },
+              git: raw.git_agent || raw.git || { status: 'running', current_task: 'Continuous EOD Auto-Push Active' },
+              sprint_watcher: raw.sprint_watcher || { status: 'running', current_task: 'Watching sprint (60s Polling Loop Active)' }
             })
           }
         })
-        .catch(() => {
-          setAgentStatus({
-            orchestrator: 'running',
-            builder: 'running',
-            tester: 'running',
-            git: 'running',
-            sprint_watcher: 'running'
-          })
-        })
+        .catch(() => {})
     }
     fetchStatus()
-    const timer = setInterval(fetchStatus, 5000)
+    const timer = setInterval(fetchStatus, 4000)
     return () => clearInterval(timer)
   }, [])
 
@@ -96,26 +88,48 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* Agent Status Footer */}
+      {/* Agent Status Footer with Live Current Task Visibility */}
       <div style={{ 
-        padding: '16px 8px', 
+        padding: '14px 8px', 
         borderTop: '1px solid var(--border-subtle)',
         marginTop: 'auto'
       }}>
-        <div className="nav-section-label" style={{ paddingTop: 0 }}>AGENT STATUS</div>
-        {Object.entries(agentStatus).map(([name, status]) => (
-          <div key={name} style={{ 
-            display: 'flex', alignItems: 'center', gap: '8px',
-            padding: '6px 8px', fontSize: '12px', color: 'var(--text-secondary)'
-          }}>
-            <span className={`status-dot ${status}`} />
-            <span style={{ textTransform: 'capitalize' }}>{name}</span>
-            <span style={{ marginLeft: 'auto', fontSize: '10px', color: 'var(--text-muted)' }}>
-              {status}
-            </span>
-          </div>
-        ))}
+        <div className="nav-section-label" style={{ paddingTop: 0, marginBottom: '6px' }}>AGENT STATUS</div>
+        {Object.entries(agentsData).map(([name, info]) => {
+          const status = info.status || 'running';
+          const taskDesc = info.current_task || 'Active';
+          const isWorking = taskDesc.includes('🔨') || taskDesc.includes('🧪') || taskDesc.includes('Picked up') || taskDesc.includes('Building') || taskDesc.includes('Implementing');
+
+          return (
+            <div key={name} title={taskDesc} style={{ 
+              padding: '5px 8px', borderRadius: '6px', marginBottom: '4px',
+              background: isWorking ? 'rgba(124, 58, 237, 0.12)' : 'transparent',
+              border: isWorking ? '1px solid rgba(124, 58, 237, 0.3)' : '1px solid transparent',
+              transition: 'all 0.2s ease'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                <span className={`status-dot ${status}`} />
+                <span style={{ textTransform: 'capitalize', fontWeight: 600, color: 'var(--text-primary)' }}>{name.replace('_', ' ')}</span>
+                <span style={{ marginLeft: 'auto', fontSize: '10px', color: isWorking ? '#a78bfa' : 'var(--text-muted)', fontWeight: isWorking ? 700 : 400 }}>
+                  {isWorking ? 'WORKING ⚡' : status}
+                </span>
+              </div>
+              <div style={{
+                fontSize: '10px',
+                color: isWorking ? '#c4b5fd' : 'var(--text-muted)',
+                marginTop: '2px',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                paddingLeft: '14px'
+              }}>
+                {taskDesc}
+              </div>
+            </div>
+          )
+        })}
       </div>
     </aside>
   )
 }
+

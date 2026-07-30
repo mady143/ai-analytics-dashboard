@@ -131,24 +131,31 @@ def get_dynamic_agent_statuses() -> dict:
     state = load_state()
     agents = state.get("agents", {})
 
+    def _get_task(key: str, default_str: str) -> str:
+        existing = agents.get(key, {})
+        cur = existing.get("current_task")
+        if cur and cur != "Active" and cur != default_str:
+            return cur
+        return default_str
+
     agents["sprint_watcher"] = {
         "status": "running" if is_watcher_running else "idle",
         "last_run": now_iso,
-        "current_task": "Watching sprint (60s Polling Loop Active)",
+        "current_task": _get_task("sprint_watcher", "Watching sprint (60s Polling Loop Active)"),
         "updated_at": now_iso
     }
 
     agents["orchestrator"] = {
         "status": "running" if is_orchestrator_running else "idle",
         "last_run": now_iso,
-        "current_task": "Task & Agent State Coordination Active",
+        "current_task": _get_task("orchestrator", "Task & Agent State Coordination Active"),
         "updated_at": now_iso
     }
 
     agents["builder"] = {
         "status": "running" if is_builder_running else "idle",
         "last_run": now_iso,
-        "current_task": "Autonomous Builder Agent Active",
+        "current_task": _get_task("builder", "Autonomous Builder Agent Active (Listening for tasks)"),
         "updated_at": now_iso
     }
 
@@ -156,21 +163,21 @@ def get_dynamic_agent_statuses() -> dict:
         "status": "running" if is_tester_running else "idle",
         "last_run": now_iso,
         "last_test_results": agents.get("tester", {}).get("last_test_results", {"passed": 42, "failed": 0}),
-        "current_task": "Automated Pytest & Playwright Suite Active",
+        "current_task": _get_task("tester", "Automated Pytest & Playwright Suite Active"),
         "updated_at": now_iso
     }
 
     agents["memory"] = {
         "status": "running" if is_memory_running else "idle",
         "last_run": now_iso,
-        "current_task": "Persistent Context & State Storage Active",
+        "current_task": _get_task("memory", "Persistent Context & State Storage Active"),
         "updated_at": now_iso
     }
 
     agents["git_agent"] = {
         "status": "running" if is_git_running else "idle",
         "last_run": now_iso,
-        "current_task": "Continuous EOD Auto-Push Active",
+        "current_task": _get_task("git_agent", "Continuous EOD Auto-Push Active"),
         "updated_at": now_iso
     }
 
@@ -181,7 +188,7 @@ def get_dynamic_agent_statuses() -> dict:
     return agents
 
 
-def update_agent_status(agent_name: str, status: str, current_task: Optional[str] = None):
+def update_agent_status(agent_name: str, status: str, current_task: Optional[str] = None, active_task_info: Optional[dict] = None):
     state = load_state()
     now_iso = datetime.now().isoformat()
     if "agents" not in state:
@@ -194,6 +201,10 @@ def update_agent_status(agent_name: str, status: str, current_task: Optional[str
         "updated_at": now_iso,
         "last_run": now_iso
     })
+    if active_task_info:
+        agent_info["active_task"] = active_task_info
+        state["active_task"] = active_task_info
+
     state["agents"][agent_name] = agent_info
     state["last_updated"] = now_iso
     state["last_active"] = now_iso
@@ -224,6 +235,16 @@ def log_task_result(
 
     with history_file.open("a", encoding="utf-8") as f:
         f.write(json.dumps(record) + "\n")
+
+    # Update state recent_activity stream for UI consumption
+    try:
+        state = load_state()
+        recent = state.get("recent_activity", [])
+        recent.insert(0, record)
+        state["recent_activity"] = recent[:15]  # Keep last 15 task pickup records
+        save_state(state)
+    except Exception:
+        pass
 
 
 def get_todays_summary() -> dict:

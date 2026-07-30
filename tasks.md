@@ -49,7 +49,13 @@ The application is structured into distinct, modular UI Screens and Component Se
 > - **Dashboard / Charts / Table / KPI / Anomaly APIs** → **MUST use the global date (`oerdte`) parameter** sent from the header. Data on all regular views is date-filtered by the selected Order Date.
 > - **Rule**: The AI Copilot answers NLP questions about the warehouse using all available data. The date picker in the header controls all other views ONLY.
 > - **Files**: [`frontend/src/components/AiDataCopilot.jsx`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/frontend/src/components/AiDataCopilot.jsx), [`backend/routers/analytics.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/backend/routers/analytics.py)
-> - **Status**: ✅ FIXED 2026-07-30 — `oerdte: ''` hardcoded in Copilot API call, backend endpoint always queries `oerdte=""`.
+> ### ⚠️ TASK 21 — MANDATORY: Real-Time Agent Task Activity & Sprint Pickup Visibility System [HIGH PRIORITY]
+> - **Problem**: Agents running in background loops previously overwrote `current_task` in `agent_state.json` with static generic strings (e.g. `"Autonomous Builder Agent Active"`), hiding active sprint task titles and IDs picked up from Plane/Sprint. Furthermore, the UI sidebar only displayed `status: "running"` without rendering the active task details.
+> - **Solution**:
+>   1. **Preserve Dynamic Task State**: Fixed [`agents/memory_manager.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/memory_manager.py) (`get_dynamic_agent_statuses()`) so active task titles (e.g. `"🔨 Implementing #AAD-5: Fix date filter"`) are preserved across polling cycles instead of being overwritten with static text.
+>   2. **Sidebar Live Task Display**: Updated [`frontend/src/components/Sidebar.jsx`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/frontend/src/components/Sidebar.jsx) to display `current_task` text under each agent with live `WORKING ⚡` status indicators, dynamic highlighting, and full title tooltips.
+>   3. **Autonomous Agent Task Pickup Stream Component**: Built [`frontend/src/components/AgentTaskActivityTracker.jsx`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/frontend/src/components/AgentTaskActivityTracker.jsx) and embedded it into [`Dashboard.jsx`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/frontend/src/pages/Dashboard.jsx). It displays currently executing tasks, active agent phases (`1. Picked Up` → `2. Building` → `3. Testing` → `4. Done`), and a recent activity task pickup log stream.
+> - **Status**: ✅ IMPLEMENTED & ENFORCED 2026-07-30
 
 ---
 

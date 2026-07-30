@@ -7,6 +7,7 @@ import WarehouseSalesAnalytics from '../components/WarehouseSalesAnalytics'
 import WarehouseAnalytics from '../components/WarehouseAnalytics'
 import AiDataCopilot from '../components/AiDataCopilot'
 import AnomalyAlertPanel from '../components/AnomalyAlertPanel'
+import AgentTaskActivityTracker from '../components/AgentTaskActivityTracker'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   ScatterChart, Scatter, Cell
@@ -282,6 +283,9 @@ export default function Dashboard() {
           <CopilotSearchFixes />
     </motion.div>
       </div>
+
+      {/* ── Autonomous Agent Task Pickup & Execution Stream ── */}
+      <AgentTaskActivityTracker />
 
       {/* ── Warehouse Sales & Invoice Analytics — receives global date, db & external filters ── */}
       <WarehouseSalesAnalytics
