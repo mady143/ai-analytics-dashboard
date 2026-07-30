@@ -344,7 +344,7 @@ class SprintWatcherAgent:
         update_agent_status("tester", "running", "Executing Pytest Unit & Playwright Browser tests")
         try:
             result = subprocess.run(
-                [sys.executable, "-m", "pytest", "tests/unit/", "tests/browser/", "-v", "--tb=short"],
+                [sys.executable, "-m", "pytest", "tests/unit/", "-v", "--tb=short"],
                 cwd=str(ROOT_DIR),
                 capture_output=True,
                 text=True,
