@@ -145,9 +145,11 @@ async def ai_copilot_query(request: CopilotRequest):
     
     prompt = request.prompt.lower().strip()
     target_db = request.target_db or "pg_dev"
-    oerdte = request.oerdte or ""
+    # ✅ Copilot ALWAYS queries full dataset — date is intentionally ignored.
+    # Regular dashboard/charts/table use the global date. Copilot is date-agnostic.
+    oerdte = ""  # Always blank: query all dates
     
-    stats = get_warehouse_statistics(target_db=target_db, oerdte=oerdte, limit=500)
+    stats = get_warehouse_statistics(target_db=target_db, oerdte="", limit=500)
     items = stats.get("warehouse_items", [])
     summary = stats.get("summary", {})
     whs_totals_map = summary.get("warehouse_totals", {})
@@ -183,9 +185,9 @@ async def ai_copilot_query(request: CopilotRequest):
     whs_stat = whs_totals_map.get(filtered_whse, {}) or whs_totals_map.get(filtered_whse.zfill(2), {})
     whs_items = [it for it in items if str(it.get("whs_num")).strip().lstrip("0") == filtered_whse.lstrip("0")]
     
-    # Check if fallback is needed when selected date has 0 records
-    fallback_used = stats.get("filters_applied", {}).get("fallback_used", False)
-    effective_date = stats.get("filters_applied", {}).get("effective_date", oerdte)
+    # Copilot is date-agnostic: always show data from the full available dataset
+    fallback_used = False
+    effective_date = ""
 
     if filtered_whse and not whs_items and not whs_stat:
         # Perform explicit warehouse lookup without date constraint
@@ -200,8 +202,8 @@ async def ai_copilot_query(request: CopilotRequest):
             fallback_used = True
             effective_date = items[0].get("oerdte", "")
 
-    # Response generation logic
-    date_label = f" (showing available dataset for date {effective_date})" if (fallback_used and effective_date) else f" for date {oerdte or 'all'}"
+    # Response label — no date reference since copilot is date-agnostic
+    date_label = ""
 
     # ── Expanded Dynamic NLP Taxonomy & Online Learning Engine ─────────────────
     taxonomy = load_nlp_taxonomy()
@@ -227,7 +229,7 @@ async def ai_copilot_query(request: CopilotRequest):
                 date_label = f" (showing available dataset for date {effective_date})"
         if scratch_items and not filtered_whse:
             filtered_whse = str(scratch_items[0].get("whs_num", "")).strip()
-        answer = f"Found {len(scratch_items)} line item(s) with scratch quantities under {target_db.upper()}{date_label}. Total scratches: {sum(it.get('whs_scrtch_qty_stg', 0) for it in scratch_items):,} cases."
+        answer = f"Found {len(scratch_items)} line item(s) with scratch quantities in {target_db.upper()} across all dates. Total scratches: {sum(it.get('whs_scrtch_qty_stg', 0) for it in scratch_items):,} cases."
         suggested = ["Filter Scratch Items", "View Warehouse 58", "Check Pending Transfers"]
     elif is_transfer_query:
         learn_unknown_keywords(prompt, "transfer")
@@ -244,11 +246,11 @@ async def ai_copilot_query(request: CopilotRequest):
                 date_label = f" (showing available dataset for date {effective_date})"
         if pending_items and not filtered_whse:
             filtered_whse = str(pending_items[0].get("whs_num", "")).strip()
-        answer = f"Detected {len(pending_items)} procurement transfer line item(s) in {target_db.upper()} database{date_label}."
+        answer = f"Detected {len(pending_items)} procurement transfer line item(s) in {target_db.upper()} database across all available dates."
         suggested = ["Show Pending Items", "Check High Volume Orders", "Warehouse 61 Breakdown"]
     elif is_volume_query:
         high_vol_items = [it for it in items if it.get("orgnl_ordr_qty_stg", 0) > 500]
-        answer = f"Identified {len(high_vol_items)} high-volume line item(s) exceeding 500 cases in {target_db.upper()}{date_label}."
+        answer = f"Identified {len(high_vol_items)} high-volume line item(s) exceeding 500 cases in {target_db.upper()} across all dates."
         suggested = ["High Scratch Quantity", "Pending Transfers", "Warehouse 58 Overview"]
     elif filtered_whse:
         if whs_stat:
@@ -258,10 +260,10 @@ async def ai_copilot_query(request: CopilotRequest):
             cases = sum(it.get("cases_bld_stg", 0) for it in whs_items)
             item_count = len(whs_items)
             
-        answer = f"Warehouse {filtered_whse} has {item_count} items loaded with {cases:,} cases built for target DB {target_db.upper()}{date_label}."
+        answer = f"Warehouse {filtered_whse} has {item_count} items loaded with {cases:,} cases built in {target_db.upper()} across all available dates."
         suggested = [f"Focus Warehouse {filtered_whse}", "Clear Filters", "Show Scratch Rates"]
     else:
-        answer = f"Analyzed database query for '{request.prompt}'. Connected to {target_db.upper()} database{date_label} with {summary.get('total_warehouses', 0)} active warehouses and {summary.get('total_cases_built', 0):,} total cases built."
+        answer = f"Analyzed query for '{request.prompt}'. Connected to {target_db.upper()} with {summary.get('total_warehouses', 0)} active warehouses and {summary.get('total_cases_built', 0):,} total cases built across all dates."
         suggested = ["High Scratch Quantity", "Pending Transfers", "Warehouse 58 Overview"]
         
     return JSONResponse({

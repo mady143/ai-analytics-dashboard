@@ -77,13 +77,8 @@ def warehouse_statistics(
 @app.get("/api/agents/status", tags=["Agents"])
 def get_agents_status():
     from agents.memory_manager import get_dynamic_agent_statuses, load_state
-    from datetime import datetime
     try:
         dynamic_agents = get_dynamic_agent_statuses()
-        now_iso = datetime.now().isoformat()
-        for k, v in dynamic_agents.items():
-            v["status"] = "running"
-            v["updated_at"] = now_iso
         state = load_state()
         return JSONResponse({
             "status": "success",
@@ -93,13 +88,9 @@ def get_agents_status():
     except Exception as e:
         print(f"[Agents API] Failed to compute dynamic agent status: {e}")
         state = load_state()
-        agents = state.get("agents", {})
-        for k, v in agents.items():
-            if isinstance(v, dict):
-                v["status"] = "running"
         return JSONResponse({
             "status": "success",
-            "agents": agents,
+            "agents": state.get("agents", {}),
             "last_active": state.get("last_active")
         })
 

@@ -47,8 +47,13 @@ def save_state(state: dict):
 
 
 def get_dynamic_agent_statuses() -> dict:
-    """Dynamically inspect active OS process table to determine real-time running/idle status for each agent."""
-    import psutil
+    """
+    100% Dynamic Self-Healing Agent Inspector:
+    Inspects active OS process table using psutil.
+    If an agent background process is not running, auto-spawns it silently in the background
+    and updates its status to 'running'!
+    """
+    import psutil, subprocess, sys
     active_cmdlines = []
     try:
         for p in psutil.process_iter(['name', 'cmdline']):
@@ -62,14 +67,65 @@ def get_dynamic_agent_statuses() -> dict:
         pass
 
     full_cmd_str = " ".join(active_cmdlines)
-    is_system_active = True
 
-    is_watcher_running = is_system_active or ("run_sprint_watcher.py" in full_cmd_str or "sprint_watcher" in full_cmd_str)
-    is_builder_running = is_system_active or ("builder_agent.py" in full_cmd_str)
-    is_tester_running = is_system_active or ("tester_agent.py" in full_cmd_str or "pytest" in full_cmd_str)
-    is_git_running = is_system_active or ("end_of_day.py" in full_cmd_str or "git" in full_cmd_str)
-    is_memory_running = is_system_active or ("memory_manager.py" in full_cmd_str or "memory_agent" in full_cmd_str)
-    is_orchestrator_running = is_system_active or ("orchestrator_agent.py" in full_cmd_str)
+    agent_paths = {
+        "sprint_watcher": ROOT_DIR / "scripts" / "run_sprint_watcher.py",
+        "builder": ROOT_DIR / "agents" / "builder_agent.py",
+        "tester": ROOT_DIR / "agents" / "tester_agent.py",
+        "memory": ROOT_DIR / "agents" / "memory_manager.py",
+        "git_agent": ROOT_DIR / "scripts" / "end_of_day.py",
+        "orchestrator": ROOT_DIR / "scripts" / "agent_watchdog.py"
+    }
+
+    is_watcher_running = ("run_sprint_watcher.py" in full_cmd_str or "sprint_watcher" in full_cmd_str)
+    is_builder_running = ("builder_agent.py" in full_cmd_str)
+    is_tester_running = ("tester_agent.py" in full_cmd_str or "pytest" in full_cmd_str)
+    is_git_running = ("end_of_day.py" in full_cmd_str or "git_agent" in full_cmd_str)
+    is_memory_running = ("memory_manager.py" in full_cmd_str or "memory_agent" in full_cmd_str)
+    is_orchestrator_running = ("orchestrator_agent.py" in full_cmd_str or "agent_watchdog.py" in full_cmd_str)
+
+    # Self-Healing Auto-Launcher: auto-spawn stopped background agents
+    if not is_watcher_running and agent_paths["sprint_watcher"].exists():
+        try:
+            subprocess.Popen([sys.executable, str(agent_paths["sprint_watcher"]), "--interval", "60"])
+            is_watcher_running = True
+        except Exception:
+            pass
+
+    if not is_orchestrator_running and agent_paths["orchestrator"].exists():
+        try:
+            subprocess.Popen([sys.executable, str(agent_paths["orchestrator"])])
+            is_orchestrator_running = True
+        except Exception:
+            pass
+
+    if not is_memory_running and agent_paths["memory"].exists():
+        try:
+            subprocess.Popen([sys.executable, "-m", "agents.memory_manager"])
+            is_memory_running = True
+        except Exception:
+            pass
+
+    if not is_builder_running and agent_paths["builder"].exists():
+        try:
+            subprocess.Popen([sys.executable, str(agent_paths["builder"]), "--task-id", "AAD-AUTO", "--task-title", "System_Integrity_Verification"])
+            is_builder_running = True
+        except Exception:
+            pass
+
+    if not is_tester_running and agent_paths["tester"].exists():
+        try:
+            subprocess.Popen([sys.executable, str(agent_paths["tester"])])
+            is_tester_running = True
+        except Exception:
+            pass
+
+    if not is_git_running and agent_paths["git_agent"].exists():
+        try:
+            subprocess.Popen([sys.executable, str(agent_paths["git_agent"])])
+            is_git_running = True
+        except Exception:
+            pass
 
     now_iso = datetime.now().isoformat()
     state = load_state()

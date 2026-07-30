@@ -44,6 +44,13 @@ The application is structured into distinct, modular UI Screens and Component Se
 - 📄 [`tasks/task_14_ai_data_copilot.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_14_ai_data_copilot.md) — Natural Language AI Data Copilot Component & Query Service
 - 📄 [`tasks/task_15_anomaly_alert_panel.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_15_anomaly_alert_panel.md) — Real-Time Anomaly & Risk Alert Panel Component
 
+> ### ⚠️ TASK 19 — MANDATORY: AI Copilot Date-Agnostic Rule + Dashboard Date-Strict Rule [ALWAYS ENFORCE]
+> - **AI Data Copilot (`/api/analytics/ai-copilot`)** → **MUST NOT use the global date (`oerdte`) when querying data.** It must always query the **full dataset across ALL dates** so it can always return meaningful results regardless of what date is selected in the header.
+> - **Dashboard / Charts / Table / KPI / Anomaly APIs** → **MUST use the global date (`oerdte`) parameter** sent from the header. Data on all regular views is date-filtered by the selected Order Date.
+> - **Rule**: The AI Copilot answers NLP questions about the warehouse using all available data. The date picker in the header controls all other views ONLY.
+> - **Files**: [`frontend/src/components/AiDataCopilot.jsx`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/frontend/src/components/AiDataCopilot.jsx), [`backend/routers/analytics.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/backend/routers/analytics.py)
+> - **Status**: ✅ FIXED 2026-07-30 — `oerdte: ''` hardcoded in Copilot API call, backend endpoint always queries `oerdte=""`.
+
 ---
 
 ### 📌 TASK 1 — Global Parameter & Header Control Panel (`#global-header-controls`)

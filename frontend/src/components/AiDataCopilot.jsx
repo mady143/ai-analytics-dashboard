@@ -16,12 +16,12 @@ export default function AiDataCopilot({ globalDate, globalTargetDb = 'pg_dev', o
     "Whse 61 Cases Built"
   ];
 
-  // Automatically refresh AI response when global date or target DB changes
+  // Re-run when DB changes (NOT date — copilot is date-agnostic, queries full dataset)
   useEffect(() => {
     if (prompt && copilotResult) {
       handleQuery(prompt);
     }
-  }, [globalDate, globalTargetDb]);
+  }, [globalTargetDb]);
 
   const handleQuery = async (queryText) => {
     const q = queryText || prompt;
@@ -29,11 +29,12 @@ export default function AiDataCopilot({ globalDate, globalTargetDb = 'pg_dev', o
 
     setLoading(true);
     try {
-      const oerdte = globalDate ? globalDate.replace(/-/g, '') : '';
+      // ✅ Copilot intentionally sends NO date — it queries the full dataset across all dates.
+      // Date filtering is only applied on regular Dashboard/Chart/Table views via global date param.
       const res = await axios.post(`${API}/api/analytics/ai-copilot`, {
         prompt: q,
         target_db: globalTargetDb,
-        oerdte: oerdte
+        oerdte: ''  // Always blank: copilot is date-agnostic by design
       });
       setCopilotResult(res.data);
       if (res.data && onApplyFilter) {
