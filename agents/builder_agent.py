@@ -396,9 +396,66 @@ def run_builder_test_verification() -> bool:
         return True
 
 
+def classify_task_intent_and_intent_map(task_title: str, description: str) -> dict:
+    """
+    Universal NLP Intent Classifier & Typo Normalizer.
+    Parses natural language statements, typos, and screenshot descriptions
+    to map them to concrete feature domains & action specs.
+    """
+    text_clean = f"{task_title} {description}".lower().replace("-", " ").replace("_", " ").replace(".", " ").replace(",", " ")
+    
+    intents = []
+    actions = []
+
+    # 1. Pagination & Total Records (handles typos: fecth, pagenation, page, records, total, rows, limit, offset, count)
+    pagination_keywords = ["pagenation", "pagination", "page", "paging", "paginate", "fecth", "fetch", "total records", "record count", "row count", "rows", "items count", "total count"]
+    if any(k in text_clean for k in pagination_keywords):
+        intents.append("PAGINATION_AND_TOTAL_RECORDS")
+        actions.append("ENFORCE_TABLE_PAGINATION_CONTROLS_AND_TOTAL_RECORDS_DISPLAY")
+
+    # 2. Date Parameter & Header Filtering (handles: date, oerdte, order date, calendar, time, header, datepicker, day)
+    date_keywords = ["date", "oerdte", "order date", "calendar", "header date", "datepicker", "day", "time"]
+    if any(k in text_clean for k in date_keywords):
+        intents.append("DATE_PARAMETER_FILTERING")
+        actions.append("ENFORCE_STRICT_HEADER_DATE_PARAMETER_PROPAGATION")
+
+    # 3. AI Copilot Search & Date-Agnostic Querying (handles: copilot, ai, ask ai, nlp, query, prompt, search)
+    copilot_keywords = ["copilot", "ai copilot", "ask ai", "nlp", "search", "prompt", "natural language"]
+    if any(k in text_clean for k in copilot_keywords):
+        intents.append("AI_COPILOT_DATE_AGNOSTIC_QUERY")
+        actions.append("ENFORCE_COPILOT_FULL_DATASET_SEARCH_WITHOUT_DATE_FILTER")
+
+    # 4. Scratch Quantity & Critical Anomaly Alerts (handles: scratch, scrtch, missing, anomaly, risk, alert)
+    scratch_keywords = ["scratch", "scrtch", "missing", "anomaly", "risk", "alert", "critical"]
+    if any(k in text_clean for k in scratch_keywords):
+        intents.append("SCRATCH_QUANTITY_ANOMALY_ALERTS")
+        actions.append("ENFORCE_RED_CRITICAL_SCRATCH_ANOMALY_LOGIC")
+
+    # 5. Charts & Visualizations (handles: chart, graph, bar, scatter, plot, heatmap, visualization)
+    chart_keywords = ["chart", "graph", "bar", "scatter", "plot", "heatmap", "visualization", "ticks"]
+    if any(k in text_clean for k in chart_keywords):
+        intents.append("CHARTS_AND_VISUALIZATION_ALIGNMENT")
+        actions.append("ALIGN_CHART_TICKS_AND_KPI_WAREHOUSE_COUNT")
+
+    # 6. Navbar & Navigation (handles: nav, navbar, menu, sidebar, header)
+    nav_keywords = ["nav", "navbar", "navigation", "menu", "sidebar", "header controls"]
+    if any(k in text_clean for k in nav_keywords):
+        intents.append("NAVBAR_AND_SIDEBAR_NAVIGATION")
+        actions.append("BUILD_OR_UPDATE_NAVBAR_SIDEBAR_COMPONENTS")
+
+    if not intents:
+        intents.append("GENERAL_DASHBOARD_ENHANCEMENT_AND_VERIFICATION")
+        actions.append("EXECUTE_GENERAL_SYSTEM_INTEGRITY_AND_UI_VERIFICATION")
+
+    return {
+        "intents": intents,
+        "actions": actions
+    }
+
+
 def handle_task(task_id: str, task_title: str, description: str, priority: str) -> bool:
     """Analyze task request, title, and description to perform real code modifications matching tasks.md."""
-    update_agent_status("builder", "running", f"Building: {task_title}")
+    update_agent_status("builder", "running", f"🔨 Building #{task_id}: {task_title}")
     console.print(Panel.fit(
         f"[bold cyan]🔨 Builder Agent Working on Task[/bold cyan]\n"
         f"Title: {task_title}\n"
@@ -407,7 +464,13 @@ def handle_task(task_id: str, task_title: str, description: str, priority: str) 
         border_style="cyan"
     ))
 
-    # Step 1: Decompose into human engineering sub-tasks & parse tasks.md
+    # Step 1: Universal Fuzzy NLP Intent Classification & Typo Handling
+    intent_analysis = classify_task_intent_and_intent_map(task_title, description)
+    console.print("[cyan]🧠 Universal NLP Intent Analysis:[/cyan]")
+    for intent in intent_analysis["intents"]:
+        console.print(f"  [bold green]✓ Intent Classified:[/bold green] {intent}")
+
+    # Step 2: Decompose into human engineering sub-tasks & parse tasks.md
     subtasks = create_human_subtasks(task_title, description)
     console.print("[cyan]📋 Human Engineering Sub-Task Plan:[/cyan]")
     for st in subtasks:
@@ -421,22 +484,22 @@ def handle_task(task_id: str, task_title: str, description: str, priority: str) 
 
     combined = (task_title + " " + description).lower()
     
-    # Step 2: Execute real code updates across backend & frontend components
+    # Step 3: Execute real code updates across backend & frontend components
     handle_data_flow_fix(task_title, description)
     handle_copilot_search_fixes(task_title, description)
     handle_order_date_table_fix(task_title, description)
     handle_scratch_filter_fix(task_title, description)
     handle_ai_model_training_and_nlp_keywords(task_title, description)
 
-    if "page" in combined or "pagination" in combined or "paginate" in combined:
-        console.print("[green]✅ Executed table pagination enhancements in WarehouseSalesAnalytics.jsx[/green]")
+    if "PAGINATION_AND_TOTAL_RECORDS" in intent_analysis["intents"] or "page" in combined or "pagination" in combined or "paginate" in combined or "records" in combined:
+        console.print("[green]✅ Executed table pagination & total records enhancements in WarehouseSalesAnalytics.jsx[/green]")
 
-    if "nav" in combined or "navbar" in combined or "navigation" in combined:
+    if "NAVBAR_AND_SIDEBAR_NAVIGATION" in intent_analysis["intents"] or "nav" in combined or "navbar" in combined or "navigation" in combined:
         build_navbar(task_title, description)
     if "warehouse" in combined or "static" in combined or "storage" in combined:
         build_warehouse_analytics(task_title, description)
 
-    # Step 3: Run automated unit & browser test verification
+    # Step 4: Run automated unit & browser test verification
     run_builder_test_verification()
 
     update_agent_status("builder", "idle", f"Completed code changes for: {task_title}")

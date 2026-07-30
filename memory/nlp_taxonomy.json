@@ -48,6 +48,40 @@
       "site",
       "depot",
       "distribution center"
+    ],
+    "pagination": [
+      "pagination",
+      "pagenation",
+      "page",
+      "paging",
+      "paginate",
+      "fecth",
+      "fetch",
+      "total records",
+      "record count",
+      "row count",
+      "rows",
+      "items count",
+      "total count"
+    ],
+    "date": [
+      "date",
+      "oerdte",
+      "order date",
+      "calendar",
+      "header date",
+      "datepicker",
+      "day",
+      "time"
+    ],
+    "copilot": [
+      "copilot",
+      "ai copilot",
+      "ask ai",
+      "nlp",
+      "search",
+      "prompt",
+      "natural language"
     ]
   },
   "learned_keywords": [
