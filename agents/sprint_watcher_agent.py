@@ -561,40 +561,56 @@ class SprintWatcherAgent:
                         self._handle_new_task(enriched_task)
 
                     # Identify actionable tasks:
-                    # 1. Task is in unstarted/todo state AND
-                    # 2. Either never seen before, OR its state changed back to unstarted,
-                    #    OR its updated_at timestamp changed (user made edits in Plane)
+                    # RULE: Only pick up tasks that are in UNSTARTED / BACKLOG state.
+                    # Tasks already in-progress (started) or done/cancelled are SKIPPED.
+                    # Re-trigger is allowed ONLY if:
+                    #   1. Task is brand new (never seen) AND is in unstarted/backlog
+                    #   2. Task state was reset back to unstarted (user re-opened it)
+                    #   3. Task content/description was updated AND task is unstarted
                     actionable_tasks = []
+                    ACTIONABLE_STATES = (STATE_TODO, STATE_BACKLOG, "unstarted", "backlog", "todo")
+                    SKIP_STATES = (STATE_DONE, STATE_INPROG, "completed", "done", "started", "in progress", "cancelled")
+
                     for t in tasks:
-                        task_id      = t["id"]
+                        task_id       = t["id"]
                         current_state = self._get_task_state(t)
                         updated_at    = t.get("updated_at") or t.get("updated", "")
                         last_state    = self._last_seen_state.get(task_id)
                         last_updated  = self._last_seen_updated.get(task_id)
 
-                        # Skip tasks that are already completed by agent or in done/completed state
-                        if task_id in self._completed_task_ids or current_state in (STATE_DONE, "completed", "done", "cancelled"):
-                            self._last_seen_state[task_id] = current_state
-                            self._last_seen_updated[task_id] = updated_at
+                        # Always update tracking
+                        self._last_seen_state[task_id] = current_state
+                        self._last_seen_updated[task_id] = updated_at
+
+                        # Skip tasks already completed by agent in this session
+                        if task_id in self._completed_task_ids:
                             continue
 
-                        # Detect if this task needs action:
-                        is_new          = last_state is None
-                        state_changed   = last_state and last_state != current_state
-                        content_updated = last_updated and updated_at and last_updated != updated_at
-                        is_open_task    = task_id not in self._completed_task_ids
+                        # Skip tasks NOT in an actionable state (e.g. already started/done/cancelled)
+                        if current_state in SKIP_STATES:
+                            continue
 
-                        if is_new or state_changed or content_updated or is_open_task:
-                            reason = "new task" if is_new else ("state changed" if state_changed else ("content updated" if content_updated else "active task"))
+                        # Only process if task is in an actionable (unstarted/backlog) state
+                        if current_state not in ACTIONABLE_STATES:
+                            console.print(f"[dim]⏭ Skipping task in state '{current_state}': {t.get('name','?')[:40]}[/dim]")
+                            continue
+
+                        # Determine the reason this task should be actioned
+                        is_new            = last_state is None
+                        reset_to_unstarted = last_state and last_state not in ACTIONABLE_STATES and current_state in ACTIONABLE_STATES
+                        content_updated   = last_updated and updated_at and last_updated != updated_at and current_state in ACTIONABLE_STATES
+
+                        if is_new or reset_to_unstarted or content_updated:
+                            reason = (
+                                "new unstarted task" if is_new
+                                else "reset to unstarted" if reset_to_unstarted
+                                else "content updated"
+                            )
                             console.print(
-                                f"[bold yellow]⚡ Task update detected ({reason}): "
+                                f"[bold yellow]⚡ Actionable task ({reason}): "
                                 f"{t.get('name', task_id)[:50]}[/bold yellow]"
                             )
                             actionable_tasks.append(t)
-
-                        # Always keep tracking updated
-                        self._last_seen_state[task_id] = current_state
-                        self._last_seen_updated[task_id] = updated_at
 
                     # Sort by priority: urgent → high → medium → low
                     priority_order = {"urgent": 0, "high": 1, "medium": 2, "low": 3, "none": 4}

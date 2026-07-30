@@ -69,6 +69,41 @@ The application is structured into distinct, modular UI Screens and Component Se
 >   3. **Complete Coverage**: Eliminates fixed domain limits — any sprint task (button additions, UI tweaks, API parameter updates, table formatting, export capabilities, or chart adjustments) is analyzed, understood, and implemented dynamically.
 > - **Status**: ✅ IMPLEMENTED & ENFORCED 2026-07-30
 
+> ### ⚠️ TASK 24 — MANDATORY: Real End-to-End Autonomous Task Execution Pipeline [CRITICAL — ALWAYS ENFORCE]
+> **Problem Fixed 2026-07-30**: The agent pipeline had two critical bugs:
+> 1. **Sprint Watcher Bug**: `is_open_task = task_id not in self._completed_task_ids` was ALWAYS `True`, causing EVERY open task to be re-triggered on every 15s poll cycle — even tasks already `started` or `done`. This caused massive duplicate processing.
+> 2. **Builder Agent was FAKE**: `handle_task()` only printed `console.print("✅ Verified...")` statements. It never actually read or wrote any code files. Tasks were marked "done" without any real implementation.
+>
+> **Fixed Pipeline Rules (ALWAYS ENFORCE):**
+>
+> **Sprint Watcher (`agents/sprint_watcher_agent.py`):**
+> - ONLY pick up tasks in `ACTIONABLE_STATES` = `("unstarted", "backlog", "todo")`
+> - SKIP tasks in `SKIP_STATES` = `("started", "done", "completed", "cancelled")`
+> - Trigger `_handle_new_task()` ONLY when: task is NEW (never seen), OR task was RESET back to unstarted, OR task CONTENT was updated and is still unstarted
+> - Once a task is marked `started` (in-progress) — DO NOT re-trigger it on the next poll
+>
+> **Builder Agent (`agents/builder_agent.py`):**
+> - `handle_task()` MUST perform REAL code changes — no fake print-only "verified" stubs
+> - Flow: Classify intent → read target files → call `_llm_generate_code_patch()` → write modified files → generate unit tests → run tests
+> - `_llm_generate_code_patch()` sends the FULL task title + description + current file content to Claude LLM and returns the complete modified file
+> - `_apply_intent_fixes()` maps each detected intent to the correct target files (table, dashboard, copilot, analytics_py, warehouse_svc, etc.)
+> - If `ANTHROPIC_API_KEY` is not set, agent logs the plan but clearly warns that autonomous code generation is disabled
+> - Agent MUST generate a `tests/unit/test_task_<name>.py` file for every task processed
+>
+> **Task Lifecycle:**
+> 1. User creates task in Plane (state: `unstarted`)
+> 2. Sprint Watcher polls (15s), detects new unstarted task
+> 3. Sprint Watcher marks task `started` in Plane, adds comment "🤖 Builder Agent working on it"
+> 4. Builder Agent: classifies intent → LLM patches files → writes real code → generates tests
+> 5. Test Agent: runs `pytest tests/unit/` to verify
+> 6. Sprint Watcher: marks task `done` in Plane if tests pass, `cancelled` if failed
+> 7. Git Agent: auto-commits and pushes to GitHub
+>
+> **Files:**
+> - [`agents/sprint_watcher_agent.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/sprint_watcher_agent.py)
+> - [`agents/builder_agent.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/builder_agent.py)
+
+
 ---
 
 ### 📌 TASK 20 — Full E2E + Unit Test Suite: Component Validation & Regression Prevention (`#full-e2e-testing`) [HIGH PRIORITY]
