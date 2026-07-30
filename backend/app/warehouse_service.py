@@ -248,18 +248,17 @@ def get_warehouse_statistics(
     fallback_used = False
 
     if config["type"] == "PostgreSQL":
-        all_items, distinct_warehouses, whs_totals_map = _fetch_from_postgres_cached(config, oerdte=oerdte, batch_id=batch_id, oewhse=oewhse, oeinv=oeinv, only_scratches=only_scratches, limit=500)
-        
-        # If no items (or 0 scratch items when only_scratches=True) match the exact oerdte, fallback to all available dates
-        has_scratch = any(it.get("whs_scrtch_qty_stg", 0) > 0 for it in all_items)
-        if (not all_items or (only_scratches and not has_scratch)) and oerdte:
-            fallback_items, fallback_whs, fallback_totals = _fetch_from_postgres_cached(config, oerdte="", batch_id=batch_id, oewhse=oewhse, oeinv=oeinv, only_scratches=only_scratches, limit=500)
-            if fallback_items:
-                all_items = fallback_items
-                distinct_warehouses = fallback_whs
-                whs_totals_map = fallback_totals
-                fallback_used = True
-                effective_date = fallback_items[0].get("oerdte", "")
+        all_items, distinct_warehouses, whs_totals_map = _fetch_from_postgres_cached(
+            config, oerdte=oerdte, batch_id=batch_id, oewhse=oewhse,
+            oeinv=oeinv, only_scratches=only_scratches, limit=500
+        )
+        # ✅ STRICT DATE BEHAVIOR (TASK 20):
+        # When oerdte is given and has no records → return empty result.
+        # Do NOT silently substitute data from a different/older date.
+        # The UI will show a clear "No data for selected date" empty state.
+        # The old automatic fallback was removed because it confused users
+        # who selected a date and got data from a completely different date instead.
+        # If oerdte="" (no date filter) → return all available data across all dates (correct).
 
     # Strict filtering for batch_id, oewhse, and oeinv
     if oewhse:

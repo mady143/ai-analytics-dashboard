@@ -38,18 +38,22 @@ TODAY_DISPLAY = date.today().strftime("%Y-%m-%d")
 # ─────────────────────────────────────────────────────────────
 def get_real_data_date(target_db: str = "pg_dev") -> dict:
     """
-    Calls the warehouse API with no date filter.
-    The backend returns real data from the most recent available date.
+    Calls the warehouse API with no date filter (oerdte='').
+    The backend returns real data across all dates.
+    Reads the actual date from the first returned item's oerdte field.
     Returns dict with: effective_date, fallback_used, item_count
+    NOTE: When queried with oerdte='', filters_applied.effective_date stays ''
+    because no fallback is triggered — we read the real date from item data.
     """
     res = client.get(f"/api/warehouse/statistics?oerdte=&target_db={target_db}&limit=5&offset=0")
     assert res.status_code == 200, f"Helper failed: {res.text}"
     data = res.json()
     items = data.get("warehouse_items", [])
     filters = data.get("filters_applied", {})
-    effective = filters.get("effective_date", "")
+    # Read actual date from first item (not from filters_applied which may be empty)
+    item_date = items[0].get("oerdte", "") if items else ""
     return {
-        "effective_date": effective,
+        "effective_date": item_date,  # e.g. "20260728" — real date that has data
         "item_count": len(items),
         "fallback_used": filters.get("fallback_used", False),
         "data": data
@@ -59,32 +63,31 @@ def get_real_data_date(target_db: str = "pg_dev") -> dict:
 # ─────────────────────────────────────────────────────────────
 # TC-UNIT-01: Today has no data → fallback returns most recent date
 # ─────────────────────────────────────────────────────────────
-def test_unit01_today_no_data_triggers_fallback():
+def test_unit01_today_no_data_strict_empty_result():
     """
-    TC-UNIT-01: When today's date has no records (SQL returns empty),
-    the backend MUST automatically fall back to the most recent date
-    with data and return that, with fallback_used=True.
-    This is confirmed by: select distinct oewhse from sptn_sales_data where oerdte='20260730' → empty.
+    TC-UNIT-01: When today's date has no records (confirmed by SQL: SELECT DISTINCT oewhse
+    FROM sptn_sales_data WHERE oerdte='20260730' → empty), the API MUST return 0 items.
+    No silent fallback to older dates. fallback_used must be False.
+    The UI shows the 'No Data Available for [date]' empty state banner instead.
     """
     res = client.get(f"/api/warehouse/statistics?oerdte={TODAY_ISO}&target_db=pg_dev&limit=10&offset=0")
     assert res.status_code == 200, f"TC-UNIT-01 FAIL: {res.text}"
     data = res.json()
     items = data.get("warehouse_items", [])
     filters = data.get("filters_applied", {})
+    fallback_used = filters.get("fallback_used", False)
+
+    assert not fallback_used, (
+        f"TC-UNIT-01 FAIL: fallback_used=True — backend is still silently substituting "
+        f"a different date's data. Fallback behavior was removed in TASK 20."
+    )
 
     if len(items) == 0:
-        # Today has no data AND no fallback → this would be a real failure
-        pytest.fail(
-            f"TC-UNIT-01 FAIL: No data returned and no fallback for date {TODAY_ISO}. "
-            f"Backend should fall back to most recent date with data."
-        )
+        print(f"TC-UNIT-01 PASS: Today ({TODAY_DISPLAY}) has no data → returned 0 items (correct strict behavior, no fallback)")
     else:
-        effective = filters.get("effective_date", TODAY_ISO)
-        fallback_used = filters.get("fallback_used", False)
-        if fallback_used:
-            print(f"TC-UNIT-01 PASS: Today ({TODAY_DISPLAY}) has no data → fallback to {effective} with {len(items)} items")
-        else:
-            print(f"TC-UNIT-01 PASS: Today ({TODAY_DISPLAY}) has {len(items)} items of its own data")
+        # Today actually has data — this is also fine
+        effective = items[0].get("oerdte", "") if items else ""
+        print(f"TC-UNIT-01 PASS: Today ({TODAY_DISPLAY}) has real data → {len(items)} items, oerdte={effective}")
 
 
 # ─────────────────────────────────────────────────────────────
@@ -92,14 +95,16 @@ def test_unit01_today_no_data_triggers_fallback():
 # ─────────────────────────────────────────────────────────────
 def test_unit02_discover_real_data_date():
     """
-    TC-UNIT-02: The API with oerdte="" returns the most recent date with real data.
-    The effective_date in filters_applied tells us exactly which date has data.
+    TC-UNIT-02: The API with oerdte="" returns data across all dates.
+    We read the actual date from the first item's oerdte field to confirm
+    which date has real data — NOT from filters_applied.effective_date
+    (which stays empty when no fallback is triggered because oerdte was already empty).
     """
     info = get_real_data_date("pg_dev")
     assert info["item_count"] > 0, "TC-UNIT-02 FAIL: No data in pg_dev at all (even with no date filter)"
     effective = info["effective_date"]
-    assert effective, f"TC-UNIT-02 FAIL: effective_date is empty even with data: {info}"
-    print(f"TC-UNIT-02 PASS: Real data date discovered = '{effective}' ({info['item_count']} items)")
+    assert effective, f"TC-UNIT-02 FAIL: Could not read oerdte from first item even though items exist"
+    print(f"TC-UNIT-02 PASS: Real data date from first item = '{effective}' ({info['item_count']} items returned)")
 
 
 # ─────────────────────────────────────────────────────────────
@@ -145,15 +150,16 @@ def test_unit05_scatter_chart_api_returns_data_regardless_of_date():
 # ─────────────────────────────────────────────────────────────
 # TC-UNIT-06: Warehouse stats with effective (real) date — no fallback needed
 # ─────────────────────────────────────────────────────────────
-def test_unit06_warehouse_stats_with_real_date_no_fallback():
+def test_unit06_real_date_query_returns_data_directly():
     """
-    TC-UNIT-06: When queried with the ACTUAL date that has data (discovered dynamically),
-    the backend returns data directly without needing the fallback.
+    TC-UNIT-06: When queried with the ACTUAL date that has data (discovered from items),
+    the backend returns data directly. fallback_used must be False.
+    Strict behavior: returned data's oerdte must match the queried date.
     """
     info = get_real_data_date("pg_dev")
     effective = info["effective_date"]
     if not effective:
-        pytest.skip("TC-UNIT-06 SKIP: Could not discover a real data date")
+        pytest.skip("TC-UNIT-06 SKIP: Could not discover a real data date from items")
 
     res = client.get(f"/api/warehouse/statistics?oerdte={effective}&target_db=pg_dev&limit=10&offset=0")
     assert res.status_code == 200
@@ -161,11 +167,16 @@ def test_unit06_warehouse_stats_with_real_date_no_fallback():
     items = data.get("warehouse_items", [])
     filters = data.get("filters_applied", {})
     assert len(items) > 0, f"TC-UNIT-06 FAIL: No items for confirmed real date {effective}"
-    fallback_used = filters.get("fallback_used", False)
-    assert not fallback_used, (
-        f"TC-UNIT-06 FAIL: fallback_used=True for a date that should have real data: {effective}"
+    assert not filters.get("fallback_used", False), (
+        f"TC-UNIT-06 FAIL: fallback_used=True for a date with real data: {effective}"
     )
-    print(f"TC-UNIT-06 PASS: Real date {effective} returned {len(items)} items without fallback")
+    # Verify returned items actually belong to the queried date
+    wrong_date_items = [it for it in items if it.get("oerdte", "") != effective]
+    assert len(wrong_date_items) == 0, (
+        f"TC-UNIT-06 FAIL: {len(wrong_date_items)} items have oerdte != {effective} "
+        f"(cross-date substitution detected)"
+    )
+    print(f"TC-UNIT-06 PASS: Real date {effective} → {len(items)} items, no fallback, all oerdte={effective}")
 
 
 # ─────────────────────────────────────────────────────────────

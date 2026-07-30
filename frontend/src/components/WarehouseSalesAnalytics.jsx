@@ -10,6 +10,8 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = '
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  // Strict date behavior: tracks when selected date has genuinely no data
+  const [noDataForDate, setNoDataForDate] = useState(false);
 
   // Table Level Filter Parameters
   const [filterWhs, setFilterWhs] = useState('');
@@ -35,12 +37,26 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = '
     let isSubscribed = true;
     const fetchInitial = async () => {
       setLoading(true);
+      setNoDataForDate(false);
       try {
         const scratchParam = filterOnlyScratches ? '&only_scratches=true' : '';
         const res = await axios.get(`${API}/api/warehouse/statistics?target_db=${globalTargetDb}&oerdte=${oerdte}&batch_id=${filterBatchId}&oewhse=${filterWhs}&oeinv=${filterInvoice}${scratchParam}&limit=${LIMIT}&offset=0`);
         if (!isSubscribed) return;
-        
+
         let fetchedItems = res.data?.warehouse_items || [];
+        const totalFromServer = res.data.total_count ?? fetchedItems.length;
+
+        // ✅ STRICT DATE BEHAVIOR: If a specific date was chosen and zero records
+        // were returned, flag it so we show a clear empty state — no silent fallback.
+        if (oerdte && totalFromServer === 0) {
+          setNoDataForDate(true);
+          setItems([]);
+          setTotalCount(0);
+          setSummary(null);
+          setHasMore(false);
+          return;
+        }
+
         if (filterWhs) {
           const targetClean = String(filterWhs).trim().replace(/^0+/, '');
           fetchedItems = fetchedItems.filter(it => String(it.whs_num).trim().replace(/^0+/, '') === targetClean);
@@ -54,10 +70,10 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = '
         if (filterOnlyScratches) {
           fetchedItems = fetchedItems.filter(it => (it.whs_scrtch_qty_stg || 0) > 0);
         }
-        
+
         setSummary(res.data.summary || null);
         setItems(fetchedItems);
-        setTotalCount(res.data.total_count ?? fetchedItems.length);
+        setTotalCount(totalFromServer);
         setHasMore(res.data.has_more ?? false);
       } catch (err) {
         if (!isSubscribed) return;
@@ -95,6 +111,11 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = '
       loadMoreData();
     }
   };
+
+  // Format oerdte for display: 20260728 → 2026-07-28
+  const displayDate = oerdte && oerdte.length === 8
+    ? `${oerdte.slice(0,4)}-${oerdte.slice(4,6)}-${oerdte.slice(6,8)}`
+    : oerdte || 'selected date';
 
   return (
     <div className="card" id="warehouse-table-card" style={{ marginTop: '24px', padding: '24px' }}>
@@ -249,12 +270,37 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = '
         </div>
       )}
 
-      {/* Row Count Badge & Query Status */}
+      {/* No-data empty state — shown when selected date has zero records */}
+      {noDataForDate && !loading && (
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          padding: '48px 24px', borderRadius: '10px', marginBottom: '12px',
+          background: 'rgba(124, 58, 237, 0.06)',
+          border: '1px dashed rgba(124, 58, 237, 0.35)'
+        }}>
+          <div style={{ fontSize: '40px', marginBottom: '12px' }}>📭</div>
+          <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
+            No Data Available for {displayDate}
+          </div>
+          <div style={{ fontSize: '13px', color: 'var(--text-secondary)', textAlign: 'center', maxWidth: '440px' }}>
+            The selected order date <strong style={{ color: '#a78bfa' }}>{displayDate}</strong> has no records
+            in <strong style={{ color: '#34d399' }}>{globalTargetDb.toUpperCase()}</strong>.
+            Please select a different date that has data, or clear the date filter to view all available records.
+          </div>
+          <div style={{ marginTop: '16px', fontSize: '12px', color: '#6b7280' }}>
+            💡 Tip: The AI Data Copilot above always queries the full dataset regardless of date.
+          </div>
+        </div>
+      )}
+
+      {/* Row Count Badge & Query Status — only when we have data */}
+      {!noDataForDate && (
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
         <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)' }}>
           Data Table Rows: <span style={{ color: 'var(--color-primary-light)', fontWeight: 700 }}>{items.length}</span> / {totalCount} Loaded
         </div>
       </div>
+      )}
 
       {/* Warehouse Items Table with Vertical Scroll Bar & Automatic Infinite Load */}
       <div
