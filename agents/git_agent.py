@@ -170,44 +170,49 @@ def get_commit_log(n: int = 5) -> list[str]:
     return stdout.split("\n") if stdout else []
 
 
+def get_unpushed_commits(branch: str = "main") -> list[str]:
+    """Check for local commits that have not been pushed to remote."""
+    stdout, _, code = _run_git(["log", f"origin/{branch}..HEAD", "--oneline"])
+    if code == 0 and stdout.strip():
+        return [line for line in stdout.split("\n") if line.strip()]
+    return []
+
+
 def eod_push(
     tasks_completed: list[str] = None,
     custom_summary: Optional[str] = None
 ) -> bool:
     """
-    Full end-of-day workflow:
-    1. Get changed files
-    2. Stage all
-    3. Generate commit message
-    4. Commit
-    5. Push
+    Daily End-of-Day workflow:
+    1. Check for uncommitted modified/new files and unpushed commits.
+    2. If NO code changes exist, skip push entirely.
+    3. If code changes exist, stage, commit, and push to remote.
     """
-    console.print("\n[bold magenta]🌙 Starting End-of-Day Git Push...[/bold magenta]")
+    console.print("\n[bold magenta]🌙 Starting Daily End-of-Day Git Check...[/bold magenta]")
 
-    # Get changed files before staging
     changed_files = get_changed_files()
-    if not changed_files:
-        console.print("[yellow]⚠️  No changes to commit today[/yellow]")
+    unpushed_commits = get_unpushed_commits()
+
+    if not changed_files and not unpushed_commits:
+        console.print("[yellow]⚠️  No code changes or unpushed commits found. Skipping Git push.[/yellow]")
         return True
 
-    console.print(f"[cyan]📁 {len(changed_files)} files changed[/cyan]")
+    if changed_files:
+        console.print(f"[cyan]📁 {len(changed_files)} file(s) changed[/cyan]")
+        if not stage_all():
+            return False
 
-    # Stage
-    if not stage_all():
-        return False
+        message = generate_commit_message(
+            tasks_completed=tasks_completed,
+            files_changed=changed_files,
+            custom_summary=custom_summary
+        )
 
-    # Commit message
-    message = generate_commit_message(
-        tasks_completed=tasks_completed,
-        files_changed=changed_files,
-        custom_summary=custom_summary
-    )
+        if not commit(message):
+            return False
+    elif unpushed_commits:
+        console.print(f"[cyan]📦 {len(unpushed_commits)} unpushed commit(s) ready to push[/cyan]")
 
-    # Commit
-    if not commit(message):
-        return False
-
-    # Push (only if remote is configured)
     if GITHUB_REPO:
         return push()
     else:
