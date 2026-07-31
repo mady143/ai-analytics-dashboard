@@ -138,19 +138,22 @@ def test_tc04_date_change_triggers_reload(page: Page):
 # TC-05: Warehouse filter in table changes data
 # ─────────────────────────────────────────────────────────────
 def test_tc05_warehouse_filter_applies_to_table(page: Page):
-    """TC-05: Entering a warehouse number in the table filter narrows rows to that warehouse."""
+    """TC-05: Entering a warehouse number dynamically extracted from the UI narrows table rows."""
     page.goto(BASE_URL)
     page.wait_for_selector("table tbody tr", timeout=20000)
 
     whse_input = page.locator(
-        "input[placeholder*='Whse'], input[placeholder*='whse'], input[placeholder*='warehouse'], input[placeholder*='58']"
+        "input[placeholder*='Whse'], input[placeholder*='whse'], input[placeholder*='warehouse']"
     ).first
     if whse_input.count() > 0:
-        whse_input.fill("58")
+        first_td = page.locator("table tbody tr td").first.inner_text().strip()
+        m = re.search(r'\d+', first_td)
+        target_whse = m.group(0) if m else "01"
+        whse_input.fill(target_whse)
         page.wait_for_timeout(1500)
         row_count = page.locator("table tbody tr").count()
-        assert row_count >= 1, f"TC-05 FAIL: No rows after warehouse 58 filter, got {row_count}"
-        print(f"TC-05 PASS: Warehouse 58 filter — {row_count} rows visible")
+        assert row_count >= 1, f"TC-05 FAIL: No rows after warehouse {target_whse} filter, got {row_count}"
+        print(f"TC-05 PASS: Warehouse {target_whse} filter — {row_count} rows visible")
     else:
         print("TC-05 SKIP: Warehouse filter input not found in current UI")
 
@@ -164,7 +167,7 @@ def test_tc06_copilot_sends_no_date_in_api_request(page: Page):
     This reads the current UI date dynamically and confirms the copilot does NOT include it.
     """
     page.goto(BASE_URL)
-    page.wait_for_selector("input[placeholder*='Ask AI Data Copilot']", timeout=15000)
+    page.wait_for_selector("#copilot-input", timeout=15000)
 
     copilot_requests = []
 
@@ -177,8 +180,14 @@ def test_tc06_copilot_sends_no_date_in_api_request(page: Page):
 
     page.on("request", capture_copilot)
 
-    # Change UI date to a specific date
-    page.fill("#global-date-picker", "2026-07-28")
+    # Compute dynamic test date relative to current UI date
+    ui_iso, _ = get_ui_date(page)
+    from datetime import datetime, timedelta
+    test_dt = datetime.strptime(ui_iso, "%Y-%m-%d") - timedelta(days=2)
+    dynamic_date_iso = test_dt.strftime("%Y-%m-%d")
+    dynamic_date_api = test_dt.strftime("%Y%m%d")
+
+    page.fill("#global-date-picker", dynamic_date_iso)
     page.click("#submit-db-btn")
     page.wait_for_timeout(1000)
 
@@ -191,8 +200,8 @@ def test_tc06_copilot_sends_no_date_in_api_request(page: Page):
     assert len(copilot_requests) > 0, "TC-06 FAIL: No copilot API requests intercepted"
 
     for req_body in copilot_requests:
-        assert "20260728" not in (req_body or ""), (
-            f"TC-06 FAIL: Copilot sent UI date '20260728' in body: {req_body}"
+        assert dynamic_date_api not in (req_body or ""), (
+            f"TC-06 FAIL: Copilot sent UI date '{dynamic_date_api}' in body: {req_body}"
         )
         if req_body and "oerdte" in req_body:
             try:
