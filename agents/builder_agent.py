@@ -772,15 +772,15 @@ def handle_task(task_id: str, task_title: str, description: str, priority: str) 
 
     if modified_files:
         console.print(f"[bold green]✅ Real code changes written to: {', '.join(modified_files)}[/bold green]")
+        # ── Step 4: Run core test suite to verify build (without creating test files) ─
+        test_passed = run_builder_test_verification()
+        update_agent_status("builder", "idle", f"Completed: {task_title}")
+        return test_passed
     else:
-        console.print("[yellow]⚠️  No LLM API key set — code analysis logged, manual review recommended.[/yellow]")
-        console.print("[yellow]    Set ANTHROPIC_API_KEY in .env to enable autonomous code generation.[/yellow]")
-
-    # ── Step 4: Run core test suite to verify build (without creating test files) ─
-    run_builder_test_verification()
-
-    update_agent_status("builder", "idle", f"Completed: {task_title}")
-    return True
+        console.print("[yellow]⚠️  No code files were modified — task remains In Progress for code review.[/yellow]")
+        console.print("[yellow]    Set ANTHROPIC_API_KEY in .env or apply code changes directly.[/yellow]")
+        update_agent_status("builder", "idle", f"In Progress (Review Needed): {task_title}")
+        return False
 
 
 if __name__ == "__main__":
