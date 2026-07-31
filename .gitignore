@@ -35,6 +35,7 @@ htmlcov/
 # Memory (conversation logs - optionally gitignore for privacy)
 memory/conversations/
 memory/task_history/
+memory/agent_state.json
 
 # IDE
 .vscode/
