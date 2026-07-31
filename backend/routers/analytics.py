@@ -159,8 +159,11 @@ async def ai_copilot_query(request: CopilotRequest):
     filtered_invoice = ""
     
     import re
-    # 100% Dynamic warehouse extraction via regex (matches 'warehouse 58', 'whse 58', 'whs #58', or standalone warehouse numbers)
+    # 100% Dynamic warehouse extraction matching any prompt order ('58 warehouse overview', 'warehouse 58', 'whse 58', 'whs 58', '58 whs', '58 overview')
     whs_match = re.search(r'(?:warehouse|whse|whs|facility|loc|w)\s*#?\s*(\d+)', prompt, re.IGNORECASE)
+    if not whs_match:
+        whs_match = re.search(r'(\d+)\s*(?:warehouse|whse|whs|facility|loc|w)', prompt, re.IGNORECASE)
+
     if whs_match:
         filtered_whse = whs_match.group(1).lstrip("0") or "0"
     else:
@@ -171,6 +174,11 @@ async def ai_copilot_query(request: CopilotRequest):
             if w_clean and re.search(r'\b0*' + re.escape(w_clean) + r'\b', prompt):
                 filtered_whse = w_clean
                 break
+        if not filtered_whse:
+            # Standalone number fallback if 1-3 digits present in prompt (e.g. "58 overview")
+            num_match = re.search(r'\b(\d{1,3})\b', prompt)
+            if num_match:
+                filtered_whse = num_match.group(1).lstrip("0") or "0"
 
     # Regex detection for batch ID and invoice #
     batch_match = re.search(r'(?:batch|batch_id)\s*#?\s*(\d+)', prompt)
