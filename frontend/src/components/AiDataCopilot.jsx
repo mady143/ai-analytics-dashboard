@@ -184,7 +184,7 @@ export default function AiDataCopilot({ globalDate, globalTargetDb = 'pg_dev', o
           <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
           <input
             type="text"
-            placeholder="Ask AI Data Copilot (e.g., 'Show Warehouse 58 high scratch cases')..."
+            placeholder="Ask AI Data Copilot (e.g., 'Show high scratch cases' or query any warehouse)..."
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             style={{
