@@ -729,52 +729,9 @@ def _apply_intent_fixes(task_title: str, description: str, intents: list) -> lis
 
 
 def _write_task_unit_tests(task_id: str, task_title: str, description: str, modified_files: list):
-    """Generate a pytest unit test file for the completed task."""
-    test_dir = ROOT_DIR / "tests" / "unit"
-    test_dir.mkdir(parents=True, exist_ok=True)
-
-    # Sanitize task title for test file name
-    safe_name = "".join(c if c.isalnum() or c == "_" else "_" for c in task_title.lower().replace(" ", "_"))[:40]
-    test_file = test_dir / f"test_task_{safe_name}.py"
-
-    file_checks = ""
-    for fname in modified_files:
-        # Map filename back to path
-        for key, path in CODEBASE_MAP.items():
-            if path.name == fname:
-                rel = str(path.relative_to(ROOT_DIR)).replace("\\", "/")
-                var_safe = fname.replace(".", "_").replace("-", "_")
-                file_checks += f"""
-def test_{var_safe}_exists():
-    assert (ROOT_DIR / \"{rel}\").exists(), \"{fname} must exist\"
-
-def test_{var_safe}_has_content():
-    content = (ROOT_DIR / \"{rel}\").read_text(encoding=\"utf-8\")
-    assert len(content) > 100, \"{fname} must have content\"
-"""
-                break
-
-    if not file_checks:
-        file_checks = f"""
-def test_task_picked_up():
-    \"\"\"Verify task was picked up and processed by the agent.\"\"\"
-    assert True, "Task {task_title} was processed by Builder Agent"
-"""
-
-    test_code = f'''"""
-Auto-generated unit tests for Plane task: {task_title}
-Task ID: {task_id}
-Description: {description[:200] if description else "N/A"}
-Generated at: {datetime.now().isoformat()}
-"""
-from pathlib import Path
-
-ROOT_DIR = Path(__file__).parent.parent.parent
-{file_checks}
-'''
-    test_file.write_text(test_code, encoding="utf-8")
-    console.print(f"[green]✅ Generated unit test: {test_file.name}[/green]")
-    return str(test_file)
+    """No-op: Avoid creating temporary test files per user mandate."""
+    console.print(f"[dim]ℹ Skipping test file creation per user policy (runs against core suite).[/dim]")
+    return ""
 
 
 def handle_task(task_id: str, task_title: str, description: str, priority: str) -> bool:
@@ -782,9 +739,7 @@ def handle_task(task_id: str, task_title: str, description: str, priority: str) 
     REAL autonomous task handler.
     1. Classifies intent from task title + description (any natural language)
     2. For each intent → reads target files → calls LLM for real code patch → writes files
-    3. Generates unit tests
-    4. Runs tests to verify
-    All steps are real — NO fake print-only 'verified' stubs.
+    3. Runs core test suite to verify without generating temporary test files
     """
     update_agent_status("builder", "running", f"🔨 Building #{task_id}: {task_title}")
     console.print(Panel.fit(
@@ -821,10 +776,7 @@ def handle_task(task_id: str, task_title: str, description: str, priority: str) 
         console.print("[yellow]⚠️  No LLM API key set — code analysis logged, manual review recommended.[/yellow]")
         console.print("[yellow]    Set ANTHROPIC_API_KEY in .env to enable autonomous code generation.[/yellow]")
 
-    # ── Step 4: Generate task-specific unit tests ─────────────────────────────
-    _write_task_unit_tests(task_id, task_title, description, modified_files)
-
-    # ── Step 5: Run tests to verify build ─────────────────────────────────────
+    # ── Step 4: Run core test suite to verify build (without creating test files) ─
     run_builder_test_verification()
 
     update_agent_status("builder", "idle", f"Completed: {task_title}")
