@@ -400,16 +400,17 @@ class SprintWatcherAgent:
         test_output: str,
         duration_seconds: float = 0.0,
     ):
-        """Mark task Done or Failed in Plane and log the result with execution duration."""
-        new_state = STATE_DONE if success else STATE_FAILED
-        status_label = "completed" if success else "failed"
-        icon = "✅" if success else "❌"
+        """Mark task Done or In Progress in Plane and log the result with execution duration."""
+        # Fix: Keep task in In Progress on warning instead of marking it Cancelled
+        new_state = STATE_DONE if success else STATE_INPROG
+        status_label = "completed" if success else "in_progress_review_needed"
+        icon = "✅" if success else "⚠️"
 
         comment = (
-            f"{icon} Task **{status_label.upper()}** by Sprint Watcher Agent\n\n"
+            f"{icon} Task **{'COMPLETED' if success else 'IN PROGRESS (Review Needed)'}** by Sprint Watcher Agent\n\n"
             f"📅 **Date & Time:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
             f"⏱️ **End-to-End Execution Time:** {duration_seconds}s\n\n"
-            f"**Test Output (last 500 chars):**\n```\n{test_output[-500:]}\n```"
+            f"**Execution Output:**\n```\n{test_output[-500:]}\n```"
         )
 
         try:
