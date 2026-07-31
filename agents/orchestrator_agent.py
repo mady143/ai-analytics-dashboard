@@ -239,6 +239,7 @@ Keep your response concise and actionable.
             "git_agent": ROOT_DIR / "agents" / "git_agent.py"
         }
 
+        sub_env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
         try:
             while True:
                 # ── 1. Check Server Endpoints ─────────────────────────────────────
@@ -259,7 +260,7 @@ Keep your response concise and actionable.
                 if not backend_healthy:
                     console.print("[bold red]🚨 Watchdog Alert: Backend FastAPI Server on :8000 is down! Auto-restarting server...[/bold red]")
                     try:
-                        subprocess.Popen([sys.executable, "-m", "uvicorn", "main:app", "--reload", "--host", "127.0.0.1", "--port", "8000"], cwd=str(ROOT_DIR / "backend"))
+                        subprocess.Popen([sys.executable, "-m", "uvicorn", "main:app", "--reload", "--host", "127.0.0.1", "--port", "8000"], cwd=str(ROOT_DIR / "backend"), env=sub_env)
                         console.print("[bold green]✅ FastAPI Backend Server auto-restarted on port 8000![/bold green]")
                     except Exception as ex:
                         console.print(f"[red]Failed to auto-restart backend server: {ex}[/red]")
@@ -267,7 +268,7 @@ Keep your response concise and actionable.
                 if not frontend_healthy:
                     console.print("[bold red]🚨 Watchdog Alert: Frontend Vite Server on :5173 is down! Auto-restarting server...[/bold red]")
                     try:
-                        subprocess.Popen(["npm", "run", "dev", "--", "--host", "127.0.0.1"], cwd=str(ROOT_DIR / "frontend"), shell=True)
+                        subprocess.Popen(["npm", "run", "dev", "--", "--host", "127.0.0.1"], cwd=str(ROOT_DIR / "frontend"), shell=True, env=sub_env)
                         console.print("[bold green]✅ Vite Frontend Server auto-restarted on port 5173![/bold green]")
                     except Exception as ex:
                         console.print(f"[red]Failed to auto-restart frontend server: {ex}[/red]")
@@ -286,7 +287,7 @@ Keep your response concise and actionable.
                         update_agent_status(agent_name, "running", f"Auto-restarted by Orchestrator Watchdog at {datetime.now().strftime('%H:%M:%S')}")
                         try:
                             if script_path.exists():
-                                subprocess.Popen([sys.executable, str(script_path)])
+                                subprocess.Popen([sys.executable, str(script_path)], env=sub_env)
                                 console.print(f"[bold green]✅ Agent '{agent_name}' successfully restarted and transitioned to RUNNING state![/bold green]")
                         except Exception as ex:
                             console.print(f"[red]❌ Watchdog failed to restart {agent_name}: {ex}[/red]")
