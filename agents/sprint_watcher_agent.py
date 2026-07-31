@@ -262,7 +262,30 @@ class SprintWatcherAgent:
         except Exception as e:
             console.print(f"[yellow]⚠️  Could not update Plane status: {e}[/yellow]")
 
-        update_agent_status("sprint_watcher", "running", task_title)
+        update_agent_status(
+            "sprint_watcher",
+            "running",
+            f"⚡ ACTIVE TASK: [{task_id[:8]}] {task_title}"
+        )
+
+        # Write picked-up task to agent_state active_tasks for live UI display
+        try:
+            state = load_state()
+            active_entry = {
+                "task_id": task_id,
+                "title": task_title,
+                "priority": priority,
+                "picked_up_at": datetime.now().isoformat(),
+                "phase": "Building"
+            }
+            active_tasks = state.get("active_tasks", [])
+            # Remove any previous entry for this task ID
+            active_tasks = [t for t in active_tasks if t.get("task_id") != task_id]
+            active_tasks.insert(0, active_entry)
+            state["active_tasks"] = active_tasks[:5]  # Keep last 5
+            save_state(state)
+        except Exception as e:
+            console.print(f"[dim]State update error: {e}[/dim]")
 
         # ── Step 2: Invoke Builder Agent ──────────────────────────────────────
         build_success = self._run_builder(task_id, task_title, desc, priority)
@@ -293,7 +316,11 @@ class SprintWatcherAgent:
         """
         builder_script = ROOT_DIR / "agents" / "builder_agent.py"
         console.print(f"[cyan]🔨 Invoking Builder Agent for: {task_title}[/cyan]")
-        update_agent_status("builder", "running", f"Implementing code for: {task_title}")
+        update_agent_status(
+            "builder",
+            "running",
+            f"🔨 Implementing [{task_id[:8]}]: {task_title}"
+        )
 
         try:
             result = subprocess.run(
@@ -412,6 +439,23 @@ class SprintWatcherAgent:
         self._last_seen_updated[task_id] = datetime.now().isoformat()
         if success:
             self._completed_task_ids.add(task_id)
+
+        # Clear active_tasks entry for this task — it's done
+        try:
+            state = load_state()
+            active_tasks = state.get("active_tasks", [])
+            active_tasks = [t for t in active_tasks if t.get("task_id") != task_id]
+            state["active_tasks"] = active_tasks
+            save_state(state)
+        except Exception:
+            pass
+
+        # Update sprint_watcher status back to polling idle
+        update_agent_status(
+            "sprint_watcher",
+            "running",
+            f"{'✅ Completed' if success else '❌ Failed'}: {task_title} — watching for next task"
+        )
 
         # ── Step 5: Automatically commit and push code if task passed ──────────
         if success:
