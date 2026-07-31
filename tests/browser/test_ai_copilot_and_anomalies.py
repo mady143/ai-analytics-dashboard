@@ -105,10 +105,14 @@ def test_header_controls_interactive(page: Page):
     page.goto(BASE_URL)
     page.wait_for_selector("#global-header-controls, input[type='date']", timeout=15000)
 
-    # 1. Change date picker value to 2026-07-28
+    # 1. Change date picker value dynamically
     date_input = page.locator("input[type='date']")
     expect(date_input).to_be_visible()
-    date_input.fill("2026-07-28")
+    current_val = date_input.input_value() or "2026-07-31"
+    from datetime import datetime, timedelta
+    test_dt = datetime.strptime(current_val, "%Y-%m-%d") - timedelta(days=3)
+    dynamic_date_iso = test_dt.strftime("%Y-%m-%d")
+    date_input.fill(dynamic_date_iso)
 
     # 2. Change Target DB dropdown to PostgreSQL DEV
     db_select = page.locator("select")
