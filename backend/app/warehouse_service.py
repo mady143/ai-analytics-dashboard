@@ -198,6 +198,49 @@ import time
 
 _CACHE_LOCK = threading.Lock()
 _QUERY_CACHE: Dict[str, Tuple[float, Any]] = {}
+
+# Cache for latest date query (separate TTL = 60s since it changes less often)
+_LATEST_DATE_CACHE: Dict[str, Tuple[float, str]] = {}
+
+
+def get_latest_available_date(target_db: str = "pg_dev") -> str:
+    """
+    Returns the most recent oerdte (YYYYMMDD string) that has actual records in sptn_sales_data.
+    Used by the frontend to auto-default to the latest active date when today has no data.
+    Caches the result for 60 seconds.
+    """
+    now = time.time()
+    with _CACHE_LOCK:
+        if target_db in _LATEST_DATE_CACHE:
+            ts, cached_date = _LATEST_DATE_CACHE[target_db]
+            if now - ts < 60.0:
+                return cached_date
+
+    config = DB_CONFIGURATIONS.get(target_db, DB_CONFIGURATIONS["pg_dev"])
+    latest_date = ""
+
+    if config["type"] == "PostgreSQL":
+        try:
+            conn = psycopg2.connect(
+                host=config["host"], port=config["port"],
+                dbname=config["dbname"], user=config["user"],
+                password=config.get("password", ""), connect_timeout=10
+            )
+            cur = conn.cursor()
+            cur.execute("SELECT MAX(oerdte) FROM sptn_sales_data WHERE oerdte IS NOT NULL AND TRIM(oerdte) != '';")
+            row = cur.fetchone()
+            if row and row[0]:
+                latest_date = str(row[0]).strip()
+            cur.close()
+            conn.close()
+        except Exception as e:
+            print(f"[WarehouseService] get_latest_available_date error: {e}")
+
+    with _CACHE_LOCK:
+        _LATEST_DATE_CACHE[target_db] = (now, latest_date)
+
+    return latest_date
+
 CACHE_TTL = 15.0  # 15 seconds TTL cache
 
 def _fetch_from_postgres_cached(config: Dict[str, Any], oerdte: str = "", batch_id: str = "", oewhse: str = "", oeinv: str = "", only_scratches: bool = False, limit: int = 500) -> Tuple[List[Dict[str, Any]], List[str], Dict[str, Dict[str, int]]]:
@@ -252,13 +295,22 @@ def get_warehouse_statistics(
             config, oerdte=oerdte, batch_id=batch_id, oewhse=oewhse,
             oeinv=oeinv, only_scratches=only_scratches, limit=500
         )
-        # ✅ STRICT DATE BEHAVIOR (TASK 20):
-        # When oerdte is given and has no records → return empty result.
-        # Do NOT silently substitute data from a different/older date.
-        # The UI will show a clear "No data for selected date" empty state.
-        # The old automatic fallback was removed because it confused users
-        # who selected a date and got data from a completely different date instead.
-        # If oerdte="" (no date filter) → return all available data across all dates (correct).
+        # ✅ AUTO-FALLBACK (TASK 26 — User Mandate 2026-07-31):
+        # Rule: Whatever date is selected → data MUST appear in all widgets.
+        # If the selected date returns 0 records, automatically re-query using the
+        # latest available date in the DB so the dashboard is NEVER blank.
+        # This applies ONLY when an explicit oerdte was given with no additional filters.
+        # If oerdte="" (Copilot mode / no filter) → already returns full dataset — no fallback needed.
+        if oerdte and not all_items and not batch_id and not oeinv:
+            latest = get_latest_available_date(target_db=target_db)
+            if latest and latest != oerdte:
+                all_items, distinct_warehouses, whs_totals_map = _fetch_from_postgres_cached(
+                    config, oerdte=latest, batch_id="", oewhse=oewhse,
+                    oeinv="", only_scratches=only_scratches, limit=500
+                )
+                effective_date = latest
+                fallback_used = True
+
 
     # Strict filtering for batch_id, oewhse, and oeinv
     if oewhse:
