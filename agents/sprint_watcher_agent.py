@@ -356,8 +356,6 @@ class SprintWatcherAgent:
 
     def _run_tests(self) -> tuple[bool, str]:
         """
-        Run unit tests and Playwright browser tests via pytest.
-        """
         Run core unit tests via pytest.
         Dynamically updates tester status to running during test execution, and idle on completion.
         """
