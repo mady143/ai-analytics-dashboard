@@ -385,12 +385,6 @@ class SprintWatcherAgent:
                 errors="replace",
                 timeout=self.test_timeout,
             )
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-                timeout=self.test_timeout,
-            )
             stdout = result.stdout or ""
             stderr = result.stderr or ""
             output = stdout + stderr
