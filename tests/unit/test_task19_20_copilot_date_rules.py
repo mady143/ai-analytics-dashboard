@@ -61,14 +61,17 @@ def get_real_data_date(target_db: str = "pg_dev") -> dict:
 
 
 # ─────────────────────────────────────────────────────────────
-# TC-UNIT-01: Today has no data → fallback returns most recent date
+# TC-UNIT-01: Today may have no data → fallback returns most recent date (TASK 26 mandate)
 # ─────────────────────────────────────────────────────────────
 def test_unit01_today_no_data_strict_empty_result():
     """
-    TC-UNIT-01: When today's date has no records (confirmed by SQL: SELECT DISTINCT oewhse
-    FROM sptn_sales_data WHERE oerdte='20260730' → empty), the API MUST return 0 items.
-    No silent fallback to older dates. fallback_used must be False.
-    The UI shows the 'No Data Available for [date]' empty state banner instead.
+    TC-UNIT-01 (Updated TASK 26 — 2026-07-31 User Mandate):
+    When today's date has no records, the API MUST auto-fallback to the latest
+    available date and return data. Dashboard should NEVER be blank.
+    - If fallback_used=True  → data is from a different (latest) date.  CORRECT.
+    - If fallback_used=False → today actually has data or date was empty. CORRECT.
+    Both cases must result in status=200. Data should be present either way.
+    Supersedes old TASK 20 strict-empty-result rule.
     """
     res = client.get(f"/api/warehouse/statistics?oerdte={TODAY_ISO}&target_db=pg_dev&limit=10&offset=0")
     assert res.status_code == 200, f"TC-UNIT-01 FAIL: {res.text}"
@@ -77,15 +80,16 @@ def test_unit01_today_no_data_strict_empty_result():
     filters = data.get("filters_applied", {})
     fallback_used = filters.get("fallback_used", False)
 
-    assert not fallback_used, (
-        f"TC-UNIT-01 FAIL: fallback_used=True — backend is still silently substituting "
-        f"a different date's data. Fallback behavior was removed in TASK 20."
+    # Items must exist — either from today or from auto-fallback date
+    assert len(items) > 0, (
+        f"TC-UNIT-01 FAIL: 0 items returned for {TODAY_ISO} — neither today's data nor fallback data present. "
+        f"Dashboard would be blank. fallback_used={fallback_used}"
     )
 
-    if len(items) == 0:
-        print(f"TC-UNIT-01 PASS: Today ({TODAY_DISPLAY}) has no data → returned 0 items (correct strict behavior, no fallback)")
+    if fallback_used:
+        effective = filters.get("effective_date", "unknown")
+        print(f"TC-UNIT-01 PASS: Today ({TODAY_DISPLAY}) has no data — auto-fallback to {effective}, {len(items)} items returned")
     else:
-        # Today actually has data — this is also fine
         effective = items[0].get("oerdte", "") if items else ""
         print(f"TC-UNIT-01 PASS: Today ({TODAY_DISPLAY}) has real data → {len(items)} items, oerdte={effective}")
 
