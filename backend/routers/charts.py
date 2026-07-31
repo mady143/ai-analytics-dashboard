@@ -26,7 +26,10 @@ def get_kpi(
     from_date: str = Query("", description="From order date filter YYYYMMDD (optional)"),
     to_date: str = Query("", description="To order date filter YYYYMMDD (optional)"),
     target_db: str = Query("pg_dev", description="Target database"),
-    oewhse: str = Query("", description="Warehouse filter (optional)")
+    oewhse: str = Query("", description="Warehouse filter (optional)"),
+    batch_id: str = Query("", description="Batch ID filter (optional)"),
+    oeinv: str = Query("", description="Invoice number filter (optional)"),
+    only_scratches: bool = Query(False, description="Only scratches filter (optional)")
 ):
     """Return Warehouse Level KPI summary cards for the dashboard, derived from warehouse statistics."""
     oerdte_clean = _clean_param(oerdte, "")
@@ -34,9 +37,15 @@ def get_kpi(
     from_date_clean = _clean_param(from_date, "")
     to_date_clean = _clean_param(to_date, "")
     oewhse_clean = _clean_param(oewhse, "")
+    batch_clean = _clean_param(batch_id, "")
+    oeinv_clean = _clean_param(oeinv, "")
 
     from app.warehouse_service import get_warehouse_statistics
-    stats = get_warehouse_statistics(target_db=target_db_clean, oerdte=oerdte_clean, oewhse=oewhse_clean, from_date=from_date_clean, to_date=to_date_clean, limit=1000, offset=0)
+    stats = get_warehouse_statistics(
+        target_db=target_db_clean, oerdte=oerdte_clean, oewhse=oewhse_clean,
+        batch_id=batch_clean, oeinv=oeinv_clean, only_scratches=only_scratches,
+        from_date=from_date_clean, to_date=to_date_clean, limit=1000, offset=0
+    )
     summary = stats.get("summary", {})
 
     total_whs = summary.get("total_warehouses", 0)
@@ -108,15 +117,25 @@ def get_bar_chart(
     metric: str = Query("cases_bld", description="Numeric column to aggregate"),
     target_db: str = Query("pg_dev", description="Target database"),
     oerdte: str = Query("", description="Order date filter YYYYMMDD"),
-    oewhse: str = Query("", description="Warehouse filter (optional)")
+    oewhse: str = Query("", description="Warehouse filter (optional)"),
+    batch_id: str = Query("", description="Batch ID filter (optional)"),
+    oeinv: str = Query("", description="Invoice number filter (optional)"),
+    only_scratches: bool = Query(False, description="Only scratches filter (optional)")
 ):
     target_db_clean = _clean_param(target_db, "pg_dev")
     oerdte_clean = _clean_param(oerdte, "")
     oewhse_clean = _clean_param(oewhse, "")
+    batch_clean = _clean_param(batch_id, "")
+    oeinv_clean = _clean_param(oeinv, "")
+
     col_val = str(column) if not hasattr(column, 'default') else (column.default or "warehouse")
     if col_val == "warehouse" or column == "warehouse":
         from app.warehouse_service import get_warehouse_statistics
-        stats = get_warehouse_statistics(target_db=target_db_clean, oerdte=oerdte_clean, oewhse=oewhse_clean, limit=1000, offset=0)
+        stats = get_warehouse_statistics(
+            target_db=target_db_clean, oerdte=oerdte_clean, oewhse=oewhse_clean,
+            batch_id=batch_clean, oeinv=oeinv_clean, only_scratches=only_scratches,
+            limit=1000, offset=0
+        )
         items = stats.get("warehouse_items", [])
 
         whs_totals_map = stats.get("summary", {}).get("warehouse_totals", {})
@@ -164,14 +183,24 @@ def get_scatter_chart(
     color: str = Query("warehouse", description="Color grouping column"),
     target_db: str = Query("pg_dev", description="Target database"),
     oerdte: str = Query("", description="Order date filter YYYYMMDD"),
-    oewhse: str = Query("", description="Warehouse filter (optional)")
+    oewhse: str = Query("", description="Warehouse filter (optional)"),
+    batch_id: str = Query("", description="Batch ID filter (optional)"),
+    oeinv: str = Query("", description="Invoice number filter (optional)"),
+    only_scratches: bool = Query(False, description="Only scratches filter (optional)")
 ):
     """Return warehouse scatter plot data: Original Order Qty vs Cases Built matching selected DB."""
     target_db_clean = _clean_param(target_db, "pg_dev")
     oerdte_clean = _clean_param(oerdte, "")
     oewhse_clean = _clean_param(oewhse, "")
+    batch_clean = _clean_param(batch_id, "")
+    oeinv_clean = _clean_param(oeinv, "")
+
     from app.warehouse_service import get_warehouse_statistics
-    stats = get_warehouse_statistics(target_db=target_db_clean, oerdte=oerdte_clean, oewhse=oewhse_clean, limit=200, offset=0)
+    stats = get_warehouse_statistics(
+        target_db=target_db_clean, oerdte=oerdte_clean, oewhse=oewhse_clean,
+        batch_id=batch_clean, oeinv=oeinv_clean, only_scratches=only_scratches,
+        limit=200, offset=0
+    )
     items = stats.get("warehouse_items", [])
 
     data = [
