@@ -370,14 +370,21 @@ class SprintWatcherAgent:
         """
         Run unit tests and Playwright browser tests via pytest.
         Dynamically updates tester status to running during test execution, and idle on completion.
+        Executes BOTH unit tests and Playwright browser tests.
         """
         timeout_msg = f"{self.test_timeout}s" if self.test_timeout else "unlimited (dynamic)"
         console.print(f"[cyan]🧪 Running Unit Tests & Playwright Browser Tests (Timeout: {timeout_msg})...[/cyan]")
         update_agent_status("tester", "running", "Executing Pytest Unit & Playwright Browser tests")
         try:
             result = subprocess.run(
-                [sys.executable, "-m", "pytest", "tests/unit/", "-v", "--tb=short"],
+                [sys.executable, "-m", "pytest", "tests/unit/", "tests/browser/", "-v", "--tb=short"],
                 cwd=str(ROOT_DIR),
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=self.test_timeout,
+            )
                 capture_output=True,
                 text=True,
                 encoding="utf-8",
