@@ -58,7 +58,7 @@ const DEFAULT_KPIS = [
 ]
 
 export default function Dashboard() {
-  // ── Form Input State ──
+  // ── Form Input State ──────────
   const [selectedDate, setSelectedDate] = useState(todayISO())
   const [selectedDb, setSelectedDb] = useState('pg_dev')
 
@@ -66,12 +66,10 @@ export default function Dashboard() {
   const [appliedDate, setAppliedDate] = useState(todayISO())
   const [appliedTargetDb, setAppliedTargetDb] = useState('pg_dev')
 
-  // ── Effective Date: what date data is ACTUALLY from (may differ if backend auto-fell-back) ──
-  const [effectiveDate, setEffectiveDate] = useState('')
-
   // ── Table Filter Synchronization State ──
   const [tableFilters, setTableFilters] = useState(null)
   // Tracks whether the Copilot has pushed an ACTIVE filter to the page
+  // (distinct from any random tableFilters change — only true when Copilot fired onApplyFilter)
   const [copilotFilterActive, setCopilotFilterActive] = useState(false)
 
   const handleApplyTableFilter = (filters) => {
@@ -93,37 +91,30 @@ export default function Dashboard() {
   const [scatterData, setScatterData] = useState([])
 
   const fetchAll = (dateVal, dbVal, whseVal = '') => {
-    // Rule (TASK 26):
-    // - Copilot Mode (copilotFilterActive=true): send oerdte='' → backend returns full dataset
-    // - Date mode: send the selected date → backend auto-falls-back to latest date if no data
-    // - Both modes ALWAYS return data (never blank)
+    // ✅ Rule (TASK 19 & TASK 24):
+    // - When Copilot filter is EXPLICITLY active → bypass date (oerdte='') so full dataset is shown
+    // - When using normal date picker → always send the selected date so all widgets are date-filtered
+    // - Both modes must populate KPI, Bar Chart, Scatter, and Table correctly
     const effectiveDateVal = copilotFilterActive ? '' : dateVal;
     const oerdte = effectiveDateVal ? toOerdte(effectiveDateVal) : '';
     const whseParam = whseVal ? `&oewhse=${whseVal}` : '';
 
-    // KPI: also capture effective_date from response (may differ if backend fell back)
     axios.get(`/api/charts/kpi?oerdte=${oerdte}&target_db=${dbVal}${whseParam}`)
       .then(res => {
         if (res.data?.kpis) setKpis(res.data.kpis)
-        // If backend auto-fell-back to a different date, update selectedDate to reflect it
-        if (res.data?.fallback_used && res.data?.effective_date) {
-          const ed = res.data.effective_date
-          const edIso = ed.length === 8 ? `${ed.slice(0,4)}-${ed.slice(4,6)}-${ed.slice(6,8)}` : ed
-          setEffectiveDate(edIso)
-          setSelectedDate(edIso)
-          setAppliedDate(edIso)
-        } else {
-          setEffectiveDate('')
-        }
       })
       .catch(err => console.error('Failed to fetch KPI cards:', err))
 
     axios.get(`/api/charts/bar?oerdte=${oerdte}&target_db=${dbVal}${whseParam}`)
-      .then(res => { if (res.data?.data) setBarData(res.data.data) })
+      .then(res => {
+        if (res.data?.data) setBarData(res.data.data)
+      })
       .catch(err => console.error('Failed to fetch Bar chart data:', err))
 
     axios.get(`/api/charts/scatter?oerdte=${oerdte}&target_db=${dbVal}${whseParam}`)
-      .then(res => { if (res.data?.data) setScatterData(res.data.data) })
+      .then(res => {
+        if (res.data?.data) setScatterData(res.data.data)
+      })
       .catch(err => console.error('Failed to fetch Scatter plot data:', err))
   }
 
@@ -238,24 +229,6 @@ export default function Dashboard() {
           </span>
         </form>
       </div>
-
-      {/* Simple badge: shown when backend auto-fell-back to a different date */}
-      {effectiveDate && effectiveDate !== appliedDate && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '8px',
-          background: 'rgba(6,182,212,0.08)', border: '1px solid rgba(6,182,212,0.25)',
-          borderRadius: '8px', padding: '7px 14px', marginBottom: '10px'
-        }}>
-          <span style={{ fontSize: '13px' }}>ℹ️</span>
-          <span style={{ fontSize: '12px', color: '#94a3b8' }}>
-            No data for <b style={{ color: '#f0f9ff' }}>{appliedDate}</b> — showing latest available:
-          </span>
-          <span style={{ fontSize: '12px', fontWeight: 700, color: '#06b6d4',
-            background: 'rgba(6,182,212,0.15)', padding: '2px 8px', borderRadius: '4px' }}>
-            {effectiveDate}
-          </span>
-        </div>
-      )}
 
       {/* ── AI Data Copilot Feature ── */}
       <AiDataCopilot

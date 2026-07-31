@@ -480,35 +480,25 @@ class SprintWatcherAgent:
 
     def _sync_completed_tasks(self, tasks: list[dict]):
         """
-        Sync completed status with Plane.
-        If a task is no longer in a completed/done state (e.g. user re-opened it in Plane),
-        remove it from _completed_task_ids so it can be re-processed by the agent loop.
+        For tasks already marked "completed" on Plane but not logged locally,
+        ensure memory is up to date.
         """
         for task in tasks:
             task_id = task["id"]
             state   = self._get_task_state(task)
 
-            if "complet" in state or "done" in state:
-                if self._last_seen_state.get(task_id) != state:
-                    log_task_result(
-                        task_id,
-                        task.get("name", "Unknown"),
-                        "sprint_watcher",
-                        "completed",
-                        "Synced from Plane — already marked completed.",
-                    )
-                    self._last_seen_state[task_id] = state
-                    self._completed_task_ids.add(task_id)
-                    console.print(
-                        f"[dim]🔄 Synced completed task: {task.get('name', task_id)[:50]}[/dim]"
-                    )
-            else:
-                # Task is active / open / re-opened in Plane
-                if task_id in self._completed_task_ids:
-                    self._completed_task_ids.discard(task_id)
-                    console.print(
-                        f"[bold cyan]🔄 Task re-opened in Plane: {task.get('name', task_id)[:50]}[/bold cyan]"
-                    )
+            if "complet" in state and self._last_seen_state.get(task_id) != state:
+                log_task_result(
+                    task_id,
+                    task.get("name", "Unknown"),
+                    "sprint_watcher",
+                    "completed",
+                    "Synced from Plane — already marked completed.",
+                )
+                self._last_seen_state[task_id] = state
+                console.print(
+                    f"[dim]🔄 Synced completed task: {task.get('name', task_id)[:50]}[/dim]"
+                )
 
     # ── Comment Polling ───────────────────────────────────────────────────────
 
@@ -632,26 +622,15 @@ class SprintWatcherAgent:
                         last_state    = self._last_seen_state.get(task_id)
                         last_updated  = self._last_seen_updated.get(task_id)
 
-                        # Determine if task was reset from completed/started back to unstarted/todo
-                        reset_to_unstarted = (
-                            last_state is not None and
-                            last_state in SKIP_STATES and
-                            current_state in ACTIONABLE_STATES
-                        )
-
-                        # If user reset the task in Plane, discard from completed list
-                        if reset_to_unstarted:
-                            self._completed_task_ids.discard(task_id)
-
                         # Always update tracking
                         self._last_seen_state[task_id] = current_state
                         self._last_seen_updated[task_id] = updated_at
 
-                        # Skip tasks already completed by agent (unless reset by user above)
+                        # Skip tasks already completed by agent in this session
                         if task_id in self._completed_task_ids:
                             continue
 
-                        # Skip tasks NOT in an actionable state (e.g. currently started/done/cancelled)
+                        # Skip tasks NOT in an actionable state (e.g. already started/done/cancelled)
                         if current_state in SKIP_STATES:
                             continue
 

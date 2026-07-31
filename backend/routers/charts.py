@@ -11,29 +11,6 @@ from services import data_service
 router = APIRouter()
 
 
-@router.get("/latest-date")
-def get_latest_date(target_db: str = Query("pg_dev", description="Target database")):
-    """
-    Returns the most recent oerdte (YYYYMMDD) with records in the target DB.
-    Used by the React frontend to auto-default to the latest available date on page load.
-    Response: { latest_date: 'YYYYMMDD', latest_date_iso: 'YYYY-MM-DD', target_db: '...' }
-    """
-    target_db_clean = _clean_param(target_db, "pg_dev")
-    from app.warehouse_service import get_latest_available_date
-    latest_raw = get_latest_available_date(target_db=target_db_clean)
-
-    # Convert YYYYMMDD → YYYY-MM-DD for the date input field
-    latest_iso = ""
-    if latest_raw and len(latest_raw) == 8:
-        latest_iso = f"{latest_raw[:4]}-{latest_raw[4:6]}-{latest_raw[6:8]}"
-
-    return JSONResponse({
-        "latest_date": latest_raw,
-        "latest_date_iso": latest_iso,
-        "target_db": target_db_clean
-    })
-
-
 def _clean_param(val: Any, default: str = "") -> str:
     if hasattr(val, "default"):
         val = val.default
@@ -120,17 +97,7 @@ def get_kpi(
         }
     ]
 
-    filters = stats.get("filters_applied", {})
-    effective_date = filters.get("effective_date", oerdte_clean)
-    fallback_used = filters.get("fallback_used", False)
-
-    return JSONResponse({
-        "kpis": kpis,
-        "total_warehouses": total_whs,
-        "selected_oerdte": oerdte,
-        "effective_date": effective_date,
-        "fallback_used": fallback_used
-    })
+    return JSONResponse({"kpis": kpis, "total_warehouses": total_whs, "selected_oerdte": oerdte})
 
 
 @router.get("/bar")
