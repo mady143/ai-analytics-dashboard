@@ -244,9 +244,9 @@ export default function Dashboard() {
 
       {/* ── Real-Time Anomaly & Risk Alerts Feature ── */}
       <AnomalyAlertPanel
-        globalDate={appliedDate}
+        globalDate={copilotFilterActive ? '' : appliedDate}
         globalTargetDb={appliedTargetDb}
-        selectedWhse={tableFilters?.whs_num || ''}
+        selectedWhse={tableFilters?.whse || tableFilters?.whs_num || ''}
         onApplyFilter={handleApplyTableFilter}
       />
 
@@ -312,6 +312,7 @@ export default function Dashboard() {
         globalDate={appliedDate}
         globalTargetDb={appliedTargetDb}
         externalFilters={tableFilters}
+        copilotFilterActive={copilotFilterActive}
       />
 
       {/* ── Warehouse Inventory Level Statistics ── */}
