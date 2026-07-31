@@ -230,7 +230,9 @@ async def ai_copilot_query(request: CopilotRequest):
         if scratch_items and not filtered_whse:
             filtered_whse = str(scratch_items[0].get("whs_num", "")).strip()
         answer = f"Found {len(scratch_items)} line item(s) with scratch quantities in {target_db.upper()} across all dates. Total scratches: {sum(it.get('whs_scrtch_qty_stg', 0) for it in scratch_items):,} cases."
-        suggested = ["Filter Scratch Items", "View Warehouse 58", "Check Pending Transfers"]
+        sample_whs = summary.get("distinct_warehouses", [])
+        whs_label = f"Warehouse {sample_whs[0]}" if sample_whs else "Target Warehouse"
+        suggested = ["Filter Scratch Items", f"View {whs_label}", "Check Pending Transfers"]
     elif is_transfer_query:
         learn_unknown_keywords(prompt, "transfer")
         pending_items = [it for it in items if it.get("procurement_transfer_status") in ("PENDING", "PROCESSING", "STAGED")]
@@ -247,11 +249,13 @@ async def ai_copilot_query(request: CopilotRequest):
         if pending_items and not filtered_whse:
             filtered_whse = str(pending_items[0].get("whs_num", "")).strip()
         answer = f"Detected {len(pending_items)} procurement transfer line item(s) in {target_db.upper()} database across all available dates."
-        suggested = ["Show Pending Items", "Check High Volume Orders", "Warehouse 61 Breakdown"]
+        sample_whs = summary.get("distinct_warehouses", [])
+        whs_label = f"Warehouse {sample_whs[0]}" if sample_whs else "Facility"
+        suggested = ["Show Pending Items", "Check High Volume Orders", f"{whs_label} Breakdown"]
     elif is_volume_query:
         high_vol_items = [it for it in items if it.get("orgnl_ordr_qty_stg", 0) > 500]
         answer = f"Identified {len(high_vol_items)} high-volume line item(s) exceeding 500 cases in {target_db.upper()} across all dates."
-        suggested = ["High Scratch Quantity", "Pending Transfers", "Warehouse 58 Overview"]
+        suggested = ["High Scratch Quantity", "Pending Transfers", "Facility Volume Breakdown"]
     elif filtered_whse:
         if whs_stat:
             cases = whs_stat.get("cases_built", 0)
@@ -273,7 +277,9 @@ async def ai_copilot_query(request: CopilotRequest):
             f"{summary.get('total_warehouses', 0)} active warehouses and "
             f"{summary.get('total_cases_built', 0):,} total cases built across all dates."
         )
-        suggested = ["High Scratch Quantity", "Pending Transfers", "Warehouse 58 Overview"]
+        sample_whs = summary.get("distinct_warehouses", [])
+        whs_label = f"Warehouse {sample_whs[0]} Overview" if sample_whs else "Warehouse Overview"
+        suggested = ["High Scratch Quantity", "Pending Transfers", whs_label]
 
     # Build per-warehouse chart breakdown data for Copilot visualization cards
     chart_data = []
