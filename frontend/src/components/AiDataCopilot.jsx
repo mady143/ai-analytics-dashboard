@@ -275,22 +275,32 @@ export default function AiDataCopilot({ globalDate, globalTargetDb = 'pg_dev', o
 
               {showChart && (
                 <div style={{ height: '160px', width: '100%', marginTop: '6px' }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={copilotResult.chart_data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                      <XAxis dataKey="warehouse" stroke="#94a3b8" fontSize={10} tickLine={false} />
-                      <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} />
-                      <Tooltip
-                        contentStyle={{ background: '#0f172a', border: '1px solid #7c3aed', borderRadius: '8px', color: '#fff', fontSize: '12px' }}
-                        formatter={(val, name) => [val.toLocaleString() + ' cases', name === 'cases_built' ? 'Cases Built' : 'Scratch Qty']}
-                      />
-                      <Bar dataKey="cases_built" name="Cases Built" radius={[4, 4, 0, 0]}>
-                        {copilotResult.chart_data.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#8b5cf6' : '#6366f1'} />
-                        ))}
-                      </Bar>
-                      <Bar dataKey="scratch_qty" name="Scratch Qty" fill="#ef4444" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  {(() => {
+                    const targetW = copilotResult.filtered_whse ? String(copilotResult.filtered_whse).trim().replace(/^0+/, '') : '';
+                    const chartItems = targetW
+                      ? copilotResult.chart_data.filter(item => String(item.warehouse).replace('WHS ', '').trim().replace(/^0+/, '') === targetW)
+                      : copilotResult.chart_data;
+                    const finalChartData = chartItems.length > 0 ? chartItems : copilotResult.chart_data;
+
+                    return (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={finalChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                          <XAxis dataKey="warehouse" stroke="#94a3b8" fontSize={10} tickLine={false} />
+                          <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} />
+                          <Tooltip
+                            contentStyle={{ background: '#0f172a', border: '1px solid #7c3aed', borderRadius: '8px', color: '#fff', fontSize: '12px' }}
+                            formatter={(val, name) => [val.toLocaleString() + ' cases', name === 'cases_built' ? 'Cases Built' : 'Scratch Qty']}
+                          />
+                          <Bar dataKey="cases_built" name="Cases Built" radius={[4, 4, 0, 0]}>
+                            {finalChartData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#8b5cf6' : '#6366f1'} />
+                            ))}
+                          </Bar>
+                          <Bar dataKey="scratch_qty" name="Scratch Qty" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    );
+                  })()}
                 </div>
               )}
             </div>
