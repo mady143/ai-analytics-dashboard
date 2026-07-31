@@ -22,10 +22,15 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = '
   // Handle external filter requests from Copilot or Anomaly panel
   useEffect(() => {
     if (externalFilters) {
-      if (externalFilters.whse !== undefined) setFilterWhs(externalFilters.whse);
-      if (externalFilters.batch !== undefined) setFilterBatchId(externalFilters.batch);
-      if (externalFilters.invoice !== undefined) setFilterInvoice(externalFilters.invoice);
-      if (externalFilters.onlyScratches !== undefined) setFilterOnlyScratches(Boolean(externalFilters.onlyScratches));
+      setFilterWhs(externalFilters.whse !== undefined ? externalFilters.whse : '');
+      setFilterBatchId(externalFilters.batch !== undefined ? externalFilters.batch : '');
+      setFilterInvoice(externalFilters.invoice !== undefined ? externalFilters.invoice : '');
+      setFilterOnlyScratches(Boolean(externalFilters.onlyScratches));
+    } else {
+      setFilterWhs('');
+      setFilterBatchId('');
+      setFilterInvoice('');
+      setFilterOnlyScratches(false);
     }
   }, [externalFilters]);
 
