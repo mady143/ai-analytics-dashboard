@@ -346,3 +346,23 @@ def get_warehouse_statistics(
         "offset": offset,
         "has_more": (offset + limit) < len(all_items)
     }
+
+
+def get_latest_available_date(target_db: str = "pg_dev") -> str:
+    """Returns the most recent oerdte with records in the database (YYYYMMDD)."""
+    config = DB_CONFIGURATIONS.get(target_db, DB_CONFIGURATIONS["pg_dev"])
+    if config.get("type") == "PostgreSQL":
+        try:
+            conn_cfg = {k: v for k, v in config.items() if k not in ["type", "env"]}
+            conn = psycopg2.connect(**conn_cfg)
+            cur = conn.cursor()
+            cur.execute("SELECT MAX(oerdte) FROM sptn_sales_data WHERE oerdte IS NOT NULL AND oerdte != '';")
+            row = cur.fetchone()
+            cur.close()
+            conn.close()
+            if row and row[0]:
+                return str(row[0]).strip()
+        except Exception as e:
+            print(f"[WarehouseService] Failed to query latest date: {e}")
+    return "20260730"
+
