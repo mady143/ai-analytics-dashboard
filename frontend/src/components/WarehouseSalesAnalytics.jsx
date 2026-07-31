@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const API = import.meta.env.VITE_API_URL || '';
 
-export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = 'pg_dev', externalFilters }) {
+export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = 'pg_dev', externalFilters, copilotFilterActive }) {
   const [summary, setSummary] = useState(null);
   const [items, setItems] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -30,7 +30,10 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = '
   }, [externalFilters]);
 
   const LIMIT = 20;
-  const oerdte = globalDate ? globalDate.replace(/-/g, '') : '';
+  // ✅ TASK 19 & Copilot Mandate: When Copilot mode is active, date filter is DISABLED (oerdte="")
+  // so the table queries the full dataset across all dates for the prompted parameters.
+  const isCopilotMode = copilotFilterActive || Boolean(externalFilters?.whse || externalFilters?.batch || externalFilters?.invoice || externalFilters?.onlyScratches);
+  const oerdte = isCopilotMode ? '' : (globalDate ? globalDate.replace(/-/g, '') : '');
 
   // Reset & initial load on DB target, date change, or filter inputs
   useEffect(() => {
