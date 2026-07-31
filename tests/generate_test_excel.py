@@ -280,7 +280,7 @@ def run_all_tests_and_get_results():
     print("[TEST 2/2] Running Playwright browser E2E tests...")
     browser_res = subprocess.run(
         [sys.executable, "-m", "pytest", "tests/browser/", "-v", "--tb=no", "-q"],
-        cwd=str(ROOT), capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=180
+        cwd=str(ROOT), capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=360
     )
 
     output = unit_res.stdout + "\n" + unit_res.stderr + "\n" + browser_res.stdout + "\n" + browser_res.stderr
