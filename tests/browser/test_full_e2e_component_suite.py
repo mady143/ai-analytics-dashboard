@@ -183,7 +183,7 @@ def test_tc06_copilot_sends_no_date_in_api_request(page: Page):
     page.wait_for_timeout(1000)
 
     # Ask copilot — it must NOT echo back the UI date
-    page.locator("input[placeholder*='Ask AI Data Copilot']").fill("High Scratch Quantity")
+    page.locator("#copilot-input").fill("High Scratch Quantity")
     page.locator("button:has-text('Ask AI')").click()
     page.wait_for_selector("text=AI Copilot Finding", timeout=15000)
     page.wait_for_timeout(500)
