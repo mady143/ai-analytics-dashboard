@@ -69,6 +69,11 @@ The application is structured into distinct, modular UI Screens and Component Se
 >   3. **Complete Coverage**: Eliminates fixed domain limits — any sprint task (button additions, UI tweaks, API parameter updates, table formatting, export capabilities, or chart adjustments) is analyzed, understood, and implemented dynamically.
 > - **Status**: ✅ IMPLEMENTED & ENFORCED 2026-07-30
 
+> ### ⚠️ TASK 25 — MANDATORY: Zero Hardcoded Dates & Zero Hardcoded Warehouse Numbers Policy [CRITICAL — ALWAYS ENFORCE]
+> - **Zero Hardcoded Dates**: DO NOT hardcode static date strings (e.g. `"2026-07-28"`, `"2026-07-30"`) in test files or component code. All date parameters in browser/unit tests MUST be computed dynamically relative to the live UI date picker (`#global-date-picker`), `get_ui_date(page)`, or dynamic `datetime` math.
+> - **Zero Hardcoded Warehouse Numbers**: DO NOT hardcode static warehouse numbers (e.g. `"58"`, `"61"`) in test assertions or code logic. All warehouse facility numbers MUST be read dynamically from active database query summary APIs (`/api/warehouse/statistics`), dynamic dropdown options, or extracted from active response objects.
+> - **Mandatory Verification**: `tests/generate_test_excel.py` MUST execute REAL Playwright browser tests (`pytest tests/browser/`) and backend unit tests (`pytest tests/unit/`) to collect actual test execution results. `TEST_CASES.xlsx` MUST only mark E2E test cases as `PASS` when Playwright browser tests pass.
+
 > ### ⚠️ TASK 24 — MANDATORY: Real End-to-End Autonomous Task Execution Pipeline [CRITICAL — ALWAYS ENFORCE]
 > **Problem Fixed 2026-07-30**: The agent pipeline had two critical bugs:
 > 1. **Sprint Watcher Bug**: `is_open_task = task_id not in self._completed_task_ids` was ALWAYS `True`, causing EVERY open task to be re-triggered on every 15s poll cycle — even tasks already `started` or `done`. This caused massive duplicate processing.
