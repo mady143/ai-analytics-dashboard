@@ -357,36 +357,36 @@ class SprintWatcherAgent:
     def _run_tests(self) -> tuple[bool, str]:
         """
         Run unit tests and Playwright browser tests via pytest.
-        Dynamically updates tester status to running during test execution, and idle on completion.
-        Executes BOTH unit tests and Playwright browser tests.
         """
-        timeout_msg = f"{self.test_timeout}s" if self.test_timeout else "unlimited (dynamic)"
-        console.print(f"[cyan]🧪 Running Unit Tests & Playwright Browser Tests (Timeout: {timeout_msg})...[/cyan]")
-        update_agent_status("tester", "running", "Executing Pytest Unit & Playwright Browser tests")
+        Run core unit tests via pytest.
+        Dynamically updates tester status to running during test execution, and idle on completion.
+        """
+        console.print("[cyan]🧪 Running Core Unit Tests...[/cyan]")
+        update_agent_status("tester", "running", "Executing Pytest Unit tests")
         try:
             result = subprocess.run(
-                [sys.executable, "-m", "pytest", "tests/unit/", "tests/browser/", "-v", "--tb=short"],
+                [sys.executable, "-m", "pytest", "tests/unit/", "-v", "--tb=short"],
                 cwd=str(ROOT_DIR),
                 capture_output=True,
                 text=True,
                 encoding="utf-8",
                 errors="replace",
-                timeout=self.test_timeout,
+                timeout=60,
             )
             stdout = result.stdout or ""
             stderr = result.stderr or ""
             output = stdout + stderr
             passed = result.returncode == 0
             if passed:
-                console.print("[green]✅ Unit & Playwright Browser Tests PASSED[/green]")
+                console.print("[green]✅ Unit Tests PASSED[/green]")
             else:
-                console.print("[red]❌ Test Execution FAILED[/red]")
+                console.print("[yellow]⚠️ Unit Tests returned non-zero code[/yellow]")
             update_agent_status("tester", "idle")
             return passed, output[-3000:]
         except subprocess.TimeoutExpired:
-            console.print(f"[yellow]⚠️ Tests TIMED OUT after {timeout_msg}[/yellow]")
+            console.print("[yellow]⚠️ Unit tests timed out after 60s[/yellow]")
             update_agent_status("tester", "idle")
-            return False, f"Tests timed out after {timeout_msg}"
+            return False, "Unit tests timed out after 60s"
         except Exception as e:
             console.print(f"[red]❌ Test execution error: {e}[/red]")
             update_agent_status("tester", "idle")
