@@ -388,12 +388,12 @@ def run_builder_test_verification() -> bool:
             console.print("[bold green]🎉 All Unit & Playwright Browser E2E tests PASSED 100%![/bold green]")
             return True
         else:
-            console.print(f"[yellow]⚠️ Test warning: Unit ({unit_pass}), Browser ({browser_pass})[/yellow]")
-            return True  # Proceed with resilient build
+            console.print(f"[red]❌ Test verification failed: Unit ({unit_pass}), Browser ({browser_pass})[/red]")
+            return False
     except Exception as e:
-        console.print(f"[yellow]⚠️ Test verification exception: {e}[/yellow]")
-        update_agent_status("tester", "idle", "Test verification completed")
-        return True
+        console.print(f"[red]❌ Test verification exception: {e}[/red]")
+        update_agent_status("tester", "idle", "Test verification exception")
+        return False
 
 
 def llm_analyze_and_implement_task(task_id: str, task_title: str, description: str) -> dict:
@@ -817,18 +817,16 @@ def handle_task(task_id: str, task_title: str, description: str, priority: str) 
 
     if modified_files:
         console.print(f"[bold green]✅ Real code changes written to: {', '.join(modified_files)}[/bold green]")
+        _write_task_unit_tests(task_id, task_title, description, modified_files)
+        verification_passed = run_builder_test_verification()
+        status_msg = "Completed" if verification_passed else "Failed (Test Verification)"
+        update_agent_status("builder", "idle", f"{status_msg}: {task_title}")
+        return verification_passed
     else:
-        console.print("[yellow]⚠️  No LLM API key set — code analysis logged, manual review recommended.[/yellow]")
-        console.print("[yellow]    Set ANTHROPIC_API_KEY in .env to enable autonomous code generation.[/yellow]")
-
-    # ── Step 4: Generate task-specific unit tests ─────────────────────────────
-    _write_task_unit_tests(task_id, task_title, description, modified_files)
-
-    # ── Step 5: Run tests to verify build ─────────────────────────────────────
-    run_builder_test_verification()
-
-    update_agent_status("builder", "idle", f"Completed: {task_title}")
-    return True
+        console.print("[red]❌ Builder Agent failed: 0 code changes generated.[/red]")
+        console.print("[yellow]    Reason: ANTHROPIC_API_KEY in .env is missing or invalid LLM key. Autonomous patch could not be applied.[/yellow]")
+        update_agent_status("builder", "idle", f"Failed (No code changes): {task_title}")
+        return False
 
 
 if __name__ == "__main__":
