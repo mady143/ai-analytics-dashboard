@@ -1,49 +1,21 @@
 {
   "agents": {
-    "tester": {
-      "status": "running",
-      "last_run": "2026-07-31T09:37:21.359293",
-      "last_test_results": {
-        "passed": 42,
-        "failed": 0
-      },
-      "current_task": "Executing Unit & Playwright Browser E2E Tests",
-      "updated_at": "2026-07-31T09:37:21.359293"
-    },
     "builder": {
       "status": "running",
-      "last_run": "2026-07-31T09:37:21.282771",
       "current_task": "\ud83d\udd28 Building #AAD-AUTO: System_Integrity_Verification",
-      "updated_at": "2026-07-31T09:37:21.282771"
+      "updated_at": "2026-07-31T09:37:24.384430",
+      "last_run": "2026-07-31T09:37:24.384430"
     },
-    "sprint_watcher": {
+    "tester": {
       "status": "running",
-      "last_run": "2026-07-31T09:37:20.654071",
-      "current_task": "Watching sprint (Poll #624 @ 09:36:46)",
-      "updated_at": "2026-07-31T09:37:20.654071"
-    },
-    "orchestrator": {
-      "status": "running",
-      "last_run": "2026-07-31T09:37:20.654071",
-      "current_task": "Task & Agent State Coordination Active",
-      "updated_at": "2026-07-31T09:37:20.654071"
-    },
-    "memory": {
-      "status": "running",
-      "last_run": "2026-07-31T09:37:20.654071",
-      "current_task": "Persistent Context & State Storage Active",
-      "updated_at": "2026-07-31T09:37:20.654071"
-    },
-    "git_agent": {
-      "status": "running",
-      "last_run": "2026-07-31T09:37:20.654071",
-      "current_task": "Continuous EOD Auto-Push Active",
-      "updated_at": "2026-07-31T09:37:20.654071"
+      "current_task": "Executing Unit & Playwright Browser E2E Tests",
+      "updated_at": "2026-07-31T09:37:24.475912",
+      "last_run": "2026-07-31T09:37:24.475912"
     }
   },
   "current_sprint": null,
   "plane_project_id": null,
   "plane_workspace_slug": "agentbuilder",
-  "last_active": "2026-07-31T09:37:21.363108",
-  "last_updated": "2026-07-31T09:37:21.359293"
+  "last_active": "2026-07-31T09:37:24.476863",
+  "last_updated": "2026-07-31T09:37:24.475912"
 }
