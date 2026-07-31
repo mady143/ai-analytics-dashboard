@@ -231,12 +231,15 @@ def create_excel(passed_tests, failed_tests):
     out_path = ROOT / "tests" / "TEST_CASES.xlsx"
     try:
         wb.save(str(out_path))
-        print(f"\n✅ TEST_CASES.xlsx generated successfully: {out_path}")
+        print(f"\n✅ TEST_CASES.xlsx overwritten successfully: {out_path}")
     except PermissionError:
-        alt_path = ROOT / "tests" / "TEST_CASES_updated.xlsx"
-        wb.save(str(alt_path))
-        print(f"\n⚠️  TEST_CASES.xlsx is currently open in Excel. Saved updated matrix to: {alt_path}")
-        out_path = alt_path
+        import time
+        time.sleep(1)
+        try:
+            wb.save(str(out_path))
+            print(f"\n✅ TEST_CASES.xlsx overwritten successfully: {out_path}")
+        except PermissionError:
+            print(f"\n⚠️  PermissionError: TEST_CASES.xlsx is open in Excel. Please close TEST_CASES.xlsx so it can be overwritten.")
 
     print(f"   PASS: {stats['pass']}  |  FAIL: {stats['fail']}")
     return out_path
