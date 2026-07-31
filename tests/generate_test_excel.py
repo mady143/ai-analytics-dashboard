@@ -269,19 +269,26 @@ TEST_CASES = [
      "Verified clicking 'Next 20' pagination button fetches page 2, updating row count indicator to 40 / 500 loaded with new line item rows."),
 ]
 
-def run_unit_tests_and_get_results():
-    """Run pytest and parse results to get PASS/FAIL per test."""
-    result = subprocess.run(
+def run_all_tests_and_get_results():
+    """Run pytest unit tests and Playwright browser tests and parse results per suite."""
+    print("[TEST 1/2] Running backend unit tests...")
+    unit_res = subprocess.run(
         [sys.executable, "-m", "pytest", "tests/unit/", "-v", "--tb=no", "-q"],
-        cwd=str(ROOT),
-        capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120
+        cwd=str(ROOT), capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=120
     )
-    output = result.stdout + result.stderr
+
+    print("[TEST 2/2] Running Playwright browser E2E tests...")
+    browser_res = subprocess.run(
+        [sys.executable, "-m", "pytest", "tests/browser/", "-v", "--tb=no", "-q"],
+        cwd=str(ROOT), capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=180
+    )
+
+    output = unit_res.stdout + "\n" + unit_res.stderr + "\n" + browser_res.stdout + "\n" + browser_res.stderr
     passed_tests = set()
     failed_tests = set()
+
     for line in output.splitlines():
         if " PASSED" in line:
-            # Extract test name
             parts = line.strip().split("::")
             if len(parts) >= 2:
                 passed_tests.add(parts[-1].strip().split(" ")[0])
@@ -289,9 +296,16 @@ def run_unit_tests_and_get_results():
             parts = line.strip().split("::")
             if len(parts) >= 2:
                 failed_tests.add(parts[-1].strip().split(" ")[0])
-    return passed_tests, failed_tests, output
 
-def create_excel(passed_tests, failed_tests):
+    unit_pass = (unit_res.returncode == 0)
+    browser_pass = (browser_res.returncode == 0)
+
+    print(f"   Unit Test Suite: {'✅ PASSED' if unit_pass else '❌ FAILED'}")
+    print(f"   Browser Test Suite (Playwright): {'✅ PASSED' if browser_pass else '❌ FAILED'}")
+
+    return passed_tests, failed_tests, unit_pass, browser_pass
+
+def create_excel(passed_tests, failed_tests, unit_pass, browser_pass):
     wb = Workbook()
     ws = wb.active
     ws.title = "Test Cases"
@@ -319,41 +333,44 @@ def create_excel(passed_tests, failed_tests):
     # Title banner
     ws.merge_cells("A1:F1")
     title_cell = ws["A1"]
-    title_cell.value = f"AI Analytics Dashboard — Test Case Matrix  |  Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+    title_cell.value = "AI ANALYTICS DASHBOARD — AUTOMATED VERIFICATION MATRIX (UNIT & E2E BROWSER)"
     title_cell.font = Font(name="Calibri", bold=True, size=13, color="FFFFFF")
     title_cell.fill = PatternFill("solid", fgColor=PURPLE_DARK)
     title_cell.alignment = Alignment(horizontal="center", vertical="center")
     ws.row_dimensions[1].height = 28
 
-    # Header row
-    for col_idx, (header, width) in enumerate(zip(headers, widths), start=1):
-        cell = ws.cell(row=2, column=col_idx)
-        cell.value = header
-        cell.font = Font(name="Calibri", bold=True, size=11, color="FFFFFF")
-        cell.fill = PatternFill("solid", fgColor=PURPLE_LIGHT)
-        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-        ws.column_dimensions[get_column_letter(col_idx)].width = width
-    ws.row_dimensions[2].height = 22
-
     thin = Side(border_style="thin", color=BORDER_COLOR)
     border = Border(left=thin, right=thin, top=thin, bottom=thin)
 
-    # ── Data rows ──────────────────────────────────────────────────────────────
-    stats = {"pass": 0, "fail": 0, "pending": 0}
+    for col_idx, (header, width) in enumerate(zip(headers, widths), start=1):
+        cell = ws.cell(row=2, column=col_idx)
+        cell.value = header
+        cell.font = Font(name="Calibri", bold=True, size=10, color="FFFFFF")
+        cell.fill = PatternFill("solid", fgColor=PURPLE_MED)
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+        cell.border = border
+        col_letter = get_column_letter(col_idx)
+        ws.column_dimensions[col_letter].width = width
 
-    for row_idx, (case_id, name, func, expected, actual, ) in enumerate(TEST_CASES, start=3):
+    ws.row_dimensions[2].height = 22
+
+    # ── Data rows ──────────────────────────────────────────────────────────────
+    stats = {"pass": 0, "fail": 0}
+
+    for row_idx, (case_id, name, func, expected, actual) in enumerate(TEST_CASES, start=3):
         row_data = (case_id, name, func, expected, actual)
 
-        # Determine PASS/FAIL from actual pytest results for unit tests
-        # Browser tests marked as PENDING if no playwright result available
         is_browser = case_id.startswith("TC-E2E")
-        result_str = "PENDING"
-        result_color = YELLOW_PENDING
-        result_bg    = YELLOW_BG
+        
+        # Strictly evaluate PASS vs FAIL based on actual test suite results
+        if is_browser:
+            is_passed = browser_pass
+        else:
+            is_passed = unit_pass
 
-        if not is_browser or (len(failed_tests) == 0 and len(passed_tests) > 0):
+        if is_passed:
             result_str = "PASS"
-            result_color = "166534"
+            result_color = GREEN_PASS
             result_bg = GREEN_BG
             stats["pass"] += 1
         else:
@@ -386,12 +403,12 @@ def create_excel(passed_tests, failed_tests):
     summary_row = len(TEST_CASES) + 3
     ws.merge_cells(f"A{summary_row}:E{summary_row}")
     summary_cell = ws[f"A{summary_row}"]
-    total = stats["pass"] + stats["fail"] + stats["pending"]
+    total = stats["pass"] + stats["fail"]
     summary_cell.value = (
         f"SUMMARY:  ✅ {stats['pass']} PASSED  |  ❌ {stats['fail']} FAILED  |  TOTAL: {total} test cases"
     )
     summary_cell.font = Font(name="Calibri", bold=True, size=11, color="FFFFFF")
-    summary_cell.fill = PatternFill("solid", fgColor=PURPLE_DARK)
+    summary_cell.fill = PatternFill("solid", fgColor=PURPLE_DARK if stats["fail"] == 0 else "991B1B")
     summary_cell.alignment = Alignment(horizontal="center", vertical="center")
     ws.row_dimensions[summary_row].height = 24
 
