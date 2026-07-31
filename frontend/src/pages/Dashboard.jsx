@@ -76,16 +76,14 @@ export default function Dashboard() {
     const nextFilters = { ...(tableFilters || {}), ...filters, _ts: Date.now() };
     setTableFilters(nextFilters);
     setCopilotFilterActive(true);
-
-    const targetWhse = nextFilters.whse || nextFilters.oewhse || nextFilters.whs_num || nextFilters.filtered_whse || '';
-    fetchAll(appliedDate, appliedTargetDb, targetWhse, true);
+    fetchAll(appliedDate, appliedTargetDb, nextFilters, true);
   }
 
   const [kpis, setKpis] = useState(DEFAULT_KPIS)
   const [barData, setBarData] = useState([])
   const [scatterData, setScatterData] = useState([])
 
-  const fetchAll = (dateVal, dbVal, whseVal = '', forceCopilot = false) => {
+  const fetchAll = (dateVal, dbVal, filterParams = null, forceCopilot = false) => {
     // ✅ Rule (TASK 19 & TASK 24):
     // - When Copilot filter is EXPLICITLY active → bypass date (oerdte='') so full dataset is shown
     // - When using normal date picker → always send the selected date so all widgets are date-filtered
@@ -93,21 +91,32 @@ export default function Dashboard() {
     const isCopilot = forceCopilot || copilotFilterActive;
     const effectiveDateVal = isCopilot ? '' : dateVal;
     const oerdte = effectiveDateVal ? toOerdte(effectiveDateVal) : '';
-    const whseParam = whseVal ? `&oewhse=${whseVal}` : '';
 
-    axios.get(`/api/charts/kpi?oerdte=${oerdte}&target_db=${dbVal}${whseParam}`)
+    const currentFilters = filterParams || tableFilters || {};
+    const whseVal = currentFilters.whse || currentFilters.oewhse || currentFilters.whs_num || currentFilters.filtered_whse || '';
+    const batchVal = currentFilters.batch || currentFilters.batch_id || currentFilters.filtered_batch || '';
+    const invVal = currentFilters.invoice || currentFilters.oeinv || currentFilters.filtered_invoice || '';
+    const scratchesVal = Boolean(currentFilters.onlyScratches || currentFilters.filter_scratch);
+
+    let queryParams = `oerdte=${oerdte}&target_db=${dbVal}`;
+    if (whseVal) queryParams += `&oewhse=${encodeURIComponent(whseVal)}`;
+    if (batchVal) queryParams += `&batch_id=${encodeURIComponent(batchVal)}`;
+    if (invVal) queryParams += `&oeinv=${encodeURIComponent(invVal)}`;
+    if (scratchesVal) queryParams += `&only_scratches=true`;
+
+    axios.get(`/api/charts/kpi?${queryParams}`)
       .then(res => {
         if (res.data?.kpis) setKpis(res.data.kpis)
       })
       .catch(err => console.error('Failed to fetch KPI cards:', err))
 
-    axios.get(`/api/charts/bar?oerdte=${oerdte}&target_db=${dbVal}${whseParam}`)
+    axios.get(`/api/charts/bar?${queryParams}`)
       .then(res => {
         if (res.data?.data) setBarData(res.data.data)
       })
       .catch(err => console.error('Failed to fetch Bar chart data:', err))
 
-    axios.get(`/api/charts/scatter?oerdte=${oerdte}&target_db=${dbVal}${whseParam}`)
+    axios.get(`/api/charts/scatter?${queryParams}`)
       .then(res => {
         if (res.data?.data) setScatterData(res.data.data)
       })
@@ -116,9 +125,8 @@ export default function Dashboard() {
 
   // Initial fetch and on submission or filter change
   useEffect(() => {
-    const activeWhse = tableFilters?.whse || tableFilters?.oewhse || tableFilters?.whs_num || tableFilters?.filtered_whse || '';
-    fetchAll(appliedDate, appliedTargetDb, activeWhse)
-    const timer = setInterval(() => fetchAll(appliedDate, appliedTargetDb, activeWhse), 15000)
+    fetchAll(appliedDate, appliedTargetDb, tableFilters)
+    const timer = setInterval(() => fetchAll(appliedDate, appliedTargetDb, tableFilters), 15000)
     return () => clearInterval(timer)
   }, [appliedDate, appliedTargetDb, tableFilters, copilotFilterActive])
 
