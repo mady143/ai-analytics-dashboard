@@ -125,11 +125,19 @@ def generate_commit_message(
 
 def commit(message: str) -> bool:
     """Commit staged changes with the given message."""
-    _, stderr, code = _run_git(["commit", "-m", message])
-    if code == 0:
-        console.print(f"[green]✅ Committed: {message[:60]}...[/green]")
+    result = subprocess.run(
+        ["git", "commit", "-F", "-"],
+        cwd=str(ROOT_DIR),
+        input=message,
+        capture_output=True,
+        text=True,
+        encoding="utf-8"
+    )
+    stderr = result.stderr.strip()
+    if result.returncode == 0:
+        console.print(f"[green]✅ Committed: {message.splitlines()[0][:60]}...[/green]")
         return True
-    elif "nothing to commit" in stderr.lower():
+    elif "nothing to commit" in stderr.lower() or "no changes added" in stderr.lower():
         console.print("[yellow]⚠️  Nothing to commit[/yellow]")
         return True  # Not an error
     else:
