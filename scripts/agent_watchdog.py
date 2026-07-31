@@ -18,6 +18,8 @@ if str(ROOT_DIR) not in sys.path:
 from orchestrator_agent import OrchestratorAgent
 
 if __name__ == "__main__":
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8')
     print("🛡️ Starting AI Analytics Dashboard — Agent & Server Watchdog Supervisor...")
     agent = OrchestratorAgent()
     agent.watchdog_health_loop(poll_interval=15)

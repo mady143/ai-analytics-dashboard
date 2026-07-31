@@ -4,7 +4,7 @@ echo =========================================================================
 echo ⚡ AI Analytics Dashboard — Comprehensive Autonomous Deployment Launcher
 echo =========================================================================
 
-set APP_ROOT=%~dp0..
+set "APP_ROOT=%~dp0.."
 cd /d "%APP_ROOT%"
 
 echo.
@@ -38,29 +38,29 @@ echo.
 echo [STEP 6/6] 🚀 Launching All Autonomous Fleet Services, Agents, Memory & Watchdog...
 
 echo 1. Launching FastAPI Backend API Server (Port 8000)...
-start "FastAPI Backend Server" cmd /k "cd /d %APP_ROOT%\backend && python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000"
+start "FastAPI Backend Server" cmd /k "cd /d "%APP_ROOT%\backend" && python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000"
 
 echo 2. Launching Vite Frontend Dev Server (Port 5173)...
-start "Vite Frontend Dev Server" cmd /k "cd /d %APP_ROOT%\frontend && npm run dev -- --host 0.0.0.0"
+start "Vite Frontend Dev Server" cmd /k "cd /d "%APP_ROOT%\frontend" && npm run dev -- --host 0.0.0.0"
 
 echo 3. Launching Sprint Watcher Continuous Agent Loop (15s Interval)...
-start "Sprint Watcher Agent" cmd /k "cd /d %APP_ROOT% && python agents/sprint_watcher_agent.py --interval 15"
+start "Sprint Watcher Agent" cmd /k "cd /d "%APP_ROOT%" && python agents/sprint_watcher_agent.py --interval 15"
 
 echo 4. Launching Agent & Server Health Watchdog Supervisor...
-start "Agent Watchdog Supervisor" cmd /k "cd /d %APP_ROOT% && python scripts/agent_watchdog.py"
+start "Agent Watchdog Supervisor" cmd /k "cd /d "%APP_ROOT%" && python scripts/agent_watchdog.py"
 
 echo 5. Launching Builder Agent System Builder...
-start "Builder Agent" cmd /k "cd /d %APP_ROOT% && python agents/builder_agent.py --task-id AAD-AUTO --task-title System_Integrity_Verification --description Autonomous_Fleet_Worker"
+start "Builder Agent" cmd /k "cd /d "%APP_ROOT%" && python agents/builder_agent.py --task-id AAD-AUTO --task-title System_Integrity_Verification --description Autonomous_Fleet_Worker"
 
 echo 6. Launching Tester Agent Test Suite Runner (Unit + Playwright E2E)...
-start "Tester Agent" cmd /k "cd /d %APP_ROOT% && python agents/tester_agent.py"
+start "Tester Agent" cmd /k "cd /d "%APP_ROOT%" && python agents/tester_agent.py"
 
 echo 7. Launching Memory Agent Persistent State Manager...
-start "Memory Agent" cmd /k "cd /d %APP_ROOT% && python -m agents.memory_manager"
+start "Memory Agent" cmd /k "cd /d "%APP_ROOT%" && python -m agents.memory_manager"
 
 echo 8. Launching MCP Server Fleet (Plane, GitHub, Memory, Browser)...
-start "MCP Plane Agent" cmd /k "cd /d %APP_ROOT% && python -m agents.plane_agent"
-start "MCP Git Agent" cmd /k "cd /d %APP_ROOT% && python -m agents.git_agent"
+start "MCP Plane Agent" cmd /k "cd /d "%APP_ROOT%" && python -m agents.plane_agent"
+start "MCP Git Agent" cmd /k "cd /d "%APP_ROOT%" && python -m agents.git_agent"
 
 echo =========================================================================
 echo 🎉 Autonomous Agent Fleet, Watchdog, Memory & MCP Servers Fully Active!
