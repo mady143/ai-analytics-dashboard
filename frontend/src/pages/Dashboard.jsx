@@ -73,29 +73,25 @@ export default function Dashboard() {
   const [copilotFilterActive, setCopilotFilterActive] = useState(false)
 
   const handleApplyTableFilter = (filters) => {
-    setTableFilters(prev => ({ ...(prev || {}), ...filters, _ts: Date.now() }))
-    // Mark copilot as active when it pushes a filter
-    setCopilotFilterActive(true)
-    if (filters.effectiveDate || filters.date) {
-      const d = filters.effectiveDate || filters.date;
-      if (d) {
-        const formattedDate = d.length === 8 ? `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}` : d;
-        setSelectedDate(formattedDate);
-        setAppliedDate(formattedDate);
-      }
-    }
+    const nextFilters = { ...(tableFilters || {}), ...filters, _ts: Date.now() };
+    setTableFilters(nextFilters);
+    setCopilotFilterActive(true);
+
+    const targetWhse = nextFilters.whse || nextFilters.oewhse || nextFilters.whs_num || nextFilters.filtered_whse || '';
+    fetchAll(appliedDate, appliedTargetDb, targetWhse, true);
   }
 
   const [kpis, setKpis] = useState(DEFAULT_KPIS)
   const [barData, setBarData] = useState([])
   const [scatterData, setScatterData] = useState([])
 
-  const fetchAll = (dateVal, dbVal, whseVal = '') => {
+  const fetchAll = (dateVal, dbVal, whseVal = '', forceCopilot = false) => {
     // ✅ Rule (TASK 19 & TASK 24):
     // - When Copilot filter is EXPLICITLY active → bypass date (oerdte='') so full dataset is shown
     // - When using normal date picker → always send the selected date so all widgets are date-filtered
     // - Both modes must populate KPI, Bar Chart, Scatter, and Table correctly
-    const effectiveDateVal = copilotFilterActive ? '' : dateVal;
+    const isCopilot = forceCopilot || copilotFilterActive;
+    const effectiveDateVal = isCopilot ? '' : dateVal;
     const oerdte = effectiveDateVal ? toOerdte(effectiveDateVal) : '';
     const whseParam = whseVal ? `&oewhse=${whseVal}` : '';
 
