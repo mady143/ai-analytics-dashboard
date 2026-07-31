@@ -14,10 +14,10 @@ export default function AiDataCopilot({ globalDate, globalTargetDb = 'pg_dev', o
   const [filterApplied, setFilterApplied] = useState(false);
 
   const quickPills = [
-    "Warehouse 58 Overview",
     "High Scratch Quantity",
     "Pending Procurement Transfers",
-    "Whse 61 Cases Built"
+    "High Volume Order Surge",
+    "Fulfillment Operations Breakdown"
   ];
 
   // Re-run when DB changes (NOT date — copilot is date-agnostic, queries full dataset)

@@ -150,21 +150,15 @@ export default function WarehouseSalesAnalytics({ globalDate, globalTargetDb = '
               }}
             >
               <option value="">All Warehouses</option>
-              {globalTargetDb.toLowerCase().includes('dev') ? (
-                <>
-                  <option value="01">Whse 01</option>
-                  <option value="02">Whse 02</option>
-                  <option value="58">Whse 58</option>
-                  <option value="61">Whse 61</option>
-                  <option value="71">Whse 71</option>
-                </>
-              ) : (
-                <>
-                  <option value="58">Whse 58</option>
-                  <option value="61">Whse 61</option>
-                  <option value="71">Whse 71</option>
-                </>
-              )}
+              {(() => {
+                const whsList = summary?.distinct_warehouses || [];
+                const optionsSet = new Set(whsList.map(w => String(w).trim()));
+                if (filterWhs) optionsSet.add(String(filterWhs).trim());
+                const sortedWhs = Array.from(optionsSet).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+                return sortedWhs.map(w => (
+                  <option key={w} value={w}>Whse {w}</option>
+                ));
+              })()}
             </select>
           </div>
 
