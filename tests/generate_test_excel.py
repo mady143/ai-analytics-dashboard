@@ -440,8 +440,7 @@ if __name__ == "__main__":
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
 
-    print("[TEST] Running unit tests to collect results...")
-    passed_tests, failed_tests, output = run_unit_tests_and_get_results()
-    print(f"   Pytest: {len(passed_tests)} passed, {len(failed_tests)} failed")
-    path = create_excel(passed_tests, failed_tests)
+    print("[TEST] Running unit and Playwright browser tests to collect real execution results...")
+    passed_tests, failed_tests, unit_pass, browser_pass = run_all_tests_and_get_results()
+    path = create_excel(passed_tests, failed_tests, unit_pass, browser_pass)
     print(f"[OK] Open: {path}")
