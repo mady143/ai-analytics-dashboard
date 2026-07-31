@@ -234,6 +234,7 @@ export default function Dashboard() {
         onClearFilter={() => {
           setCopilotFilterActive(false)
           setTableFilters(null)
+          fetchAll(appliedDate, appliedTargetDb, '', false)
         }}
         copilotFilterActive={copilotFilterActive}
       />
