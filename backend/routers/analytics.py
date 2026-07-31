@@ -277,7 +277,31 @@ async def ai_copilot_query(request: CopilotRequest):
 
     # Build per-warehouse chart breakdown data for Copilot visualization cards
     chart_data = []
-    if whs_totals_map:
+    if filtered_whse:
+        # When a specific warehouse is targeted in Copilot query (e.g. "Warehouse 58 Overview"),
+        # restrict chart_data strictly to that warehouse so the bar chart breakdown shows only the target warehouse.
+        w_info = whs_totals_map.get(filtered_whse, {}) or whs_totals_map.get(filtered_whse.zfill(2), {})
+        if w_info:
+            cb = w_info.get("cases_built", 0)
+            oq = w_info.get("original_order_qty", 0)
+            sq = oq - cb if oq > cb else 0
+            chart_data.append({
+                "warehouse": f"WHS {filtered_whse.zfill(2)}",
+                "cases_built": cb,
+                "order_qty": oq,
+                "scratch_qty": sq
+            })
+        elif whs_items:
+            cb = sum(it.get("cases_bld_stg", 0) for it in whs_items)
+            oq = sum(it.get("orgnl_ordr_qty_stg", 0) for it in whs_items)
+            sq = sum(it.get("whs_scrtch_qty_stg", 0) for it in whs_items)
+            chart_data.append({
+                "warehouse": f"WHS {filtered_whse.zfill(2)}",
+                "cases_built": cb,
+                "order_qty": oq,
+                "scratch_qty": sq
+            })
+    elif whs_totals_map:
         for w_num, w_info in whs_totals_map.items():
             w_clean = str(w_num).strip()
             cb = w_info.get("cases_built", 0)
