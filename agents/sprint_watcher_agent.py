@@ -78,20 +78,8 @@ STATE_BACKLOG   = "backlog"       # Not yet in sprint
 
 
 def trigger_automated_git_push():
-    """Triggers end_of_day.py automatically in the background without user prompts."""
-    try:
-        eod_script = ROOT_DIR / "scripts" / "end_of_day.py"
-        if eod_script.exists():
-            env = dict(os.environ)
-            env["PYTHONIOENCODING"] = "utf-8"
-            proc = subprocess.run(
-                [sys.executable, str(eod_script)],
-                capture_output=True, text=True, encoding="utf-8", errors="replace", env=env, timeout=60
-            )
-            if proc.returncode == 0:
-                console.print("[bold green]🚀 Dynamic Continuous Background Git Push completed successfully![/bold green]")
-    except Exception as e:
-        console.print(f"[dim]Background git push check: {e}[/dim]")
+    """Disabled continuous pushes. Pushes only run at daily EOD cycle when changes exist."""
+    console.print("[dim]Continuous Git push disabled (Pushes occur on daily EOD cycle only when code changes exist).[/dim]")
 
 
 class SprintWatcherAgent:
@@ -458,17 +446,7 @@ class SprintWatcherAgent:
             f"{'✅ Completed' if success else '❌ Failed'}: {task_title} — watching for next task"
         )
 
-        # ── Step 5: Automatically commit and push code if task passed ──────────
-        if success:
-            try:
-                from git_agent import eod_push
-                console.print(f"[bold cyan]🔀 Auto-committing and pushing code for completed task: {task_title}[/bold cyan]")
-                eod_push(
-                    tasks_completed=[task_title],
-                    custom_summary=f"Automated completion of sprint task: {task_title}"
-                )
-            except Exception as e:
-                console.print(f"[yellow]⚠️  Git push skipped/failed: {e}[/yellow]")
+        # Note: Continuous auto-push after every task disabled per configuration. Pushes execute on daily EOD schedule if code changes exist.
 
         console.print(Panel(
             f"[bold {'green' if success else 'red'}]{icon} Task {status_label.upper()}[/bold {'green' if success else 'red'}]\n"
@@ -669,7 +647,6 @@ class SprintWatcherAgent:
                         )
                         for task in actionable_tasks:
                             self._handle_new_task(task)
-                        trigger_automated_git_push()
                     else:
                         console.print("[dim]✓ No new or updated tasks — all up to date.[/dim]")
                 else:
