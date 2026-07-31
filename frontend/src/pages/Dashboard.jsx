@@ -69,11 +69,23 @@ export default function Dashboard() {
   // ── Table Filter Synchronization State ──
   const [tableFilters, setTableFilters] = useState(null)
   // Tracks whether the Copilot has pushed an ACTIVE filter to the page
-  // (distinct from any random tableFilters change — only true when Copilot fired onApplyFilter)
   const [copilotFilterActive, setCopilotFilterActive] = useState(false)
 
+  const tableFiltersRef = React.useRef(tableFilters)
+  const copilotActiveRef = React.useRef(copilotFilterActive)
+
+  React.useEffect(() => {
+    tableFiltersRef.current = tableFilters
+  }, [tableFilters])
+
+  React.useEffect(() => {
+    copilotActiveRef.current = copilotFilterActive
+  }, [copilotFilterActive])
+
   const handleApplyTableFilter = (filters) => {
-    const nextFilters = { ...(tableFilters || {}), ...filters, _ts: Date.now() };
+    const nextFilters = { ...(tableFiltersRef.current || {}), ...filters, _ts: Date.now() };
+    tableFiltersRef.current = nextFilters;
+    copilotActiveRef.current = true;
     setTableFilters(nextFilters);
     setCopilotFilterActive(true);
     fetchAll(appliedDate, appliedTargetDb, nextFilters, true);
@@ -84,15 +96,11 @@ export default function Dashboard() {
   const [scatterData, setScatterData] = useState([])
 
   const fetchAll = (dateVal, dbVal, filterParams = null, forceCopilot = false) => {
-    // ✅ Rule (TASK 19 & TASK 24):
-    // - When Copilot filter is EXPLICITLY active → bypass date (oerdte='') so full dataset is shown
-    // - When using normal date picker → always send the selected date so all widgets are date-filtered
-    // - Both modes must populate KPI, Bar Chart, Scatter, and Table correctly
-    const isCopilot = forceCopilot || copilotFilterActive;
+    const isCopilot = forceCopilot || copilotFilterActive || copilotActiveRef.current;
     const effectiveDateVal = isCopilot ? '' : dateVal;
     const oerdte = effectiveDateVal ? toOerdte(effectiveDateVal) : '';
 
-    const currentFilters = filterParams || tableFilters || {};
+    const currentFilters = filterParams || tableFilters || tableFiltersRef.current || {};
     const whseVal = currentFilters.whse || currentFilters.oewhse || currentFilters.whs_num || currentFilters.filtered_whse || '';
     const batchVal = currentFilters.batch || currentFilters.batch_id || currentFilters.filtered_batch || '';
     const invVal = currentFilters.invoice || currentFilters.oeinv || currentFilters.filtered_invoice || '';
@@ -104,19 +112,19 @@ export default function Dashboard() {
     if (invVal) queryParams += `&oeinv=${encodeURIComponent(invVal)}`;
     if (scratchesVal) queryParams += `&only_scratches=true`;
 
-    axios.get(`/api/charts/kpi?${queryParams}`)
+    axios.get(`${API}/api/charts/kpi?${queryParams}`)
       .then(res => {
         if (res.data?.kpis) setKpis(res.data.kpis)
       })
       .catch(err => console.error('Failed to fetch KPI cards:', err))
 
-    axios.get(`/api/charts/bar?${queryParams}`)
+    axios.get(`${API}/api/charts/bar?${queryParams}`)
       .then(res => {
         if (res.data?.data) setBarData(res.data.data)
       })
       .catch(err => console.error('Failed to fetch Bar chart data:', err))
 
-    axios.get(`/api/charts/scatter?${queryParams}`)
+    axios.get(`${API}/api/charts/scatter?${queryParams}`)
       .then(res => {
         if (res.data?.data) setScatterData(res.data.data)
       })
@@ -125,8 +133,8 @@ export default function Dashboard() {
 
   // Initial fetch and on submission or filter change
   useEffect(() => {
-    fetchAll(appliedDate, appliedTargetDb, tableFilters)
-    const timer = setInterval(() => fetchAll(appliedDate, appliedTargetDb, tableFilters), 15000)
+    fetchAll(appliedDate, appliedTargetDb, tableFiltersRef.current)
+    const timer = setInterval(() => fetchAll(appliedDate, appliedTargetDb, tableFiltersRef.current), 15000)
     return () => clearInterval(timer)
   }, [appliedDate, appliedTargetDb, tableFilters, copilotFilterActive])
 
