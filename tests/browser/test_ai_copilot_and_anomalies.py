@@ -21,10 +21,10 @@ def browser_context_args(browser_context_args):
 def test_ai_copilot_interactive_prompt_and_ask_ai(page: Page):
     """Test typing a query into AI Copilot, clicking 'Ask AI', verifying finding card, and applying filter."""
     page.goto(BASE_URL)
-    page.wait_for_selector("input[placeholder*='Ask AI Data Copilot']", timeout=15000)
+    page.wait_for_selector("#copilot-input", timeout=15000)
 
     # 1. Fill input with query
-    copilot_input = page.locator("input[placeholder*='Ask AI Data Copilot']")
+    copilot_input = page.locator("#copilot-input")
     expect(copilot_input).to_be_visible()
     copilot_input.fill("Warehouse 58 Overview")
 
