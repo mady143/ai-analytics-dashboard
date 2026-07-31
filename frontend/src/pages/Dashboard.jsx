@@ -120,7 +120,7 @@ export default function Dashboard() {
 
   // Initial fetch and on submission or filter change
   useEffect(() => {
-    const activeWhse = tableFilters?.oewhse || tableFilters?.whs_num || '';
+    const activeWhse = tableFilters?.whse || tableFilters?.oewhse || tableFilters?.whs_num || tableFilters?.filtered_whse || '';
     fetchAll(appliedDate, appliedTargetDb, activeWhse)
     const timer = setInterval(() => fetchAll(appliedDate, appliedTargetDb, activeWhse), 15000)
     return () => clearInterval(timer)
