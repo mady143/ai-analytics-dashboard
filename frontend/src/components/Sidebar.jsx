@@ -59,27 +59,35 @@ export default function Sidebar({ collapsed, onToggle }) {
         overflowX: 'hidden'
       }}
     >
-      {/* Logo & Three-Line Toggle Button Header */}
+      {/* Logo & Three-Line Toggle Button Header - SIDE BY SIDE */}
       <div
         className="sidebar-logo"
         style={{
           display: 'flex',
-          flexDirection: collapsed ? 'column' : 'row',
+          flexDirection: 'row',
           alignItems: 'center',
           justifyContent: collapsed ? 'center' : 'space-between',
-          padding: collapsed ? '16px 4px' : '16px 12px',
-          gap: collapsed ? '10px' : '0px',
+          padding: collapsed ? '14px 2px' : '16px 12px',
+          gap: collapsed ? '5px' : '0px',
           width: '100%'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <div
             className="logo-icon"
             title="AI Analytics · Agentic Dashboard"
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            style={{
+              width: collapsed ? '30px' : '40px',
+              height: collapsed ? '30px' : '40px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              borderRadius: collapsed ? '6px' : '12px'
+            }}
             onClick={collapsed ? onToggle : undefined}
           >
-            <BarChart3 size={20} color="#7C3AED" />
+            <BarChart3 size={collapsed ? 16 : 20} color="#7C3AED" />
           </div>
           {!collapsed && (
             <div>
@@ -89,7 +97,7 @@ export default function Sidebar({ collapsed, onToggle }) {
           )}
         </div>
 
-        {/* Three Line Toggle Button - ALWAYS VISIBLE */}
+        {/* Three Line Toggle Button - SIDE BY SIDE WITH LOGO */}
         <button
           id="sidebar-toggle-btn"
           onClick={onToggle}
@@ -99,17 +107,17 @@ export default function Sidebar({ collapsed, onToggle }) {
             background: collapsed ? 'rgba(124, 58, 237, 0.25)' : 'var(--bg-secondary)',
             border: collapsed ? '1px solid #7C3AED' : '1px solid var(--border-color)',
             color: collapsed ? '#a78bfa' : 'var(--text-primary)',
-            padding: '8px',
-            borderRadius: '8px',
+            padding: '6px',
+            borderRadius: '6px',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: collapsed ? '44px' : 'auto',
-            height: '40px'
+            width: collapsed ? '30px' : 'auto',
+            height: collapsed ? '30px' : '40px'
           }}
         >
-          <Menu size={20} />
+          <Menu size={collapsed ? 16 : 20} />
         </button>
       </div>
 
