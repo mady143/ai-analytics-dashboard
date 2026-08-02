@@ -91,10 +91,10 @@ def test_interactive_step3_copilot_search_warehouse(page: Page):
 
     page.fill("#copilot-input", f"{dynamic_whse} warehouse overview")
     page.click("#copilot-submit-btn")
-    page.wait_for_timeout(2500)
 
-    # Verify AI Copilot result / mode active
-    expect(page.locator("text=AI Copilot Finding, text=Copilot Mode Active").first).to_be_visible()
+    # Wait for AI Copilot result card
+    page.wait_for_selector("text=AI Copilot Finding", timeout=25000)
+    expect(page.locator("text=AI Copilot Finding")).to_be_visible()
 
     # Verify Global Warehouse dropdown updated dynamically
     whse_val = page.locator("#global-whse-selector").input_value()
@@ -123,7 +123,7 @@ def test_interactive_step4_clear_filters_resets_ui(page: Page):
 
     page.fill("#copilot-input", f"Warehouse {dynamic_whse}")
     page.click("#copilot-submit-btn")
-    page.wait_for_timeout(2000)
+    page.wait_for_selector("text=AI Copilot Finding", timeout=25000)
 
     # Click Clear All Filters button
     clear_btn = page.locator("button:has-text('Clear All Filters')").first
