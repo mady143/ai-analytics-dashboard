@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom'
 import axios from 'axios'
 import { 
   LayoutDashboard, BarChart3, LineChart, Bot, 
-  GitBranch, Database, Settings, ChevronRight, Activity, Menu
+  GitBranch, Database, Settings, ChevronRight, Activity, Menu, EyeOff, X
 } from 'lucide-react'
 
 const navItems = [
@@ -15,7 +15,7 @@ const navItems = [
   { path: '/sprints', label: 'Sprint Board', icon: GitBranch, section: 'AGENTS' },
 ]
 
-export default function Sidebar({ collapsed, onToggle }) {
+export default function Sidebar({ collapsed, onToggle, onHide }) {
   const location = useLocation()
   const [agentsData, setAgentsData] = useState({
     orchestrator: { status: 'running', current_task: 'Task & Agent State Coordination Active' },
@@ -59,7 +59,7 @@ export default function Sidebar({ collapsed, onToggle }) {
         overflowX: 'hidden'
       }}
     >
-      {/* Logo & Three-Line Toggle Button Header - SIDE BY SIDE */}
+      {/* Logo, Three-Line Toggle, & Hide Component Header */}
       <div
         className="sidebar-logo"
         style={{
@@ -97,28 +97,56 @@ export default function Sidebar({ collapsed, onToggle }) {
           )}
         </div>
 
-        {/* Three Line Toggle Button - SIDE BY SIDE WITH LOGO */}
-        <button
-          id="sidebar-toggle-btn"
-          onClick={onToggle}
-          title={collapsed ? "Enable Nav Bar (AI Analytics)" : "Disable Nav Bar"}
-          aria-label={collapsed ? "Enable Nav Bar" : "Disable Nav Bar"}
-          style={{
-            background: collapsed ? 'rgba(124, 58, 237, 0.25)' : 'var(--bg-secondary)',
-            border: collapsed ? '1px solid #7C3AED' : '1px solid var(--border-color)',
-            color: collapsed ? '#a78bfa' : 'var(--text-primary)',
-            padding: '6px',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: collapsed ? '30px' : 'auto',
-            height: collapsed ? '30px' : '40px'
-          }}
-        >
-          <Menu size={collapsed ? 16 : 20} />
-        </button>
+        {/* Action Buttons: Toggle (Collapse/Expand) & Hide Entire Component */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          {/* Three Line Toggle Button */}
+          <button
+            id="sidebar-toggle-btn"
+            onClick={onToggle}
+            title={collapsed ? "Enable Nav Bar (AI Analytics)" : "Disable Nav Bar"}
+            aria-label={collapsed ? "Enable Nav Bar" : "Disable Nav Bar"}
+            style={{
+              background: collapsed ? 'rgba(124, 58, 237, 0.25)' : 'var(--bg-secondary)',
+              border: collapsed ? '1px solid #7C3AED' : '1px solid var(--border-color)',
+              color: collapsed ? '#a78bfa' : 'var(--text-primary)',
+              padding: '6px',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: collapsed ? '30px' : 'auto',
+              height: collapsed ? '30px' : '40px'
+            }}
+          >
+            <Menu size={collapsed ? 16 : 20} />
+          </button>
+
+          {/* Hide Left Nav Bar Component Button */}
+          {onHide && !collapsed && (
+            <button
+              id="sidebar-hide-btn"
+              onClick={onHide}
+              title="Hide Left Side Nav Bar"
+              aria-label="Hide Left Side Nav Bar"
+              style={{
+                background: 'rgba(239, 68, 68, 0.12)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                color: '#ef4444',
+                padding: '6px',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '40px',
+                width: '32px'
+              }}
+            >
+              <EyeOff size={16} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Navigation Links */}
