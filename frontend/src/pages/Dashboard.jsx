@@ -213,14 +213,15 @@ export default function Dashboard() {
               }}
             >
               <option value="">All Warehouses</option>
-              <option value="01">Whse 01</option>
-              <option value="02">Whse 02</option>
-              <option value="03">Whse 03</option>
-              <option value="08">Whse 08</option>
-              <option value="27">Whse 27</option>
-              <option value="58">Whse 58</option>
-              <option value="61">Whse 61</option>
-              <option value="71">Whse 71</option>
+              {(() => {
+                const whsSet = new Set(barData.map(b => (b.whs_num || '').toString().trim()).filter(Boolean));
+                const currentVal = (tableFilters?.whse || tableFilters?.oewhse || tableFilters?.whs_num || '').toString().trim();
+                if (currentVal) whsSet.add(currentVal);
+                const sorted = Array.from(whsSet).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+                return sorted.map(w => (
+                  <option key={w} value={w}>Whse {w}</option>
+                ));
+              })()}
             </select>
           </div>
 
