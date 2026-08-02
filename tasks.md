@@ -146,6 +146,18 @@ The application is structured into distinct, modular UI Screens and Component Se
 
 ---
 
+### 📌 TASK 26 — Dynamic Header Clear Filters Component (`#header-clear-filter`) [HIGH PRIORITY]
+
+**Goal:** Provide a dynamic, prominent `✕ Clear Filters` button in the top global control bar that automatically appears whenever any filter is active, and hides when no filter is active.
+
+- **Component Location:** Top Navigation Header ([`Dashboard.jsx`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/frontend/src/pages/Dashboard.jsx#L276-L305))
+- **Visibility Rule:**
+  - **Hidden (`display: none` / unrendered):** When all filters are cleared (`tableFilters` is `null` and `copilotFilterActive` is `false`).
+  - **Visible (`id="header-clear-filter-btn"`):** Dynamically renders in soft red/pink theme beside the Submit button whenever `tableFilters?.whse`, `batch`, `invoice`, `onlyScratches`, or `copilotFilterActive` is active.
+- **Action:** Clicking `✕ Clear Filters` resets `tableFilters` to `null`, resets `copilotFilterActive` to `false`, re-fetches baseline dashboard metrics via `fetchAll()`, and hides the clear button.
+
+---
+
 ### 📌 TASK 20 — Full E2E + Unit Test Suite: Component Validation & Regression Prevention (`#full-e2e-testing`) [HIGH PRIORITY]
 
 **Goal:** Run automated tests against every UI component and API endpoint to catch regressions. Must be run after every code change.
