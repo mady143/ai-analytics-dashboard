@@ -96,15 +96,16 @@ export default function Dashboard() {
   const [scatterData, setScatterData] = useState([])
 
   const fetchAll = (dateVal, dbVal, filterParams = null, forceCopilot = false) => {
-    const isCopilot = forceCopilot || copilotFilterActive || copilotActiveRef.current;
-    const effectiveDateVal = isCopilot ? '' : dateVal;
-    const oerdte = effectiveDateVal ? toOerdte(effectiveDateVal) : '';
-
-    const currentFilters = filterParams || tableFilters || tableFiltersRef.current || {};
+    const currentFilters = filterParams !== null ? filterParams : (tableFilters || tableFiltersRef.current || {});
     const whseVal = currentFilters.whse || currentFilters.oewhse || currentFilters.whs_num || currentFilters.filtered_whse || '';
     const batchVal = currentFilters.batch || currentFilters.batch_id || currentFilters.filtered_batch || '';
     const invVal = currentFilters.invoice || currentFilters.oeinv || currentFilters.filtered_invoice || '';
     const scratchesVal = Boolean(currentFilters.onlyScratches || currentFilters.filter_scratch);
+
+    const hasFilter = Boolean(whseVal || batchVal || invVal || scratchesVal);
+    const isCopilot = forceCopilot || copilotFilterActive || copilotActiveRef.current || hasFilter;
+    const effectiveDateVal = isCopilot ? '' : dateVal;
+    const oerdte = effectiveDateVal ? toOerdte(effectiveDateVal) : '';
 
     let queryParams = `oerdte=${oerdte}&target_db=${dbVal}`;
     if (whseVal) queryParams += `&oewhse=${encodeURIComponent(whseVal)}`;
