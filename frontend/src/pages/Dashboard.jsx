@@ -276,6 +276,34 @@ export default function Dashboard() {
             Submit
           </button>
 
+          {Boolean(tableFilters?.whse || tableFilters?.oewhse || tableFilters?.whs_num || tableFilters?.batch || tableFilters?.invoice || tableFilters?.onlyScratches || copilotFilterActive) && (
+            <button
+              type="button"
+              id="header-clear-filter-btn"
+              onClick={() => {
+                setCopilotFilterActive(false);
+                setTableFilters(null);
+                fetchAll(appliedDate, appliedTargetDb, {}, false);
+              }}
+              style={{
+                background: 'rgba(239, 68, 68, 0.15)',
+                color: '#fca5a5',
+                border: '1px solid rgba(239, 68, 68, 0.4)',
+                padding: '7px 14px',
+                borderRadius: '6px',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              ✕ Clear Filters
+            </button>
+          )}
+
           <span style={{
             fontSize: '11px', color: '#34d399', fontWeight: 700,
             background: 'rgba(52,211,153,0.1)', padding: '3px 8px', borderRadius: '4px'
