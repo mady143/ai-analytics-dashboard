@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   CheckCircle2, Clock, PlayCircle, AlertCircle, RefreshCw,
-  Search, Layers, Cpu, Server, CheckSquare, Zap, Filter
+  Search, Layers, Cpu, Server, CheckSquare, Zap, Filter, Menu
 } from 'lucide-react'
 
 const API_BASE = 'http://localhost:8000'
@@ -171,6 +171,10 @@ export default function SprintBoard() {
         borderRadius: '12px', padding: '12px 18px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: '1', minWidth: '240px' }}>
+          {/* White Three-Line Hamburger Icon Beside Search */}
+          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Menu size={20} color="#FFFFFF" strokeWidth={2.5} />
+          </span>
           <Search size={16} style={{ color: 'var(--text-secondary)' }} />
           <input
             type="text"
