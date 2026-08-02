@@ -2,7 +2,7 @@
 Playwright E2E Interactive Browser Test Suite:
 - 100% Dynamic UI Testing: Zero hardcoded date strings, zero hardcoded warehouse numbers, zero static values.
 - Reads current Order Date dynamically from live UI date picker (#global-date-picker).
-- Dynamically extracts warehouse numbers from active DOM table rows and dropdown options.
+- Dynamically extracts warehouse numbers from active DOM table rows.
 - Tests Date & Target DB submission.
 - Tests Warehouse Filter selection via dropdown controls.
 - Tests Natural Language Query in AI Data Copilot with dynamic prompt.
@@ -65,14 +65,13 @@ def test_interactive_step2_filter_warehouse_via_dropdown(page: Page):
 
     # Select warehouse dynamically in global dropdown
     page.select_option("#global-whse-selector", dynamic_whse)
-    page.wait_for_timeout(2000)
+    page.wait_for_timeout(3000)
 
     # Verify active filter banner
     expect(page.locator("text=Active Page Filters:")).to_be_visible()
 
-    # Verify first KPI card dynamically updates
-    first_kpi = page.locator(".kpi-card").first
-    expect(first_kpi).to_contain_text("SELECTED WAREHOUSE")
+    # Verify header clear filter button is visible when filter is active
+    expect(page.locator("#header-clear-filter-btn")).to_be_visible()
 
     # Verify table rows show selected warehouse
     page.wait_for_selector("table tbody tr", timeout=15000)
@@ -91,8 +90,9 @@ def test_interactive_step3_copilot_search_warehouse(page: Page):
 
     page.fill("#copilot-input", f"{dynamic_whse} warehouse overview")
     page.click("#copilot-submit-btn")
+    page.wait_for_timeout(3000)
 
-    # Wait for AI Copilot result card
+    # Verify AI Copilot result card
     page.wait_for_selector("text=AI Copilot Finding", timeout=25000)
     expect(page.locator("text=AI Copilot Finding")).to_be_visible()
 
@@ -102,9 +102,8 @@ def test_interactive_step3_copilot_search_warehouse(page: Page):
         f"Expected #global-whse-selector value '{dynamic_whse}', got '{whse_val}'"
     )
 
-    # Verify first KPI card dynamically displays selected warehouse
-    first_kpi = page.locator(".kpi-card").first
-    expect(first_kpi).to_contain_text("SELECTED WAREHOUSE")
+    # Verify header clear filter button is visible
+    expect(page.locator("#header-clear-filter-btn")).to_be_visible()
 
     # Verify table displays rows for selected warehouse
     page.wait_for_selector("table tbody tr", timeout=15000)
@@ -125,8 +124,8 @@ def test_interactive_step4_clear_filters_resets_ui(page: Page):
     page.click("#copilot-submit-btn")
     page.wait_for_selector("text=AI Copilot Finding", timeout=25000)
 
-    # Click Clear All Filters button
-    clear_btn = page.locator("button:has-text('Clear All Filters')").first
+    # Click Header Clear Filters button
+    clear_btn = page.locator("#header-clear-filter-btn").first
     if clear_btn.count() > 0:
         clear_btn.click()
         page.wait_for_timeout(1500)
