@@ -59,6 +59,9 @@ def test_scatter_chart():
     data = response.json()
     assert data["chart_type"] == "scatter"
     assert "data" in data
+    assert len(data["data"]) > 0
+    assert "x" in data["data"][0]
+    assert "y" in data["data"][0]
 
 
 def test_task27_single_warehouse_chart_filtering():
@@ -75,10 +78,6 @@ def test_task27_single_warehouse_chart_filtering():
     assert len(scatter_json["data"]) > 0
     for point in scatter_json["data"]:
         assert point["color"] == "Whse 58"
-
-    assert len(data["data"]) > 0
-    assert "x" in data["data"][0]
-    assert "y" in data["data"][0]
 
 
 def test_heatmap():
