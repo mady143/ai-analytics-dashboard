@@ -596,9 +596,8 @@ class SprintWatcherAgent:
                     #   1. Task is brand new (never seen) AND is in unstarted/backlog
                     #   2. Task state was reset back to unstarted (user re-opened it)
                     #   3. Task content/description was updated AND task is unstarted
-                    actionable_tasks = []
-                    ACTIONABLE_STATES = (STATE_TODO, STATE_BACKLOG, "unstarted", "backlog", "todo")
-                    SKIP_STATES = (STATE_DONE, STATE_INPROG, "completed", "done", "started", "in progress", "cancelled")
+                    ACTIONABLE_STATES = (STATE_TODO, STATE_BACKLOG, STATE_INPROG, "unstarted", "backlog", "todo", "started", "in_progress", "in progress")
+                    SKIP_STATES = (STATE_DONE, "completed", "done", "cancelled")
 
                     for t in tasks:
                         task_id       = t["id"]
@@ -607,15 +606,19 @@ class SprintWatcherAgent:
                         last_state    = self._last_seen_state.get(task_id)
                         last_updated  = self._last_seen_updated.get(task_id)
 
+                        # If user moved a task back out of Done/Completed into To Do or In Progress, unmark from completed_task_ids
+                        if current_state in ACTIONABLE_STATES and task_id in self._completed_task_ids and last_state in SKIP_STATES:
+                            self._completed_task_ids.remove(task_id)
+
                         # Always update tracking
                         self._last_seen_state[task_id] = current_state
                         self._last_seen_updated[task_id] = updated_at
 
-                        # Skip tasks already completed by agent in this session
-                        if task_id in self._completed_task_ids:
+                        # Skip tasks already completed by agent in this session unless state changed back
+                        if task_id in self._completed_task_ids and current_state in SKIP_STATES:
                             continue
 
-                        # Skip tasks NOT in an actionable state (e.g. already started/done/cancelled)
+                        # Skip tasks in DONE / CANCELLED states
                         if current_state in SKIP_STATES:
                             continue
 
