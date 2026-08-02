@@ -3,6 +3,7 @@ Playwright E2E Browser Test — Sidebar Three-Line Toggle Button & Footer
 Verifies clicking the hamburger button collapses/expands the nav bar and footer displays copyright info.
 """
 
+import re
 import pytest
 from playwright.sync_api import Page, expect
 
@@ -22,12 +23,12 @@ def test_sidebar_toggle_and_footer_rendering(page: Page):
 
     # Verify sidebar is collapsed
     sidebar = page.locator("aside.sidebar")
-    expect(sidebar).to_have_class(pytest.PytestRegex(".*collapsed.*"))
+    expect(sidebar).to_have_class(re.compile(r".*collapsed.*"))
 
     # 3. Click toggle button again to expand/enable nav bar
     toggle_btn.click()
     page.wait_for_timeout(1000)
-    expect(sidebar).not_to_have_class(pytest.PytestRegex(".*collapsed.*"))
+    expect(sidebar).not_to_have_class(re.compile(r".*collapsed.*"))
 
     # 4. Verify Footer renders copyright
     footer = page.locator("#app-footer")
