@@ -73,6 +73,8 @@ This document maintains the official record of test cases, test objectives, and 
 ## 🔹 Sprint Task 30: "Three-Line Sidebar Toggle & Footer Component"
 
 ### Test Cases & Results
-- **Test Case 1: `test_sidebar_has_toggle_button`** — Verify `#sidebar-toggle-btn` toggles nav bar between collapsed mini-mode (`72px`) and expanded mode (`260px`). 👉 **`PASSED`**
-- **Test Case 2: `test_footer_component_exists`** — Verify `#app-footer` renders default copyright information at the bottom of the layout. 👉 **`PASSED`**
+- **Test Case 1: `test_sidebar_has_toggle_button_disable`** — Verify clicking `#sidebar-toggle-btn` collapses (disables) nav bar to mini-mode (`72px`) and adjusts main content margin. 👉 **`PASSED`**
+- **Test Case 2: `test_sidebar_has_toggle_button_enable`** — Verify clicking `#sidebar-toggle-btn` a second time expands (enables) nav bar back to full width (`260px`). 👉 **`PASSED`**
+- **Test Case 3: `test_footer_component_exists`** — Verify `#app-footer` renders default copyright information at the bottom of the layout. 👉 **`PASSED`**
+
 
