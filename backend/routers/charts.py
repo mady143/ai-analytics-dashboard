@@ -12,10 +12,17 @@ router = APIRouter()
 
 
 def _clean_param(val: Any, default: str = "") -> str:
+    if isinstance(val, str):
+        s = val.strip()
+        if s.startswith("annotation="):
+            return default
+        return s
     if hasattr(val, "default"):
-        val = val.default
+        val = getattr(val, "default", default)
+    if val is None or "Query" in str(type(val)):
+        return default
     s = str(val or "").strip()
-    if s.startswith("annotation=") or "Query" in str(type(val)):
+    if s.startswith("annotation="):
         return default
     return s
 
