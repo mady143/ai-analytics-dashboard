@@ -573,14 +573,17 @@ def classify_task_intent_and_intent_map(task_title: str, description: str) -> di
 # No fake "✅ Verified" print-only stubs allowed.
 
 CODEBASE_MAP = {
-    "table":       ROOT_DIR / "frontend" / "src" / "components" / "WarehouseSalesAnalytics.jsx",
-    "dashboard":   ROOT_DIR / "frontend" / "src" / "pages" / "Dashboard.jsx",
-    "copilot":     ROOT_DIR / "frontend" / "src" / "components" / "AiDataCopilot.jsx",
-    "anomaly":     ROOT_DIR / "frontend" / "src" / "components" / "AnomalyAlertPanel.jsx",
-    "charts_py":   ROOT_DIR / "backend" / "routers" / "charts.py",
-    "analytics_py":ROOT_DIR / "backend" / "routers" / "analytics.py",
+    "table":        ROOT_DIR / "frontend" / "src" / "components" / "WarehouseSalesAnalytics.jsx",
+    "dashboard":    ROOT_DIR / "frontend" / "src" / "pages" / "Dashboard.jsx",
+    "analytics":    ROOT_DIR / "frontend" / "src" / "pages" / "Analytics.jsx",
+    "copilot":      ROOT_DIR / "frontend" / "src" / "components" / "AiDataCopilot.jsx",
+    "anomaly":      ROOT_DIR / "frontend" / "src" / "components" / "AnomalyAlertPanel.jsx",
+    "charts_py":    ROOT_DIR / "backend" / "routers" / "charts.py",
+    "analytics_py": ROOT_DIR / "backend" / "routers" / "analytics.py",
     "warehouse_svc":ROOT_DIR / "backend" / "app" / "warehouse_service.py",
-    "navbar":      ROOT_DIR / "frontend" / "src" / "components" / "Navbar.jsx",
+    "sidebar":      ROOT_DIR / "frontend" / "src" / "components" / "Sidebar.jsx",
+    "sprintboard":  ROOT_DIR / "frontend" / "src" / "pages" / "SprintBoard.jsx",
+    "agentmonitor": ROOT_DIR / "frontend" / "src" / "pages" / "AgentMonitor.jsx",
 }
 
 
@@ -772,21 +775,15 @@ def handle_task(task_id: str, task_title: str, description: str, priority: str) 
 
     if modified_files:
         console.print(f"[bold green]✅ Real code changes written to: {', '.join(modified_files)}[/bold green]")
-        # ── Step 4: Run core test suite to verify build (without creating test files) ─
+        # ── Step 4: Run core test suite to verify build ──
         test_passed = run_builder_test_verification()
         update_agent_status("builder", "idle", "Autonomous Builder Agent Active (Listening for tasks)")
         return test_passed
     else:
-        # Verify codebase health with core test suite
-        test_passed = run_builder_test_verification()
-        if test_passed:
-            console.print("[green]✅ Core test suite passed — system integrity verified.[/green]")
-            update_agent_status("builder", "idle", "Autonomous Builder Agent Active (Listening for tasks)")
-            return True
-        else:
-            console.print("[yellow]⚠️  No code files were modified and tests failed — task remains In Progress for review.[/yellow]")
-            update_agent_status("builder", "idle", f"In Progress (Review Needed): {task_title}")
-            return False
+        # STRICT RULE: A task MUST NOT be marked Completed unless real code modifications were written to disk
+        console.print(f"[bold red]❌ Builder Agent Failure: No code files were modified for task '{task_title}'. Task remains In Progress for review.[/bold red]")
+        update_agent_status("builder", "idle", f"In Progress (Review Needed): {task_title}")
+        return False
 
 
 if __name__ == "__main__":
