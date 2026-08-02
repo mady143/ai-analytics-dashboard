@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard'
 import Analytics from './pages/Analytics'
 import SprintBoard from './pages/SprintBoard'
 import AgentMonitor from './pages/AgentMonitor'
+import Footer from './components/Footer'
 import './index.css'
 
 const queryClient = new QueryClient({
@@ -37,7 +38,7 @@ function App() {
       <Router>
         <div className="app-layout">
           <Sidebar />
-          <main className="main-content">
+          <main className="main-content" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/analytics" element={<Analytics />} />
@@ -46,6 +47,7 @@ function App() {
               <Route path="/agents" element={<AgentMonitor />} />
               <Route path="/sprints" element={<SprintBoard />} />
             </Routes>
+            <Footer />
           </main>
         </div>
       </Router>
