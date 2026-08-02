@@ -237,9 +237,11 @@ export default function SprintBoard() {
         </div>
       </div>
 
-      {/* ── Kanban Columns ── */}
+      {/* ── Kanban Columns: Always 3 Side-by-Side in 1 Single Row ── */}
       <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '20px'
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: '16px'
       }}>
         {/* Column 1: TODO / Backlog */}
         <KanbanColumn
@@ -295,7 +297,7 @@ function KanbanColumn({ title, count, color, icon, tasks, priorityColors, badgeT
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ color }}>{icon}</span>
-          <h2 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>{title}</h2>
+          <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{title}</h2>
         </div>
         
         {/* Beside the count: Crisp White 3-Line Menu Button + Count Badge */}
@@ -304,7 +306,7 @@ function KanbanColumn({ title, count, color, icon, tasks, priorityColors, badgeT
           <button
             id={`column-collapse-btn-${title.toLowerCase().replace(/[^a-z0-9]/g, '')}`}
             onClick={() => setCollapsed(prev => !prev)}
-            title={collapsed ? "Expand column box" : "Close / Collapse entire column box"}
+            title={collapsed ? "Click to open / expand box" : "Click to close / collapse entire box"}
             style={{
               background: collapsed ? 'rgba(124, 58, 237, 0.25)' : 'transparent',
               border: 'none',
