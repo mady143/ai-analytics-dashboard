@@ -151,19 +151,6 @@ def get_bar_chart(
         whs_totals_map = stats.get("summary", {}).get("warehouse_totals", {})
         distinct_whs = stats.get("summary", {}).get("distinct_warehouses", [])
 
-        # If oewhse filter is applied, fetch full warehouse totals so comparative bars stay visible
-        if oewhse_clean and len(distinct_whs) <= 1:
-            full_stats = get_warehouse_statistics(
-                target_db=target_db_clean, oerdte=oerdte_clean,
-                batch_id=batch_clean, oeinv=oeinv_clean, only_scratches=only_scratches,
-                limit=1000, offset=0
-            )
-            full_totals = full_stats.get("summary", {}).get("warehouse_totals", {})
-            full_whs = full_stats.get("summary", {}).get("distinct_warehouses", [])
-            if full_whs:
-                distinct_whs = full_whs
-                whs_totals_map = full_totals
-
         if not distinct_whs and whs_totals_map:
             distinct_whs = sorted(list(whs_totals_map.keys()))
 
