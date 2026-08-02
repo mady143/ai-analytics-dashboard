@@ -13,6 +13,20 @@ export default function SprintBoard() {
   const [error, setError] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
   
+  // Independent Column Collapse States
+  const [collapsedColumns, setCollapsedColumns] = useState({
+    todo: false,
+    in_progress: false,
+    completed: false
+  })
+
+  const toggleColumnCollapse = (colKey) => {
+    setCollapsedColumns(prev => ({
+      ...prev,
+      [colKey]: !prev[colKey]
+    }))
+  }
+
   // Priority Enable/Disable Toggles State
   const [enabledPriorities, setEnabledPriorities] = useState({
     URGENT: true,
@@ -173,7 +187,7 @@ export default function SprintBoard() {
           />
         </div>
 
-        {/* Priority Filter Buttons (Clean & Sleek) */}
+        {/* Priority Filter Buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           {['URGENT', 'HIGH', 'MEDIUM', 'LOW'].map(p => {
             const isEnabled = enabledPriorities[p]
@@ -209,7 +223,7 @@ export default function SprintBoard() {
         </div>
       </div>
 
-      {/* ── Kanban Columns: Always 3 Side-by-Side in 1 Single Row ── */}
+      {/* ── Kanban Columns: 100% Independent Toggle Buttons for Each Column ── */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(3, 1fr)',
@@ -217,16 +231,20 @@ export default function SprintBoard() {
       }}>
         {/* Column 1: TODO / Backlog */}
         <KanbanColumn
+          columnKey="todo"
           title="To Do / Backlog"
           count={todoTasks.length}
           color="#3b82f6"
           icon={<Clock size={16} />}
           tasks={todoTasks}
           priorityColors={priorityColors}
+          isCollapsed={collapsedColumns.todo}
+          onToggleCollapse={() => toggleColumnCollapse('todo')}
         />
 
         {/* Column 2: In Progress */}
         <KanbanColumn
+          columnKey="in_progress"
           title="In Progress"
           count={inProgressTasks.length}
           color="#f59e0b"
@@ -234,10 +252,13 @@ export default function SprintBoard() {
           tasks={inProgressTasks}
           priorityColors={priorityColors}
           badgeText="Active Agent Working"
+          isCollapsed={collapsedColumns.in_progress}
+          onToggleCollapse={() => toggleColumnCollapse('in_progress')}
         />
 
         {/* Column 3: Completed */}
         <KanbanColumn
+          columnKey="completed"
           title="Completed"
           count={completedTasks.length}
           color="#10b981"
@@ -245,15 +266,15 @@ export default function SprintBoard() {
           tasks={completedTasks}
           priorityColors={priorityColors}
           badgeText="Verified & Merged"
+          isCollapsed={collapsedColumns.completed}
+          onToggleCollapse={() => toggleColumnCollapse('completed')}
         />
       </div>
     </motion.div>
   )
 }
 
-function KanbanColumn({ title, count, color, icon, tasks, priorityColors, badgeText }) {
-  const [collapsed, setCollapsed] = useState(false)
-
+function KanbanColumn({ columnKey, title, count, color, icon, tasks, priorityColors, badgeText, isCollapsed, onToggleCollapse }) {
   return (
     <div style={{
       background: 'var(--bg-card)', border: '1px solid var(--border-color)',
@@ -264,23 +285,22 @@ function KanbanColumn({ title, count, color, icon, tasks, priorityColors, badgeT
         display: 'flex',
         justify: 'space-between',
         alignItems: 'center',
-        borderBottom: collapsed ? 'none' : '1px solid var(--border-color)',
-        paddingBottom: collapsed ? '0px' : '12px'
+        borderBottom: isCollapsed ? 'none' : '1px solid var(--border-color)',
+        paddingBottom: isCollapsed ? '0px' : '12px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ color }}>{icon}</span>
           <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{title}</h2>
         </div>
         
-        {/* Beside the count: Crisp White 3-Line Menu Button + Count Badge */}
+        {/* Beside the count: Independent Crisp White 3-Line Menu Toggle Button */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {/* Clicking ☰ closes/collapses the entire column box */}
           <button
-            id={`column-collapse-btn-${title.toLowerCase().replace(/[^a-z0-9]/g, '')}`}
-            onClick={() => setCollapsed(prev => !prev)}
-            title={collapsed ? "Click to open / expand box" : "Click to close / collapse entire box"}
+            id={`column-collapse-btn-${columnKey}`}
+            onClick={onToggleCollapse}
+            title={isCollapsed ? `Click to open / expand ${title}` : `Click to close / collapse ${title}`}
             style={{
-              background: collapsed ? 'rgba(124, 58, 237, 0.25)' : 'transparent',
+              background: isCollapsed ? 'rgba(124, 58, 237, 0.25)' : 'transparent',
               border: 'none',
               padding: '4px',
               borderRadius: '6px',
@@ -303,7 +323,7 @@ function KanbanColumn({ title, count, color, icon, tasks, priorityColors, badgeT
         </div>
       </div>
 
-      {!collapsed && (
+      {!isCollapsed && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minHeight: '200px' }}>
           {tasks.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--text-secondary)', fontSize: '13px', fontStyle: 'italic' }}>
