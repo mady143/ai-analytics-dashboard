@@ -15,7 +15,7 @@ ROOT_DIR = Path(__file__).parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from routers import data, analytics, charts
+from routers import data, analytics, charts, sprints
 
 load_dotenv()
 
@@ -43,6 +43,7 @@ app.add_middleware(
 app.include_router(data.router, prefix="/api/data", tags=["Data"])
 app.include_router(analytics.router, prefix="/api/analytics", tags=["Analytics"])
 app.include_router(charts.router, prefix="/api/charts", tags=["Charts"])
+app.include_router(sprints.router, prefix="/api/sprints", tags=["Sprints"])
 
 
 # ── Warehouse Statistics Endpoint (AAD-5 Specification) ─────────────────────────
