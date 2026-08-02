@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Sidebar from './components/Sidebar'
 import Dashboard from './pages/Dashboard'
 import Analytics from './pages/Analytics'
+import SprintBoard from './pages/SprintBoard'
 import './index.css'
 
 const queryClient = new QueryClient({
@@ -42,7 +43,7 @@ function App() {
               <Route path="/charts" element={<Placeholder title="Charts Explorer" emoji="📈" />} />
               <Route path="/data" element={<Placeholder title="Data Manager" emoji="🗄️" />} />
               <Route path="/agents" element={<Placeholder title="Agent Monitor" emoji="🤖" />} />
-              <Route path="/sprints" element={<Placeholder title="Sprint Board" emoji="🏃" />} />
+              <Route path="/sprints" element={<SprintBoard />} />
             </Routes>
           </main>
         </div>
