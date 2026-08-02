@@ -223,7 +223,7 @@ export default function SprintBoard() {
         </div>
       </div>
 
-      {/* ── Kanban Columns: 100% Independent Toggle Buttons for Each Column ── */}
+      {/* ── Kanban Columns: 3 Side-by-Side with Max Height & Scrollbar ── */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(3, 1fr)',
@@ -293,7 +293,7 @@ function KanbanColumn({ columnKey, title, count, color, icon, tasks, priorityCol
           <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{title}</h2>
         </div>
         
-        {/* Beside the count: Independent Crisp White 3-Line Menu Toggle Button */}
+        {/* Beside the count: Crisp White 3-Line Menu Toggle Button */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button
             id={`column-collapse-btn-${columnKey}`}
@@ -324,7 +324,14 @@ function KanbanColumn({ columnKey, title, count, color, icon, tasks, priorityCol
       </div>
 
       {!isCollapsed && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minHeight: '200px' }}>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px',
+          maxHeight: '520px',
+          overflowY: 'auto',
+          paddingRight: '6px'
+        }}>
           {tasks.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--text-secondary)', fontSize: '13px', fontStyle: 'italic' }}>
               No tasks in this column
