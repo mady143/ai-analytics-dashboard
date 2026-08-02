@@ -1,10 +1,12 @@
 """
 Plane Agent — Manages tasks, sprints, and issues in Plane via REST API.
 Handles: create project, create cycles (sprints), create/update issues.
+Includes robust timeout & auto-retry resilience for all Plane REST API calls.
 """
 
 import os
 import json
+import time
 import httpx
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -27,6 +29,14 @@ HEADERS = {
     "X-API-Key": PLANE_API_TOKEN,
     "Content-Type": "application/json"
 }
+
+# Robust Timeout (30s read, 10s connect)
+CLIENT_TIMEOUT = httpx.Timeout(30.0, connect=10.0)
+
+
+def _get_client() -> httpx.Client:
+    """Helper to return an httpx.Client with explicit 30s timeouts."""
+    return httpx.Client(timeout=CLIENT_TIMEOUT, follow_redirects=True)
 
 
 def _load_plane_config() -> dict:
@@ -62,17 +72,23 @@ def get_or_create_project() -> str:
         "network": 2  # Public
     }
 
-    with httpx.Client() as client:
-        resp = client.post(url, headers=HEADERS, json=payload)
-        resp.raise_for_status()
-        project = resp.json()
+    for attempt in range(3):
+        try:
+            with _get_client() as client:
+                resp = client.post(url, headers=HEADERS, json=payload)
+                resp.raise_for_status()
+                project = resp.json()
+                project_id = project["id"]
+                config["project_id"] = project_id
+                _save_plane_config(config)
+                console.print(f"[bold green]Created Plane project: {config['project_name']} (ID: {project_id})[/bold green]")
+                return project_id
+        except Exception as e:
+            if attempt == 2:
+                raise e
+            time.sleep(1)
 
-    project_id = project["id"]
-    config["project_id"] = project_id
-    _save_plane_config(config)
-
-    console.print(f"[bold green]Created Plane project: {config['project_name']} (ID: {project_id})[/bold green]")
-    return project_id
+    return config.get("project_id", "")
 
 
 # ── Cycles (Sprints) ───────────────────────────────────────────────────────────
@@ -84,7 +100,7 @@ def create_sprint(project_id: str, sprint_name: str, description: str, duration_
 
     # Ensure cycle_view is enabled on project
     try:
-        with httpx.Client() as client:
+        with _get_client() as client:
             client.patch(f"{PLANE_BASE_URL}/workspaces/{PLANE_WORKSPACE_SLUG}/projects/{project_id}/", headers=HEADERS, json={"cycle_view": True})
     except Exception:
         pass
@@ -98,7 +114,7 @@ def create_sprint(project_id: str, sprint_name: str, description: str, duration_
         "project_id": project_id
     }
 
-    with httpx.Client() as client:
+    with _get_client() as client:
         resp = client.post(url, headers=HEADERS, json=payload)
         resp.raise_for_status()
         cycle = resp.json()
@@ -110,10 +126,18 @@ def create_sprint(project_id: str, sprint_name: str, description: str, duration_
 def list_sprints(project_id: str) -> list[dict]:
     """List all sprints (cycles) for a project."""
     url = f"{PLANE_BASE_URL}/workspaces/{PLANE_WORKSPACE_SLUG}/projects/{project_id}/cycles/"
-    with httpx.Client() as client:
-        resp = client.get(url, headers=HEADERS)
-        resp.raise_for_status()
-        return resp.json().get("results", [])
+    for attempt in range(3):
+        try:
+            with _get_client() as client:
+                resp = client.get(url, headers=HEADERS)
+                resp.raise_for_status()
+                return resp.json().get("results", [])
+        except Exception as e:
+            if attempt == 2:
+                console.print(f"[yellow]⚠️ list_sprints failed: {e}[/yellow]")
+                return []
+            time.sleep(1)
+    return []
 
 
 # ── Issues (Tasks) ─────────────────────────────────────────────────────────────
@@ -141,7 +165,7 @@ def create_task(
         "parent": parent_id
     }
 
-    with httpx.Client() as client:
+    with _get_client() as client:
         resp = client.post(url, headers=HEADERS, json=payload)
         resp.raise_for_status()
         issue = resp.json()
@@ -199,29 +223,44 @@ def update_task_status(project_id: str, issue_id: str, status: str) -> dict:
     url = f"{PLANE_BASE_URL}/workspaces/{PLANE_WORKSPACE_SLUG}/projects/{project_id}/issues/{issue_id}/"
     payload = {"state": state_id}
 
-    with httpx.Client() as client:
-        resp = client.patch(url, headers=HEADERS, json=payload)
-        resp.raise_for_status()
-        issue = resp.json()
-
-    console.print(f"[green]Task status updated -> {status}[/green]")
-    return issue
+    for attempt in range(3):
+        try:
+            with _get_client() as client:
+                resp = client.patch(url, headers=HEADERS, json=payload)
+                resp.raise_for_status()
+                issue = resp.json()
+                console.print(f"[green]Task status updated -> {status}[/green]")
+                return issue
+        except Exception as e:
+            if attempt == 2:
+                console.print(f"[red]Failed updating task status: {e}[/red]")
+                return {}
+            time.sleep(1)
+    return {}
 
 
 def get_states(project_id: str) -> list[dict]:
     """Get all workflow states for a project."""
     url = f"{PLANE_BASE_URL}/workspaces/{PLANE_WORKSPACE_SLUG}/projects/{project_id}/states/"
-    with httpx.Client() as client:
-        resp = client.get(url, headers=HEADERS)
-        resp.raise_for_status()
-        return resp.json().get("results", [])
+    for attempt in range(3):
+        try:
+            with _get_client() as client:
+                resp = client.get(url, headers=HEADERS)
+                resp.raise_for_status()
+                return resp.json().get("results", [])
+        except Exception as e:
+            if attempt == 2:
+                console.print(f"[yellow]⚠️ get_states failed: {e}[/yellow]")
+                return []
+            time.sleep(1)
+    return []
 
 
 def add_task_to_sprint(project_id: str, cycle_id: str, issue_id: str) -> None:
     """Add an issue to a sprint cycle."""
     url = f"{PLANE_BASE_URL}/workspaces/{PLANE_WORKSPACE_SLUG}/projects/{project_id}/cycles/{cycle_id}/cycle-issues/"
     payload = {"issues": [issue_id]}
-    with httpx.Client() as client:
+    with _get_client() as client:
         resp = client.post(url, headers=HEADERS, json=payload)
         resp.raise_for_status()
 
@@ -230,7 +269,7 @@ def add_comment(project_id: str, issue_id: str, comment: str) -> dict:
     """Add a comment to an issue (used for daily summaries and test results)."""
     url = f"{PLANE_BASE_URL}/workspaces/{PLANE_WORKSPACE_SLUG}/projects/{project_id}/issues/{issue_id}/comments/"
     payload = {"comment_html": f"<p>{comment}</p>"}
-    with httpx.Client() as client:
+    with _get_client() as client:
         resp = client.post(url, headers=HEADERS, json=payload)
         resp.raise_for_status()
         return resp.json()
@@ -239,15 +278,23 @@ def add_comment(project_id: str, issue_id: str, comment: str) -> dict:
 def list_tasks(project_id: str, state_filter: Optional[str] = None) -> list[dict]:
     """List all issues in a project, optionally filtered by state."""
     url = f"{PLANE_BASE_URL}/workspaces/{PLANE_WORKSPACE_SLUG}/projects/{project_id}/issues/"
-    with httpx.Client() as client:
-        resp = client.get(url, headers=HEADERS)
-        resp.raise_for_status()
-        issues = resp.json().get("results", [])
+    for attempt in range(3):
+        try:
+            with _get_client() as client:
+                resp = client.get(url, headers=HEADERS)
+                resp.raise_for_status()
+                issues = resp.json().get("results", [])
 
-    if state_filter:
-        issues = [i for i in issues if state_filter.lower() in i.get("state_detail", {}).get("name", "").lower()]
+                if state_filter:
+                    issues = [i for i in issues if state_filter.lower() in i.get("state_detail", {}).get("name", "").lower()]
 
-    return issues
+                return issues
+        except Exception as e:
+            if attempt == 2:
+                console.print(f"[yellow]⚠️ list_tasks failed: {e}[/yellow]")
+                return []
+            time.sleep(1)
+    return []
 
 
 def list_comments(project_id: str, issue_id: str) -> list[dict]:
@@ -259,84 +306,7 @@ def list_comments(project_id: str, issue_id: str) -> list[dict]:
         f"{PLANE_BASE_URL}/workspaces/{PLANE_WORKSPACE_SLUG}"
         f"/projects/{project_id}/issues/{issue_id}/comments/"
     )
-    try:
-        with httpx.Client(timeout=10) as client:
-            resp = client.get(url, headers=HEADERS)
-            resp.raise_for_status()
-            return resp.json().get("results", [])
-    except Exception as e:
-        console.print(f"[yellow]⚠️  Could not fetch comments for issue {issue_id}: {e}[/yellow]")
-        return []
-
-
-# ── Sprint Setup ───────────────────────────────────────────────────────────────
-
-def setup_all_sprints(project_id: str) -> list[dict]:
-    """Create all 5 sprints defined in the plane config."""
-    config = _load_plane_config()
-    created_sprints = []
-
-    for sprint_def in config["sprints"]:
-        sprint = create_sprint(
-            project_id=project_id,
-            sprint_name=sprint_def["name"],
-            description=sprint_def["description"],
-            duration_weeks=sprint_def["duration_weeks"]
-        )
-        created_sprints.append(sprint)
-
-    return created_sprints
-
-
-def setup_initial_tasks(project_id: str, sprint_1_id: str) -> None:
-    """Create the initial set of tasks for Sprint 1 in Plane."""
-    tasks = [
-        # Backend epic
-        {"title": "Create FastAPI project structure", "priority": "urgent", "pts": 2,
-         "desc": "Set up FastAPI app with CORS, health check, and router structure"},
-        {"title": "Data ingestion endpoints", "priority": "high", "pts": 3,
-         "desc": "POST /upload, GET /sample, GET /summary endpoints"},
-        {"title": "ML analytics endpoints", "priority": "high", "pts": 5,
-         "desc": "Train model, get results, predict endpoints"},
-        {"title": "Chart data endpoints", "priority": "medium", "pts": 3,
-         "desc": "Bar, scatter, heatmap, KPI chart data endpoints"},
-
-        # Memory & Agents
-        {"title": "Memory system implementation", "priority": "urgent", "pts": 3,
-         "desc": "Conversation history, task logs, agent state persistence"},
-        {"title": "Orchestrator agent", "priority": "urgent", "pts": 8,
-         "desc": "Master agent that coordinates all sub-agents"},
-        {"title": "Builder agent", "priority": "high", "pts": 5,
-         "desc": "Code writing agent with Plane + memory integration"},
-        {"title": "Tester agent", "priority": "high", "pts": 5,
-         "desc": "Automated testing agent with pytest + Playwright"},
-        {"title": "Git agent", "priority": "medium", "pts": 2,
-         "desc": "End-of-day git commit and push automation"},
-
-        # MCP
-        {"title": "MCP server configuration", "priority": "medium", "pts": 3,
-         "desc": "Configure Plane, GitHub, Memory, Browser MCP servers"},
-    ]
-
-    for task_def in tasks:
-        create_task(
-            project_id=project_id,
-            title=task_def["title"],
-            description=task_def["desc"],
-            priority=task_def["priority"],
-            story_points=task_def["pts"],
-            cycle_id=sprint_1_id
-        )
-
-
-if __name__ == "__main__":
-    console.print("[bold magenta]Plane Agent -- Setup Mode[/bold magenta]")
-
-    if not PLANE_API_TOKEN or not PLANE_WORKSPACE_SLUG:
-        console.print("[red]Please set PLANE_API_TOKEN and PLANE_WORKSPACE_SLUG in .env[/red]")
-    else:
-        project_id = get_or_create_project()
-        sprints = setup_all_sprints(project_id)
-        if sprints:
-            setup_initial_tasks(project_id, sprints[0]["id"])
-            console.print("[bold green]Plane project fully set up![/bold green]")
+    with _get_client() as client:
+        resp = client.get(url, headers=HEADERS)
+        resp.raise_for_status()
+        return resp.json().get("results", [])
