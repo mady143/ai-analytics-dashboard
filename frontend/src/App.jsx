@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Sidebar from './components/Sidebar'
@@ -33,12 +34,28 @@ const Placeholder = ({ title, emoji }) => (
 )
 
 function App() {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+
+  const handleSidebarToggle = () => {
+    setSidebarCollapsed(prev => !prev)
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
         <div className="app-layout">
-          <Sidebar />
-          <main className="main-content" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+          <Sidebar collapsed={sidebarCollapsed} onToggle={handleSidebarToggle} />
+          <main
+            className="main-content"
+            style={{
+              marginLeft: sidebarCollapsed ? '72px' : '260px',
+              maxWidth: sidebarCollapsed ? 'calc(100vw - 72px)' : 'calc(100vw - 260px)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: '100vh'
+            }}
+          >
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/analytics" element={<Analytics />} />
