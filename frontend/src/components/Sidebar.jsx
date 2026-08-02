@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom'
 import axios from 'axios'
 import { 
   LayoutDashboard, BarChart3, LineChart, Bot, 
-  GitBranch, Database, Settings, ChevronRight, Activity, Menu, PanelLeftClose, PanelLeftOpen
+  GitBranch, Database, Settings, ChevronRight, Activity, Menu
 } from 'lucide-react'
 
 const navItems = [
@@ -59,40 +59,50 @@ export default function Sidebar({ collapsed, onToggle }) {
         overflowX: 'hidden'
       }}
     >
-      {/* Logo & Three-Line Toggle Button */}
-      <div className="sidebar-logo" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div className="logo-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <BarChart3 size={20} color="#7C3AED" />
-          </div>
-          {!collapsed && (
+      {/* Logo & Three-Line Toggle Button Header */}
+      <div
+        className="sidebar-logo"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: collapsed ? 'center' : 'space-between',
+          padding: collapsed ? '16px 4px' : '16px 12px',
+          width: '100%'
+        }}
+      >
+        {!collapsed && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="logo-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <BarChart3 size={20} color="#7C3AED" />
+            </div>
             <div>
               <div className="logo-text">AI Analytics</div>
               <div className="logo-subtitle">Agentic Dashboard</div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Three Line Toggle Button */}
+        {/* Three Line Toggle Button - ALWAYS VISIBLE */}
         <button
           id="sidebar-toggle-btn"
           onClick={onToggle}
           title={collapsed ? "Enable Nav Bar" : "Disable Nav Bar"}
           aria-label={collapsed ? "Enable Nav Bar" : "Disable Nav Bar"}
           style={{
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border-color)',
-            color: 'var(--text-primary)',
-            padding: '6px',
-            borderRadius: '6px',
+            background: collapsed ? 'rgba(124, 58, 237, 0.25)' : 'var(--bg-secondary)',
+            border: collapsed ? '1px solid #7C3AED' : '1px solid var(--border-color)',
+            color: collapsed ? '#a78bfa' : 'var(--text-primary)',
+            padding: '8px',
+            borderRadius: '8px',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            marginLeft: collapsed ? '0' : 'auto'
+            width: collapsed ? '44px' : 'auto',
+            height: '40px'
           }}
         >
-          {collapsed ? <Menu size={20} /> : <Menu size={20} />}
+          <Menu size={20} />
         </button>
       </div>
 
