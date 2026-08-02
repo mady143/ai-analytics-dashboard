@@ -201,6 +201,7 @@ export default function AiDataCopilot({ globalDate, globalTargetDb = 'pg_dev', o
           />
         </div>
         <button
+          id="copilot-submit-btn"
           type="submit"
           disabled={loading}
           style={{
