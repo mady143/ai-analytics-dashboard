@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom'
 import axios from 'axios'
 import { 
   LayoutDashboard, BarChart3, LineChart, Bot, 
-  GitBranch, Database, Settings, ChevronRight, Activity
+  GitBranch, Database, Settings, ChevronRight, Activity, Menu, X
 } from 'lucide-react'
 
 const navItems = [
@@ -15,7 +15,7 @@ const navItems = [
   { path: '/sprints', label: 'Sprint Board', icon: GitBranch, section: 'AGENTS' },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ collapsed, onToggle }) {
   const location = useLocation()
   const [agentsData, setAgentsData] = useState({
     orchestrator: { status: 'running', current_task: 'Task & Agent State Coordination Active' },
@@ -49,17 +49,42 @@ export default function Sidebar() {
 
   const sections = [...new Set(navItems.map(n => n.section))]
 
+  if (collapsed) {
+    return null
+  }
+
   return (
     <aside className="sidebar">
-      {/* Logo */}
+      {/* Logo & 3-Line Hide Toggle Button */}
       <div className="sidebar-logo">
         <div className="logo-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <BarChart3 size={20} color="#7C3AED" />
         </div>
-        <div>
+        <div style={{ flex: 1 }}>
           <div className="logo-text">AI Analytics</div>
           <div className="logo-subtitle">Agentic Dashboard</div>
         </div>
+
+        {/* 3-Line Hamburger Hide Toggle Button */}
+        <button
+          id="nav-bar-toggle-btn"
+          onClick={onToggle}
+          title="Disable/Hide Navigation Bar"
+          style={{
+            background: 'transparent',
+            border: '1px solid var(--border-subtle)',
+            color: 'var(--text-secondary)',
+            padding: '6px',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'var(--transition)'
+          }}
+        >
+          <Menu size={18} />
+        </button>
       </div>
 
       {/* Navigation */}
@@ -132,4 +157,3 @@ export default function Sidebar() {
     </aside>
   )
 }
-
