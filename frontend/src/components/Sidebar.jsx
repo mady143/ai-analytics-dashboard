@@ -167,7 +167,7 @@ export default function Sidebar({ collapsed, onToggle }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
                   <span className={`status-dot ${status}`} />
                   <span style={{ textTransform: 'capitalize', fontWeight: 600, color: 'var(--text-primary)' }}>{name.replace('_', ' ')}</span>
-                  <span style={{ marginLeft: 'auto', fontSize: '10px', color isWorking ? '#a78bfa' : 'var(--text-muted)', fontWeight: isWorking ? 700 : 400 }}>
+                  <span style={{ marginLeft: 'auto', fontSize: '10px', color: isWorking ? '#a78bfa' : 'var(--text-muted)', fontWeight: isWorking ? 700 : 400 }}>
                     {isWorking ? 'WORKING ⚡' : status}
                   </span>
                 </div>
