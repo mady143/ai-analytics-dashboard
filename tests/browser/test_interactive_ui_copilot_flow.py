@@ -52,7 +52,7 @@ def test_interactive_step1_select_date_and_submit(page: Page):
     assert kpis.count() >= 6, f"Expected >= 6 KPI cards, got {kpis.count()}"
 
     # Verify table has rows
-    page.wait_for_selector("table tbody tr", timeout=20000)
+    page.wait_for_selector("table tbody tr td", timeout=20000)
     rows = page.locator("table tbody tr").count()
     assert rows >= 1, f"Expected >= 1 table rows, got {rows}"
     print(f"✓ Step 1 PASS: Submitted UI date {iso_date} & loaded KPI cards & table rows")
@@ -65,7 +65,7 @@ def test_interactive_step2_filter_warehouse_via_dropdown(page: Page):
 
     # Select warehouse dynamically in global dropdown
     page.select_option("#global-whse-selector", dynamic_whse)
-    page.wait_for_timeout(2500)
+    page.wait_for_timeout(3500)
 
     # Verify active filter banner
     expect(page.locator("text=Active Page Filters:")).to_be_visible()
@@ -77,9 +77,14 @@ def test_interactive_step2_filter_warehouse_via_dropdown(page: Page):
     page.wait_for_selector(".kpi-card", timeout=15000)
     expect(page.locator(".kpi-card").first).to_contain_text("SELECTED WAREHOUSE")
 
-    # Verify table rows show selected warehouse
-    page.wait_for_selector("table tbody tr", timeout=15000)
+    # Verify table rows finish loading and show selected warehouse
+    page.wait_for_selector("table tbody tr td", timeout=20000)
+    page.wait_for_timeout(1000)
     first_row_text = page.locator("table tbody tr td").first.inner_text().strip()
+    if "Querying" in first_row_text:
+        page.wait_for_timeout(2000)
+        first_row_text = page.locator("table tbody tr td").first.inner_text().strip()
+
     assert dynamic_whse.lstrip("0") in first_row_text.lstrip("0"), (
         f"Expected Whse {dynamic_whse} in table row, got: '{first_row_text}'"
     )
@@ -94,7 +99,7 @@ def test_interactive_step3_copilot_search_warehouse(page: Page):
     page.wait_for_selector("#copilot-input", timeout=15000)
     page.fill("#copilot-input", f"{dynamic_whse} warehouse overview")
     page.click("#copilot-submit-btn")
-    page.wait_for_timeout(2500)
+    page.wait_for_timeout(3500)
 
     # Verify AI Copilot result card
     page.wait_for_selector("text=AI Copilot Finding", timeout=25000)
@@ -110,8 +115,13 @@ def test_interactive_step3_copilot_search_warehouse(page: Page):
     expect(page.locator("#header-clear-filter-btn")).to_be_visible()
 
     # Verify table displays rows for selected warehouse
-    page.wait_for_selector("table tbody tr", timeout=15000)
+    page.wait_for_selector("table tbody tr td", timeout=20000)
+    page.wait_for_timeout(1000)
     first_row_text = page.locator("table tbody tr td").first.inner_text().strip()
+    if "Querying" in first_row_text:
+        page.wait_for_timeout(2000)
+        first_row_text = page.locator("table tbody tr td").first.inner_text().strip()
+
     assert dynamic_whse.lstrip("0") in first_row_text.lstrip("0"), (
         f"Expected Whse {dynamic_whse} in table row after Copilot query, got: '{first_row_text}'"
     )
