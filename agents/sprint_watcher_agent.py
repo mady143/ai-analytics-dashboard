@@ -589,13 +589,7 @@ class SprintWatcherAgent:
                         )
                         self._handle_new_task(enriched_task)
 
-                    # Identify actionable tasks:
-                    # RULE: Only pick up tasks that are in UNSTARTED / BACKLOG state.
-                    # Tasks already in-progress (started) or done/cancelled are SKIPPED.
-                    # Re-trigger is allowed ONLY if:
-                    #   1. Task is brand new (never seen) AND is in unstarted/backlog
-                    #   2. Task state was reset back to unstarted (user re-opened it)
-                    #   3. Task content/description was updated AND task is unstarted
+                    actionable_tasks = []
                     ACTIONABLE_STATES = (STATE_TODO, STATE_BACKLOG, STATE_INPROG, "unstarted", "backlog", "todo", "started", "in_progress", "in progress")
                     SKIP_STATES = (STATE_DONE, "completed", "done", "cancelled")
 
@@ -604,7 +598,6 @@ class SprintWatcherAgent:
                         current_state = self._get_task_state(t)
                         updated_at    = t.get("updated_at") or t.get("updated", "")
                         last_state    = self._last_seen_state.get(task_id)
-                        last_updated  = self._last_seen_updated.get(task_id)
 
                         # If user moved a task back out of Done/Completed into To Do or In Progress, unmark from completed_task_ids
                         if current_state in ACTIONABLE_STATES and task_id in self._completed_task_ids and last_state in SKIP_STATES:
@@ -614,32 +607,14 @@ class SprintWatcherAgent:
                         self._last_seen_state[task_id] = current_state
                         self._last_seen_updated[task_id] = updated_at
 
-                        # Skip tasks already completed by agent in this session unless state changed back
-                        if task_id in self._completed_task_ids and current_state in SKIP_STATES:
+                        # Skip completed/cancelled tasks
+                        if current_state in SKIP_STATES or task_id in self._completed_task_ids:
                             continue
 
-                        # Skip tasks in DONE / CANCELLED states
-                        if current_state in SKIP_STATES:
-                            continue
-
-                        # Only process if task is in an actionable (unstarted/backlog) state
-                        if current_state not in ACTIONABLE_STATES:
-                            console.print(f"[dim]⏭ Skipping task in state '{current_state}': {t.get('name','?')[:40]}[/dim]")
-                            continue
-
-                        # Determine the reason this task should be actioned
-                        is_new            = last_state is None
-                        reset_to_unstarted = last_state and last_state not in ACTIONABLE_STATES and current_state in ACTIONABLE_STATES
-                        content_updated   = last_updated and updated_at and last_updated != updated_at and current_state in ACTIONABLE_STATES
-
-                        if is_new or reset_to_unstarted or content_updated:
-                            reason = (
-                                "new unstarted task" if is_new
-                                else "reset to unstarted" if reset_to_unstarted
-                                else "content updated"
-                            )
+                        # Pick up any actionable task in To Do / In Progress / Backlog
+                        if current_state in ACTIONABLE_STATES:
                             console.print(
-                                f"[bold yellow]⚡ Actionable task ({reason}): "
+                                f"[bold yellow]⚡ Actionable task picked up ({current_state}): "
                                 f"{t.get('name', task_id)[:50]}[/bold yellow]"
                             )
                             actionable_tasks.append(t)
