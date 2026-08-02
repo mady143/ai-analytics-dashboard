@@ -29,17 +29,6 @@ export default function SprintBoard() {
     }))
   }
 
-  const toggleAllPriorities = () => {
-    const allOn = Object.values(enabledPriorities).every(v => v)
-    setEnabledPriorities({
-      URGENT: !allOn,
-      HIGH: !allOn,
-      MEDIUM: !allOn,
-      LOW: !allOn,
-      NONE: !allOn
-    })
-  }
-
   const fetchSprintTasks = async () => {
     try {
       setLoading(true)
@@ -163,7 +152,7 @@ export default function SprintBoard() {
         </div>
       </div>
 
-      {/* ── Search & Enable/Disable Priority Toggles ── */}
+      {/* ── Search & Priority Buttons ── */}
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         flexWrap: 'wrap', gap: '16px', marginBottom: '24px',
@@ -184,25 +173,8 @@ export default function SprintBoard() {
           />
         </div>
 
-        {/* Enable/Disable Priority Toggle Buttons */}
+        {/* Priority Filter Buttons (Clean & Sleek) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <Filter size={14} /> Priority Toggles:
-          </span>
-          
-          <button
-            id="toggle-all-priorities-btn"
-            onClick={toggleAllPriorities}
-            style={{
-              background: 'rgba(124, 58, 237, 0.2)',
-              color: '#a78bfa',
-              border: '1px solid #7C3AED',
-              padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer'
-            }}
-          >
-            {Object.values(enabledPriorities).every(v => v) ? 'Disable All' : 'Enable All'}
-          </button>
-
           {['URGENT', 'HIGH', 'MEDIUM', 'LOW'].map(p => {
             const isEnabled = enabledPriorities[p]
             const colors = priorityColors[p.toLowerCase()] || priorityColors.medium
@@ -216,7 +188,7 @@ export default function SprintBoard() {
                   background: isEnabled ? colors.bg : 'var(--bg-secondary)',
                   color: isEnabled ? colors.text : 'var(--text-muted)',
                   border: `1px solid ${isEnabled ? colors.border : 'var(--border-color)'}`,
-                  padding: '4px 10px',
+                  padding: '5px 12px',
                   borderRadius: '6px',
                   fontSize: '11px',
                   fontWeight: 700,
