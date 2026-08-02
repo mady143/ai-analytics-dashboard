@@ -136,10 +136,16 @@ export default function AgentMonitor() {
         </div>
       </div>
 
-      {/* ── Agents Grid ── */}
-      <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px', marginBottom: '24px'
-      }}>
+      {/* ── Agents Grid: 3 Side by Side in First Row, 3 in Second Row ── */}
+      <div
+        id="agents-grid-container"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: '20px',
+          marginBottom: '24px'
+        }}
+      >
         {defaultAgents.map((ag) => {
           const liveInfo = liveAgents[ag.key] || {}
           const isRunning = (liveInfo.status || 'running').toLowerCase() === 'running'
@@ -157,7 +163,7 @@ export default function AgentMonitor() {
                 boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
                 display: 'flex',
                 flexDirection: 'column',
-                justify: 'space-between',
+                justifyContent: 'space-between',
                 gap: '16px'
               }}
             >
