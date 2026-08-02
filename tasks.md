@@ -113,16 +113,20 @@ The application is structured into distinct, modular UI Screens and Component Se
 
 ---
 
-> ### ⚠️ TASK 25 — MANDATORY: Non-Destructive Development & Copilot/Date Filter Fixes [ALWAYS ENFORCE]
+> ### ⚠️ TASK 25 — MANDATORY: Non-Destructive Development, Copilot/Date Filter Fixes & Zero Hardcoding Directive [ALWAYS ENFORCE]
 >
-> **Rule: NEVER delete or change existing functionality. Treat any broken existing feature as a bug fix, NOT a removal.**
+> **Rule 1: NEVER delete or change existing functionality. Treat any broken existing feature as a bug fix, NOT a removal.**
+> **Rule 2: MANDATORY ZERO HARDCODING DIRECTIVE:**
+> - NEVER hardcode warehouse numbers (such as `"58"`, `"01"`, `"71"`), order dates (such as `"2026-07-28"`), batch IDs, or record counts in any Python backend code, React frontend components, Playwright test scripts, or task documentation.
+> - ALL values must be dynamically queried from connected databases (`sptn_sales_data`) or dynamically extracted from live DOM elements (`#global-date-picker`, `#global-whse-selector`, `table tbody tr td`).
 >
-> **Fixes Applied 2026-07-30:**
+> **Fixes Applied 2026-07-30 & 2026-08-02:**
 > 1. **Copilot Q&A Answer Overwrite Bug** (`analytics.py`): The warehouse-specific answer at line 263 was immediately overwritten by a generic answer at line 265. Fixed so each intent branch (`scratch`, `transfer`, `volume`, `warehouse`, `general`) produces its own specific answer string.
 > 2. **isCopilotActive Always-True Bug** (`Dashboard.jsx`): `tableFilters?._ts` was always truthy after first use, causing the date filter to NEVER be applied. Replaced with explicit `copilotFilterActive` state that is only `true` when the Copilot fires `onApplyFilter()`.
 > 3. **Copilot Mode Active Banner**: Added visible banner in `AiDataCopilot.jsx` showing "Copilot Mode Active — Full Dataset" with a "Clear & Use Date Filter" button that resets Copilot mode.
 > 4. **Auto-Apply Filter on Query**: Copilot now auto-applies the filter immediately when a query returns results (no separate "Apply Filter" click needed).
 > 5. **Date Filter Restore on Submit**: When user clicks Submit on the date picker, `copilotFilterActive` is reset to `false` and `tableFilters` is cleared — so the date filter takes effect across ALL widgets.
+> 6. **Dynamic UI & E2E Verification**: `test_interactive_ui_copilot_flow.py` dynamically extracts live UI date and active table warehouse numbers with zero static fallback strings.
 >
 > **Data Population Rules (ALWAYS ENFORCE):**
 > - **Without date filter (Copilot Mode)**: KPI Cards + Bar Chart + Scatter + Table + Anomaly all show full dataset from ALL dates
