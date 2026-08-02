@@ -249,8 +249,6 @@ export default function SprintBoard() {
           icon={<Clock size={16} />}
           tasks={todoTasks}
           priorityColors={priorityColors}
-          enabledPriorities={enabledPriorities}
-          onTogglePriority={togglePriority}
         />
 
         {/* Column 2: In Progress */}
@@ -262,8 +260,6 @@ export default function SprintBoard() {
           tasks={inProgressTasks}
           priorityColors={priorityColors}
           badgeText="Active Agent Working"
-          enabledPriorities={enabledPriorities}
-          onTogglePriority={togglePriority}
         />
 
         {/* Column 3: Completed */}
@@ -275,23 +271,28 @@ export default function SprintBoard() {
           tasks={completedTasks}
           priorityColors={priorityColors}
           badgeText="Verified & Merged"
-          enabledPriorities={enabledPriorities}
-          onTogglePriority={togglePriority}
         />
       </div>
     </motion.div>
   )
 }
 
-function KanbanColumn({ title, count, color, icon, tasks, priorityColors, badgeText, enabledPriorities, onTogglePriority }) {
-  const [showPriorityMenu, setShowPriorityMenu] = useState(false)
+function KanbanColumn({ title, count, color, icon, tasks, priorityColors, badgeText }) {
+  const [collapsed, setCollapsed] = useState(false)
 
   return (
     <div style={{
       background: 'var(--bg-card)', border: '1px solid var(--border-color)',
-      borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px'
+      borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px',
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', position: 'relative' }}>
+      <div style={{
+        display: 'flex',
+        justify: 'space-between',
+        alignItems: 'center',
+        borderBottom: collapsed ? 'none' : '1px solid var(--border-color)',
+        paddingBottom: collapsed ? '0px' : '12px'
+      }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ color }}>{icon}</span>
           <h2 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>{title}</h2>
@@ -299,14 +300,14 @@ function KanbanColumn({ title, count, color, icon, tasks, priorityColors, badgeT
         
         {/* Beside the count: Crisp White 3-Line Menu Button + Count Badge */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {/* Crisp White 3-Line Hamburger Menu Toggle Button Beside the Count */}
+          {/* Clicking ☰ closes/collapses the entire column box */}
           <button
-            id={`column-toggle-btn-${title.toLowerCase().replace(/[^a-z0-9]/g, '')}`}
-            onClick={() => setShowPriorityMenu(prev => !prev)}
-            title="Disable / Enable Priority Toggles"
+            id={`column-collapse-btn-${title.toLowerCase().replace(/[^a-z0-9]/g, '')}`}
+            onClick={() => setCollapsed(prev => !prev)}
+            title={collapsed ? "Expand column box" : "Close / Collapse entire column box"}
             style={{
-              background: showPriorityMenu ? 'rgba(124, 58, 237, 0.25)' : 'transparent',
-              border: showPriorityMenu ? '1px solid #7C3AED' : 'none',
+              background: collapsed ? 'rgba(124, 58, 237, 0.25)' : 'transparent',
+              border: 'none',
               padding: '4px',
               borderRadius: '6px',
               cursor: 'pointer',
@@ -326,113 +327,65 @@ function KanbanColumn({ title, count, color, icon, tasks, priorityColors, badgeT
             {count}
           </span>
         </div>
+      </div>
 
-        {/* Dropdown Menu directly under Column Header Toggle Button */}
-        {showPriorityMenu && (
-          <div style={{
-            position: 'absolute',
-            top: '42px',
-            right: '0px',
-            zIndex: 99,
-            background: 'var(--bg-card)',
-            border: '1px solid var(--border-color)',
-            borderRadius: '10px',
-            padding: '10px',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-            minWidth: '170px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '6px'
-          }}>
-            <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '2px' }}>
-              Toggle Priority Tasks
+      {!collapsed && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minHeight: '200px' }}>
+          {tasks.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--text-secondary)', fontSize: '13px', fontStyle: 'italic' }}>
+              No tasks in this column
             </div>
-            {['URGENT', 'HIGH', 'MEDIUM', 'LOW'].map(p => {
-              const isEnabled = enabledPriorities[p]
-              const pColors = priorityColors[p.toLowerCase()] || priorityColors.medium
+          ) : (
+            tasks.map(task => {
+              const pStyle = priorityColors[task.priority?.toLowerCase()] || priorityColors.medium
               return (
-                <button
-                  key={p}
-                  onClick={() => onTogglePriority(p)}
+                <motion.div
+                  key={task.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.96 }}
+                  animate={{ opacity: 1, scale: 1 }}
                   style={{
-                    background: isEnabled ? pColors.bg : 'var(--bg-secondary)',
-                    color: isEnabled ? pColors.text : 'var(--text-muted)',
-                    border: `1px solid ${isEnabled ? pColors.border : 'var(--border-color)'}`,
-                    padding: '6px 10px',
-                    borderRadius: '6px',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    width: '100%'
+                    background: 'var(--bg-secondary)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    padding: '14px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                   }}
                 >
-                  <span>{p}</span>
-                  <span>{isEnabled ? 'ENABLE ✓' : 'DISABLE ✗'}</span>
-                </button>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '8px' }}>
+                    <span style={{
+                      background: pStyle.bg, color: pStyle.text, border: `1px solid ${pStyle.border}`,
+                      fontSize: '10px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase'
+                    }}>
+                      {task.priority || 'MEDIUM'}
+                    </span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                      {task.points || 3} pts
+                    </span>
+                  </div>
+
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
+                    {task.name}
+                  </div>
+
+                  {task.description && (
+                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineClamp: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {task.description}
+                    </div>
+                  )}
+
+                  {badgeText && (
+                    <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Zap size={12} style={{ color }} />
+                      <span style={{ fontSize: '11px', color, fontWeight: 700 }}>{badgeText}</span>
+                    </div>
+                  )}
+                </motion.div>
               )
-            })}
-          </div>
-        )}
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minHeight: '200px' }}>
-        {tasks.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--text-secondary)', fontSize: '13px', fontStyle: 'italic' }}>
-            No tasks in this column
-          </div>
-        ) : (
-          tasks.map(task => {
-            const pStyle = priorityColors[task.priority?.toLowerCase()] || priorityColors.medium
-            return (
-              <motion.div
-                key={task.id}
-                layout
-                initial={{ opacity: 0, scale: 0.96 }}
-                animate={{ opacity: 1, scale: 1 }}
-                style={{
-                  background: 'var(--bg-secondary)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '8px',
-                  padding: '14px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', marginBottom: '8px' }}>
-                  <span style={{
-                    background: pStyle.bg, color: pStyle.text, border: `1px solid ${pStyle.border}`,
-                    fontSize: '10px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px', textTransform: 'uppercase'
-                  }}>
-                    {task.priority || 'MEDIUM'}
-                  </span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                    {task.points || 3} pts
-                  </span>
-                </div>
-
-                <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
-                  {task.name}
-                </div>
-
-                {task.description && (
-                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineClamp: 2, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                    {task.description}
-                  </div>
-                )}
-
-                {badgeText && (
-                  <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Zap size={12} style={{ color }} />
-                    <span style={{ fontSize: '11px', color, fontWeight: 700 }}>{badgeText}</span>
-                  </div>
-                )}
-              </motion.div>
-            )
-          })
-        )}
-      </div>
+            })
+          )}
+        </div>
+      )}
     </div>
   )
 }
