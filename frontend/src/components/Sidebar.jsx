@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom'
 import axios from 'axios'
 import { 
   LayoutDashboard, BarChart3, LineChart, Bot, 
-  GitBranch, Database, Settings, ChevronRight, Activity, Menu, X
+  GitBranch, Database, Settings, ChevronRight, Activity, Menu, PanelLeftClose, PanelLeftOpen
 } from 'lucide-react'
 
 const navItems = [
@@ -15,9 +15,8 @@ const navItems = [
   { path: '/sprints', label: 'Sprint Board', icon: GitBranch, section: 'AGENTS' },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ collapsed, onToggle }) {
   const location = useLocation()
-  const [collapsed, setCollapsed] = useState(false)
   const [agentsData, setAgentsData] = useState({
     orchestrator: { status: 'running', current_task: 'Task & Agent State Coordination Active' },
     builder: { status: 'running', current_task: 'Autonomous Builder Agent Active' },
@@ -50,10 +49,6 @@ export default function Sidebar() {
 
   const sections = [...new Set(navItems.map(n => n.section))]
 
-  const toggleSidebar = () => {
-    setCollapsed(prev => !prev)
-  }
-
   return (
     <aside
       className={`sidebar ${collapsed ? 'collapsed' : ''}`}
@@ -81,8 +76,9 @@ export default function Sidebar() {
         {/* Three Line Toggle Button */}
         <button
           id="sidebar-toggle-btn"
-          onClick={toggleSidebar}
+          onClick={onToggle}
           title={collapsed ? "Enable Nav Bar" : "Disable Nav Bar"}
+          aria-label={collapsed ? "Enable Nav Bar" : "Disable Nav Bar"}
           style={{
             background: 'var(--bg-secondary)',
             border: '1px solid var(--border-color)',
@@ -96,7 +92,7 @@ export default function Sidebar() {
             marginLeft: collapsed ? '0' : 'auto'
           }}
         >
-          {collapsed ? <Menu size={18} /> : <Menu size={18} />}
+          {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
         </button>
       </div>
 
