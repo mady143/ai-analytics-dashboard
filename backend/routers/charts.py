@@ -120,7 +120,7 @@ def get_kpi(
         }
     ]
 
-    return JSONResponse({"kpis": kpis, "total_warehouses": total_whs, "selected_oerdte": oerdte})
+    return JSONResponse({"kpis": kpis, "total_warehouses": total_whs, "selected_oerdte": str(oerdte_clean)})
 
 
 @router.get("/bar")
