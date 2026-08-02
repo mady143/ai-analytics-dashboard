@@ -188,6 +188,42 @@ export default function Dashboard() {
             />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Selected Whse:</span>
+            <select
+              id="global-whse-selector"
+              value={(tableFilters?.whse || tableFilters?.oewhse || tableFilters?.whs_num || '').toString()}
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val) {
+                  handleApplyTableFilter({ whse: val });
+                } else {
+                  handleApplyTableFilter({ whse: '' });
+                }
+              }}
+              style={{
+                background: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border-color)',
+                padding: '6px 10px',
+                borderRadius: '6px',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              <option value="">All Warehouses</option>
+              <option value="01">Whse 01</option>
+              <option value="02">Whse 02</option>
+              <option value="03">Whse 03</option>
+              <option value="08">Whse 08</option>
+              <option value="27">Whse 27</option>
+              <option value="58">Whse 58</option>
+              <option value="61">Whse 61</option>
+              <option value="71">Whse 71</option>
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Target DB:</span>
             <select
               id="global-db-selector"
@@ -241,6 +277,57 @@ export default function Dashboard() {
           </span>
         </form>
       </div>
+
+      {/* ── Active Warehouse & Filter Synchronizer Banner ── */}
+      {Boolean(tableFilters?.whse || tableFilters?.oewhse || tableFilters?.batch || tableFilters?.invoice || tableFilters?.onlyScratches) && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px',
+          background: 'linear-gradient(135deg, rgba(52,211,153,0.12) 0%, rgba(16,185,129,0.06) 100%)',
+          border: '1px solid rgba(52,211,153,0.4)', borderRadius: '8px', padding: '10px 16px', marginTop: '16px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '12px', fontWeight: 700, color: '#34d399', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              ⚡ Active Page Filters:
+            </span>
+            {(tableFilters?.whse || tableFilters?.oewhse || tableFilters?.whs_num) && (
+              <span style={{ fontSize: '12px', fontWeight: 700, background: 'rgba(52,211,153,0.2)', color: '#6ee7b7', padding: '3px 10px', borderRadius: '6px', border: '1px solid rgba(52,211,153,0.5)' }}>
+                🏢 Warehouse: Whse {(tableFilters?.whse || tableFilters?.oewhse || tableFilters?.whs_num)}
+              </span>
+            )}
+            {tableFilters?.batch && (
+              <span style={{ fontSize: '12px', fontWeight: 700, background: 'rgba(245,158,11,0.2)', color: '#fcd34d', padding: '3px 10px', borderRadius: '6px', border: '1px solid rgba(245,158,11,0.5)' }}>
+                📦 Batch: #{tableFilters.batch}
+              </span>
+            )}
+            {tableFilters?.invoice && (
+              <span style={{ fontSize: '12px', fontWeight: 700, background: 'rgba(192,132,252,0.2)', color: '#e9d5ff', padding: '3px 10px', borderRadius: '6px', border: '1px solid rgba(192,132,252,0.5)' }}>
+                🧾 Invoice: #{tableFilters.invoice}
+              </span>
+            )}
+            {tableFilters?.onlyScratches && (
+              <span style={{ fontSize: '12px', fontWeight: 700, background: 'rgba(239,68,68,0.2)', color: '#fca5a5', padding: '3px 10px', borderRadius: '6px', border: '1px solid rgba(239,68,68,0.5)' }}>
+                🔴 Scratch Items Only
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setCopilotFilterActive(false);
+              setTableFilters(null);
+              fetchAll(appliedDate, appliedTargetDb, {}, false);
+            }}
+            style={{
+              background: 'rgba(255,255,255,0.08)', color: 'var(--text-secondary)',
+              border: '1px solid var(--border-color)', padding: '4px 12px',
+              borderRadius: '6px', fontSize: '11px', fontWeight: 700,
+              cursor: 'pointer', transition: 'all 0.2s ease'
+            }}
+          >
+            Clear All Filters
+          </button>
+        </div>
+      )}
 
       {/* ── AI Data Copilot Feature ── */}
       <AiDataCopilot
