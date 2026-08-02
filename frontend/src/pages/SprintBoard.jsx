@@ -171,10 +171,6 @@ export default function SprintBoard() {
         borderRadius: '12px', padding: '12px 18px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: '1', minWidth: '240px' }}>
-          {/* White Three-Line Hamburger Icon Beside Search */}
-          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Menu size={20} color="#FFFFFF" strokeWidth={2.5} />
-          </span>
           <Search size={16} style={{ color: 'var(--text-secondary)' }} />
           <input
             type="text"
@@ -253,6 +249,8 @@ export default function SprintBoard() {
           icon={<Clock size={16} />}
           tasks={todoTasks}
           priorityColors={priorityColors}
+          enabledPriorities={enabledPriorities}
+          onTogglePriority={togglePriority}
         />
 
         {/* Column 2: In Progress */}
@@ -264,6 +262,8 @@ export default function SprintBoard() {
           tasks={inProgressTasks}
           priorityColors={priorityColors}
           badgeText="Active Agent Working"
+          enabledPriorities={enabledPriorities}
+          onTogglePriority={togglePriority}
         />
 
         {/* Column 3: Completed */}
@@ -275,29 +275,107 @@ export default function SprintBoard() {
           tasks={completedTasks}
           priorityColors={priorityColors}
           badgeText="Verified & Merged"
+          enabledPriorities={enabledPriorities}
+          onTogglePriority={togglePriority}
         />
       </div>
     </motion.div>
   )
 }
 
-function KanbanColumn({ title, count, color, icon, tasks, priorityColors, badgeText }) {
+function KanbanColumn({ title, count, color, icon, tasks, priorityColors, badgeText, enabledPriorities, onTogglePriority }) {
+  const [showPriorityMenu, setShowPriorityMenu] = useState(false)
+
   return (
     <div style={{
       background: 'var(--bg-card)', border: '1px solid var(--border-color)',
       borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px'
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', position: 'relative' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ color }}>{icon}</span>
           <h2 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>{title}</h2>
         </div>
-        <span style={{
-          background: 'var(--bg-secondary)', border: `1px solid ${color}`,
-          color, fontSize: '12px', fontWeight: 800, padding: '2px 8px', borderRadius: '12px'
-        }}>
-          {count}
-        </span>
+        
+        {/* Beside the count: Crisp White 3-Line Menu Button + Count Badge */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* Crisp White 3-Line Hamburger Menu Toggle Button Beside the Count */}
+          <button
+            id={`column-toggle-btn-${title.toLowerCase().replace(/[^a-z0-9]/g, '')}`}
+            onClick={() => setShowPriorityMenu(prev => !prev)}
+            title="Disable / Enable Priority Toggles"
+            style={{
+              background: showPriorityMenu ? 'rgba(124, 58, 237, 0.25)' : 'transparent',
+              border: showPriorityMenu ? '1px solid #7C3AED' : 'none',
+              padding: '4px',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <Menu size={18} color="#FFFFFF" strokeWidth={2.5} />
+          </button>
+
+          <span style={{
+            background: 'var(--bg-secondary)', border: `1px solid ${color}`,
+            color, fontSize: '12px', fontWeight: 800, padding: '2px 8px', borderRadius: '12px'
+          }}>
+            {count}
+          </span>
+        </div>
+
+        {/* Dropdown Menu directly under Column Header Toggle Button */}
+        {showPriorityMenu && (
+          <div style={{
+            position: 'absolute',
+            top: '42px',
+            right: '0px',
+            zIndex: 99,
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '10px',
+            padding: '10px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+            minWidth: '170px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px'
+          }}>
+            <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '2px' }}>
+              Toggle Priority Tasks
+            </div>
+            {['URGENT', 'HIGH', 'MEDIUM', 'LOW'].map(p => {
+              const isEnabled = enabledPriorities[p]
+              const pColors = priorityColors[p.toLowerCase()] || priorityColors.medium
+              return (
+                <button
+                  key={p}
+                  onClick={() => onTogglePriority(p)}
+                  style={{
+                    background: isEnabled ? pColors.bg : 'var(--bg-secondary)',
+                    color: isEnabled ? pColors.text : 'var(--text-muted)',
+                    border: `1px solid ${isEnabled ? pColors.border : 'var(--border-color)'}`,
+                    padding: '6px 10px',
+                    borderRadius: '6px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    width: '100%'
+                  }}
+                >
+                  <span>{p}</span>
+                  <span>{isEnabled ? 'ENABLE ✓' : 'DISABLE ✗'}</span>
+                </button>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', minHeight: '200px' }}>
