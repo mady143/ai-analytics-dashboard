@@ -64,29 +64,36 @@ export default function Sidebar({ collapsed, onToggle }) {
         className="sidebar-logo"
         style={{
           display: 'flex',
+          flexDirection: collapsed ? 'column' : 'row',
           alignItems: 'center',
           justifyContent: collapsed ? 'center' : 'space-between',
           padding: collapsed ? '16px 4px' : '16px 12px',
+          gap: collapsed ? '10px' : '0px',
           width: '100%'
         }}
       >
-        {!collapsed && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div className="logo-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <BarChart3 size={20} color="#7C3AED" />
-            </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div
+            className="logo-icon"
+            title="AI Analytics · Agentic Dashboard"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            onClick={collapsed ? onToggle : undefined}
+          >
+            <BarChart3 size={20} color="#7C3AED" />
+          </div>
+          {!collapsed && (
             <div>
               <div className="logo-text">AI Analytics</div>
               <div className="logo-subtitle">Agentic Dashboard</div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Three Line Toggle Button - ALWAYS VISIBLE */}
         <button
           id="sidebar-toggle-btn"
           onClick={onToggle}
-          title={collapsed ? "Enable Nav Bar" : "Disable Nav Bar"}
+          title={collapsed ? "Enable Nav Bar (AI Analytics)" : "Disable Nav Bar"}
           aria-label={collapsed ? "Enable Nav Bar" : "Disable Nav Bar"}
           style={{
             background: collapsed ? 'rgba(124, 58, 237, 0.25)' : 'var(--bg-secondary)',
@@ -160,7 +167,7 @@ export default function Sidebar({ collapsed, onToggle }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: 'var(--text-secondary)' }}>
                   <span className={`status-dot ${status}`} />
                   <span style={{ textTransform: 'capitalize', fontWeight: 600, color: 'var(--text-primary)' }}>{name.replace('_', ' ')}</span>
-                  <span style={{ marginLeft: 'auto', fontSize: '10px', color: isWorking ? '#a78bfa' : 'var(--text-muted)', fontWeight: isWorking ? 700 : 400 }}>
+                  <span style={{ marginLeft: 'auto', fontSize: '10px', color isWorking ? '#a78bfa' : 'var(--text-muted)', fontWeight: isWorking ? 700 : 400 }}>
                     {isWorking ? 'WORKING ⚡' : status}
                   </span>
                 </div>
