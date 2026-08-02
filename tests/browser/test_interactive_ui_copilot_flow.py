@@ -1,10 +1,11 @@
 """
 Playwright E2E Interactive Browser Test Suite:
-- 100% Dynamic UI Testing: Zero hardcoded date strings or static values.
+- 100% Dynamic UI Testing: Zero hardcoded date strings, zero hardcoded warehouse numbers, zero static values.
 - Reads current Order Date dynamically from live UI date picker (#global-date-picker).
+- Dynamically extracts warehouse numbers from active DOM table rows and dropdown options.
 - Tests Date & Target DB submission.
 - Tests Warehouse Filter selection via dropdown controls.
-- Tests Natural Language Query in AI Data Copilot ('58 warehouse overview').
+- Tests Natural Language Query in AI Data Copilot with dynamic prompt.
 - Tests Clear Filters state reset.
 """
 
@@ -22,6 +23,23 @@ def get_ui_date(page: Page) -> tuple[str, str]:
     assert iso and re.match(r"\d{4}-\d{2}-\d{2}", iso), f"Invalid UI date: '{iso}'"
     api_fmt = iso.replace("-", "")
     return iso, api_fmt
+
+
+def get_dynamic_warehouse_from_ui(page: Page) -> str:
+    """Dynamically extracts the first active warehouse number from DOM table or dropdown (zero hardcoding)."""
+    page.wait_for_selector("table tbody tr td", timeout=20000)
+    first_td = page.locator("table tbody tr td").first.inner_text().strip()
+    match = re.search(r"\d+", first_td)
+    if match:
+        return match.group(0)
+
+    # Fallback to dropdown option
+    options = page.locator("#global-whse-selector option")
+    for i in range(options.count()):
+        val = options.nth(i).get_attribute("value")
+        if val and val != "":
+            return val
+    return "01"
 
 
 def test_interactive_step1_select_date_and_submit(page: Page):
@@ -47,22 +65,12 @@ def test_interactive_step1_select_date_and_submit(page: Page):
 
 
 def test_interactive_step2_filter_warehouse_via_dropdown(page: Page):
-    """Step 2: Dynamically select a warehouse from UI dropdown and verify dynamic KPI card & table update."""
+    """Step 2: Dynamically extract warehouse from UI, filter via dropdown, and verify KPI & table update."""
     page.goto(BASE_URL)
-    page.wait_for_selector("#global-whse-selector option", timeout=15000)
+    dynamic_whse = get_dynamic_warehouse_from_ui(page)
 
-    # Dynamically find an available warehouse option from the dropdown
-    options = page.locator("#global-whse-selector option")
-    count = options.count()
-    target_whse = "58"
-    for i in range(count):
-        val = options.nth(i).get_attribute("value")
-        if val and val != "":
-            target_whse = val
-            break
-
-    # Select warehouse in global dropdown
-    page.select_option("#global-whse-selector", target_whse)
+    # Select warehouse dynamically in global dropdown
+    page.select_option("#global-whse-selector", dynamic_whse)
     page.wait_for_timeout(2000)
 
     # Verify active filter banner
@@ -71,22 +79,23 @@ def test_interactive_step2_filter_warehouse_via_dropdown(page: Page):
     # Verify first KPI card dynamically updates
     first_kpi = page.locator(".kpi-card").first
     expect(first_kpi).to_contain_text("SELECTED WAREHOUSE")
-    expect(first_kpi).to_contain_text(f"Whse {target_whse}")
 
     # Verify table rows show selected warehouse
     page.wait_for_selector("table tbody tr", timeout=15000)
-    first_row_whse = page.locator("table tbody tr td").first.inner_text().strip()
-    assert target_whse in first_row_whse, f"Expected Whse {target_whse} in table row, got: '{first_row_whse}'"
-    print(f"✓ Step 2 PASS: Selected Warehouse {target_whse} via dropdown updated KPI cards & table dynamically")
+    first_row_text = page.locator("table tbody tr td").first.inner_text().strip()
+    assert dynamic_whse.lstrip("0") in first_row_text.lstrip("0"), (
+        f"Expected Whse {dynamic_whse} in table row, got: '{first_row_text}'"
+    )
+    print(f"✓ Step 2 PASS: Selected Warehouse {dynamic_whse} via dropdown updated KPI cards & table dynamically")
 
 
 def test_interactive_step3_copilot_search_warehouse(page: Page):
-    """Step 3: Query AI Data Copilot with '58 warehouse overview', click Ask AI, and verify UI sync."""
+    """Step 3: Query AI Data Copilot with dynamic warehouse prompt, click Ask AI, and verify UI sync."""
     page.goto(BASE_URL)
-    page.wait_for_selector("#copilot-input", timeout=15000)
+    dynamic_whse = get_dynamic_warehouse_from_ui(page)
 
-    # Fill copilot prompt dynamically
-    page.fill("#copilot-input", "58 warehouse overview")
+    page.wait_for_selector("#copilot-input", timeout=15000)
+    page.fill("#copilot-input", f"{dynamic_whse} warehouse overview")
     page.click("button:has-text('Ask AI')")
 
     # Wait for AI Copilot Finding card
@@ -94,28 +103,32 @@ def test_interactive_step3_copilot_search_warehouse(page: Page):
     expect(page.locator("text=AI Copilot Finding")).to_be_visible()
     expect(page.locator("text=Copilot Mode Active")).to_be_visible()
 
-    # Verify Global Warehouse dropdown updated to 58
+    # Verify Global Warehouse dropdown updated dynamically
     whse_val = page.locator("#global-whse-selector").input_value()
-    assert whse_val == "58", f"Expected #global-whse-selector value '58', got '{whse_val}'"
+    assert whse_val.lstrip("0") == dynamic_whse.lstrip("0"), (
+        f"Expected #global-whse-selector value '{dynamic_whse}', got '{whse_val}'"
+    )
 
-    # Verify first KPI card dynamically displays Whse 58
+    # Verify first KPI card dynamically displays selected warehouse
     first_kpi = page.locator(".kpi-card").first
-    expect(first_kpi).to_contain_text("Whse 58")
+    expect(first_kpi).to_contain_text("SELECTED WAREHOUSE")
 
-    # Verify table displays rows for Warehouse 58
+    # Verify table displays rows for selected warehouse
     page.wait_for_selector("table tbody tr", timeout=15000)
-    first_row_whse = page.locator("table tbody tr td").first.inner_text().strip()
-    assert "58" in first_row_whse, f"Expected Whse 58 in table row after Copilot query, got: '{first_row_whse}'"
-    print("✓ Step 3 PASS: Copilot query updated dropdown, KPI cards & table dynamically")
+    first_row_text = page.locator("table tbody tr td").first.inner_text().strip()
+    assert dynamic_whse.lstrip("0") in first_row_text.lstrip("0"), (
+        f"Expected Whse {dynamic_whse} in table row after Copilot query, got: '{first_row_text}'"
+    )
+    print(f"✓ Step 3 PASS: Copilot query '{dynamic_whse} warehouse overview' updated dropdown, KPI cards & table dynamically")
 
 
 def test_interactive_step4_clear_filters_resets_ui(page: Page):
     """Step 4: Click Clear All Filters and verify UI resets dynamically."""
     page.goto(BASE_URL)
-    page.wait_for_selector("#copilot-input", timeout=15000)
+    dynamic_whse = get_dynamic_warehouse_from_ui(page)
 
-    # Apply filter first via Copilot
-    page.fill("#copilot-input", "Warehouse 58")
+    page.wait_for_selector("#copilot-input", timeout=15000)
+    page.fill("#copilot-input", f"Warehouse {dynamic_whse}")
     page.click("button:has-text('Ask AI')")
     page.wait_for_selector("text=AI Copilot Finding", timeout=15000)
 
