@@ -92,7 +92,7 @@ export default function Sidebar({ collapsed, onToggle }) {
             marginLeft: collapsed ? '0' : 'auto'
           }}
         >
-          {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+          {collapsed ? <Menu size={20} /> : <Menu size={20} />}
         </button>
       </div>
 
