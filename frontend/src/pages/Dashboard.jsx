@@ -214,7 +214,12 @@ export default function Dashboard() {
             >
               <option value="">All Warehouses</option>
               {(() => {
-                const whsSet = new Set(barData.map(b => (b.whs_num || '').toString().trim()).filter(Boolean));
+                const defaultWhs = ['01', '02', '03', '08', '27', '58', '61', '71'];
+                const whsSet = new Set(defaultWhs);
+                (barData || []).forEach(b => {
+                  const w = (b.whs_num || '').toString().trim();
+                  if (w) whsSet.add(w);
+                });
                 const currentVal = (tableFilters?.whse || tableFilters?.oewhse || tableFilters?.whs_num || '').toString().trim();
                 if (currentVal) whsSet.add(currentVal);
                 const sorted = Array.from(whsSet).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
