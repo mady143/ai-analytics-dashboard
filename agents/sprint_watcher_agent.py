@@ -541,6 +541,13 @@ class SprintWatcherAgent:
         sprint = self._resolve_active_sprint()
         if sprint:
             self.current_sprint_id = sprint.get("id")
+            try:
+                state = load_state()
+                state["current_sprint"] = sprint
+                state["plane_project_id"] = self.project_id
+                save_state(state)
+            except Exception:
+                pass
             console.print(
                 f"[green]✅ Active sprint: [bold]{sprint.get('name')}[/bold][/green]"
             )
