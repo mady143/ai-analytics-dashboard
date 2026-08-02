@@ -106,20 +106,21 @@ export default function Sidebar({ collapsed, onToggle, onHide }) {
             title={collapsed ? "Enable Nav Bar (AI Analytics)" : "Disable Nav Bar"}
             aria-label={collapsed ? "Enable Nav Bar" : "Disable Nav Bar"}
             style={{
-              background: collapsed ? 'rgba(124, 58, 237, 0.25)' : 'var(--bg-secondary)',
-              border: collapsed ? '1px solid #7C3AED' : '1px solid var(--border-color)',
-              color: collapsed ? '#a78bfa' : 'var(--text-primary)',
+              background: 'transparent',
+              border: 'none',
+              color: '#FFFFFF',
               padding: '6px',
               borderRadius: '6px',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              width: collapsed ? '30px' : 'auto',
-              height: collapsed ? '30px' : '40px'
+              width: collapsed ? '30px' : '36px',
+              height: collapsed ? '30px' : '36px',
+              transition: 'all 0.2s ease'
             }}
           >
-            <Menu size={collapsed ? 16 : 20} />
+            <Menu size={22} color="#FFFFFF" strokeWidth={2.5} />
           </button>
 
           {/* Hide Left Nav Bar Component Button */}
