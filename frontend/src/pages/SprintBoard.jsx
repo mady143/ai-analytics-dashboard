@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   CheckCircle2, Clock, PlayCircle, AlertCircle, RefreshCw,
-  Search, Layers, Cpu, Server, CheckSquare, Zap
+  Search, Layers, Cpu, Server, CheckSquare, Zap, Filter
 } from 'lucide-react'
 
 const API_BASE = 'http://localhost:8000'
@@ -12,7 +12,33 @@ export default function SprintBoard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [searchTerm, setSearchTerm] = useState('')
-  const [priorityFilter, setPriorityFilter] = useState('ALL')
+  
+  // Priority Enable/Disable Toggles State
+  const [enabledPriorities, setEnabledPriorities] = useState({
+    URGENT: true,
+    HIGH: true,
+    MEDIUM: true,
+    LOW: true,
+    NONE: true
+  })
+
+  const togglePriority = (p) => {
+    setEnabledPriorities(prev => ({
+      ...prev,
+      [p]: !prev[p]
+    }))
+  }
+
+  const toggleAllPriorities = () => {
+    const allOn = Object.values(enabledPriorities).every(v => v)
+    setEnabledPriorities({
+      URGENT: !allOn,
+      HIGH: !allOn,
+      MEDIUM: !allOn,
+      LOW: !allOn,
+      NONE: !allOn
+    })
+  }
 
   const fetchSprintTasks = async () => {
     try {
@@ -47,8 +73,9 @@ export default function SprintBoard() {
   const filteredTasks = allTasks.filter(task => {
     const matchesSearch = task.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           (task.description && task.description.toLowerCase().includes(searchTerm.toLowerCase()))
-    const matchesPriority = priorityFilter === 'ALL' || task.priority?.toUpperCase() === priorityFilter
-    return matchesSearch && matchesPriority
+    const pKey = (task.priority || 'MEDIUM').toUpperCase()
+    const isPriorityEnabled = enabledPriorities[pKey] !== false
+    return matchesSearch && isPriorityEnabled
   })
 
   const todoTasks = filteredTasks.filter(t => t.status === 'unstarted' || t.status === 'backlog' || t.status === 'todo')
@@ -136,7 +163,7 @@ export default function SprintBoard() {
         </div>
       </div>
 
-      {/* ── Search & Filter Controls ── */}
+      {/* ── Search & Enable/Disable Priority Toggles ── */}
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         flexWrap: 'wrap', gap: '16px', marginBottom: '24px',
@@ -157,22 +184,56 @@ export default function SprintBoard() {
           />
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Priority:</span>
-          {['ALL', 'URGENT', 'HIGH', 'MEDIUM', 'LOW'].map(p => (
-            <button
-              key={p}
-              onClick={() => setPriorityFilter(p)}
-              style={{
-                background: priorityFilter === p ? 'var(--color-primary)' : 'var(--bg-secondary)',
-                color: priorityFilter === p ? '#fff' : 'var(--text-secondary)',
-                border: '1px solid var(--border-color)',
-                padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer'
-              }}
-            >
-              {p}
-            </button>
-          ))}
+        {/* Enable/Disable Priority Toggle Buttons */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <Filter size={14} /> Priority Toggles:
+          </span>
+          
+          <button
+            id="toggle-all-priorities-btn"
+            onClick={toggleAllPriorities}
+            style={{
+              background: 'rgba(124, 58, 237, 0.2)',
+              color: '#a78bfa',
+              border: '1px solid #7C3AED',
+              padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer'
+            }}
+          >
+            {Object.values(enabledPriorities).every(v => v) ? 'Disable All' : 'Enable All'}
+          </button>
+
+          {['URGENT', 'HIGH', 'MEDIUM', 'LOW'].map(p => {
+            const isEnabled = enabledPriorities[p]
+            const colors = priorityColors[p.toLowerCase()] || priorityColors.medium
+            return (
+              <button
+                key={p}
+                id={`priority-toggle-${p.toLowerCase()}`}
+                onClick={() => togglePriority(p)}
+                title={`Click to ${isEnabled ? 'Disable' : 'Enable'} ${p} priority tasks`}
+                style={{
+                  background: isEnabled ? colors.bg : 'var(--bg-secondary)',
+                  color: isEnabled ? colors.text : 'var(--text-muted)',
+                  border: `1px solid ${isEnabled ? colors.border : 'var(--border-color)'}`,
+                  padding: '4px 10px',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  opacity: isEnabled ? 1 : 0.45,
+                  textDecoration: isEnabled ? 'none' : 'line-through',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: isEnabled ? colors.text : 'var(--text-muted)' }} />
+                {p} {isEnabled ? '✓' : 'OFF'}
+              </button>
+            )
+          })}
         </div>
       </div>
 
