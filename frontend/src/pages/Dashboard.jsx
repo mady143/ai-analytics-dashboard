@@ -287,14 +287,18 @@ export default function Dashboard() {
               <YAxis tick={{ fill: '#8B949E', fontSize: 11 }} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(124,58,237,0.08)' }} />
               <Bar dataKey="value" name="Cases Built Qty" radius={[6, 6, 0, 0]}>
-                {barData.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                ))}
+                {barData.map((entry, i) => {
+                  const targetW = (tableFilters?.whse || tableFilters?.oewhse || tableFilters?.whs_num || '').toString().replace(/^0+/, '');
+                  const currentW = (entry.whs_num || '').toString().replace(/^0+/, '');
+                  const isHighlighted = targetW && currentW === targetW;
+                  return (
+                    <Cell key={i} fill={isHighlighted ? '#34D399' : COLORS[i % COLORS.length]} opacity={targetW && !isHighlighted ? 0.35 : 1.0} />
+                  );
+                })}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
-          <CopilotSearchFixes />
-    </motion.div>
+        </motion.div>
 
         {/* Scatter Chart */}
         <motion.div
@@ -310,11 +314,19 @@ export default function Dashboard() {
               <XAxis type="number" dataKey="x" name="Order Qty" tick={{ fill: '#8B949E', fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis type="number" dataKey="y" name="Cases Built" tick={{ fill: '#8B949E', fontSize: 11 }} axisLine={false} tickLine={false} />
               <Tooltip cursor={{ strokeDasharray: '3 3' }} content={<CustomTooltip />} />
-              <Scatter name="Order vs Built" data={scatterData} fill="#06B6D4" opacity={0.8} />
+              <Scatter name="Order vs Built" data={scatterData} fill="#06B6D4">
+                {scatterData.map((entry, i) => {
+                  const targetW = (tableFilters?.whse || tableFilters?.oewhse || tableFilters?.whs_num || '').toString().replace(/^0+/, '');
+                  const currentW = (entry.color || '').toString().replace(/[^0-9]/g, '').replace(/^0+/, '');
+                  const isHighlighted = targetW && currentW === targetW;
+                  return (
+                    <Cell key={i} fill={isHighlighted ? '#34D399' : '#06B6D4'} opacity={targetW && !isHighlighted ? 0.25 : 0.85} />
+                  );
+                })}
+              </Scatter>
             </ScatterChart>
           </ResponsiveContainer>
-          <CopilotSearchFixes />
-    </motion.div>
+        </motion.div>
       </div>
 
       {/* ── Autonomous Agent Task Pickup & Execution Stream ── */}
