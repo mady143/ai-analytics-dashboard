@@ -57,11 +57,14 @@ def get_kpi(
     scratch_qty = total_order - total_built if total_order > total_built else 0
     scratch_rate = f"{(scratch_qty / total_order * 100):.1f}%" if total_order > 0 else "0%"
 
+    whs_card_title = f"SELECTED WAREHOUSE" if oewhse_clean else "TOTAL WAREHOUSES"
+    whs_card_unit = f"Facility (Whse {oewhse_clean})" if oewhse_clean else "Facilities"
+
     kpis = [
         {
-            "title": "TOTAL WAREHOUSES",
-            "value": str(total_whs),
-            "unit": "Facilities",
+            "title": whs_card_title,
+            "value": f"Whse {oewhse_clean}" if oewhse_clean else str(total_whs),
+            "unit": whs_card_unit,
             "trend": 0.0,
             "trend_direction": "up",
             "color": "#7C3AED"
