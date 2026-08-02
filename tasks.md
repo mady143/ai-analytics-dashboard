@@ -158,6 +158,17 @@ The application is structured into distinct, modular UI Screens and Component Se
 
 ---
 
+### 📌 TASK 27 — Strict Single-Warehouse Chart Filtering (`#single-whse-chart-filtering`) [HIGH PRIORITY]
+
+**Goal:** Ensure that when a specific warehouse (e.g. `Whse 58`) is selected via global dropdown, table filter, or Data Copilot prompt, the Bar Chart (`/api/charts/bar`) and Scatter Plot (`/api/charts/scatter`) strictly display ONLY the data for that selected warehouse, removing comparative bars for unselected warehouses.
+
+- **Backend Endpoints:** [`backend/routers/charts.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/backend/routers/charts.py#L145-L245) (`get_bar_chart`, `get_scatter_chart`)
+- **Behavior Rule:**
+  - **Warehouse Filter Active (`oewhse=58`):** Response `data` array contains strictly **1 item** (e.g. `[{"label": "Whse 58", "value": 82747, "whs_num": "58"}]`) for Bar Chart, and ONLY points with `color: "Whse 58"` for Scatter Plot.
+  - **All Warehouses Mode (`oewhse=""`):** Response `data` array contains all **8 distinct warehouses**.
+
+---
+
 ### 📌 TASK 20 — Full E2E + Unit Test Suite: Component Validation & Regression Prevention (`#full-e2e-testing`) [HIGH PRIORITY]
 
 **Goal:** Run automated tests against every UI component and API endpoint to catch regressions. Must be run after every code change.

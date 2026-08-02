@@ -58,6 +58,24 @@ def test_scatter_chart():
     assert response.status_code == 200
     data = response.json()
     assert data["chart_type"] == "scatter"
+    assert "data" in data
+
+
+def test_task27_single_warehouse_chart_filtering():
+    """Task 27: When oewhse is provided, bar chart and scatter plot must strictly return ONLY data for that warehouse."""
+    bar_res = client.get("/api/charts/bar?target_db=pg_dev&oewhse=58")
+    assert bar_res.status_code == 200
+    bar_json = bar_res.json()
+    assert len(bar_json["data"]) == 1
+    assert bar_json["data"][0]["whs_num"] == "58"
+
+    scatter_res = client.get("/api/charts/scatter?target_db=pg_dev&oewhse=58")
+    assert scatter_res.status_code == 200
+    scatter_json = scatter_res.json()
+    assert len(scatter_json["data"]) > 0
+    for point in scatter_json["data"]:
+        assert point["color"] == "Whse 58"
+
     assert len(data["data"]) > 0
     assert "x" in data["data"][0]
     assert "y" in data["data"][0]
