@@ -5,7 +5,7 @@ This master index organizes the **AI Analytics Dashboard Autonomous Agent Networ
 ---
 
 ## 🚨 Section 1: Mandatory Operational Rules & Git Automation
-- 📄 [`tasks/section_1_mandatory_tasks.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/section_1_mandatory_tasks.md) — Mandatory Launcher Scripts ([`scripts/start_all_services.bat`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/start_all_services.bat) / [`scripts/start_all_services.sh`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/start_all_services.sh))
+- 📄 [`tasks/section_1_mandatory_tasks.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/section_1_mandatory_tasks.md) — 6-Stage Autonomous Lifecycle Pipeline (Pickup → Understand → Build → Test → Close → Git Push)
 - 📄 [`tasks/task_7_git_automation.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_7_git_automation.md) — Git Start/End of Day Auto-Push, Branch Merging & Automatic Merge Conflict Resolution
 
 ---
@@ -33,7 +33,7 @@ This master index organizes the **AI Analytics Dashboard Autonomous Agent Networ
 - 📄 [`tasks/task_4_data_table.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_4_data_table.md) — Warehouse Item Level Data Table
 
 ### 🧠 AI & Agent Network
-- 📄 [`tasks/task_6_agents_and_mcp.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_6_agents_and_mcp.md) — Autonomous Agent Network
+- 📄 [`tasks/task_6_agents_and_mcp.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_6_agents_and_mcp.md) — Autonomous Agent Network & Plane PM Integration
 - 📄 [`tasks/task_14_ai_data_copilot.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_14_ai_data_copilot.md) — Natural Language AI Data Copilot
 - 📄 [`tasks/task_15_anomaly_alert_panel.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_15_anomaly_alert_panel.md) — Real-Time Anomaly & Risk Alerts
 - 📄 [`tasks/task_28_memory_and_daily_task_updates.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_28_memory_and_daily_task_updates.md) — Daily Memory Persistence & State Updating Engine
