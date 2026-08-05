@@ -316,6 +316,53 @@ def save_conversation(agent_name: str, messages: list):
         console.print(f"[yellow]⚠️ Failed to save conversation for {agent_name}: {e}[/yellow]")
 
 
+def update_conversation_memory(agent_name: str = "assistant", user_query: str = "", response_summary: str = ""):
+    """
+    Daily / Per-Conversation Memory Updater:
+    Logs every conversation exchange to conversations/assistant_conversation.jsonl,
+    updates task history in task_history/YYYY-MM-DD_task_history.jsonl,
+    and saves current timestamp state into agent_state.json.
+    """
+    _ensure_dirs()
+    now = datetime.now()
+    today_str = now.strftime("%Y-%m-%d")
+    now_iso = now.isoformat()
+
+    # 1. Append message exchange to conversation memory
+    conv_file = CONVERSATIONS_DIR / f"{agent_name}_conversation.jsonl"
+    entry = {
+        "timestamp": now_iso,
+        "date": today_str,
+        "user_query": user_query[:500],
+        "response_summary": response_summary[:1000]
+    }
+    try:
+        with conv_file.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(entry) + "\n")
+    except Exception as e:
+        console.print(f"[yellow]⚠️ Failed to write conversation memory: {e}[/yellow]")
+
+    # 2. Append to daily task history log
+    try:
+        log_task_result(
+            task_id=f"CONV-{now.strftime('%H%M%S')}",
+            task_title=f"User Conversation: {user_query[:50]}",
+            agent_name=agent_name,
+            status="completed",
+            output=response_summary[:500]
+        )
+    except Exception:
+        pass
+
+    # 3. Update agent_state.json
+    try:
+        state = load_state()
+        state["last_conversation_update"] = now_iso
+        save_state(state)
+    except Exception:
+        pass
+
+
 def cleanup_old_memory(retention_days: int = 30):
     _ensure_dirs()
     cutoff = datetime.now() - timedelta(days=retention_days)
