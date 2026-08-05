@@ -81,6 +81,30 @@ def get_changed_files() -> list[str]:
     return files
 
 
+def get_meaningful_changed_files() -> list[str]:
+    """
+    Get list of meaningful changed source code/documentation files.
+    Filters out log files, system cache, temporary files, and noisy state logs
+    to prevent unnecessary spam commits.
+    """
+    raw_files = get_changed_files()
+    meaningful = []
+    
+    # Exclude temporary, cache, log, and noisy state files
+    ignored_patterns = (
+        ".log", ".system_generated", "__pycache__", ".pytest_cache",
+        "brain/", ".tmp", "task-", "logs/"
+    )
+    
+    for f in raw_files:
+        normalized = f.replace("\\", "/").lower()
+        if any(pat in normalized for pat in ignored_patterns):
+            continue
+        meaningful.append(f)
+        
+    return meaningful
+
+
 def stage_all() -> bool:
     """Stage all changes."""
     _, stderr, code = _run_git(["add", "."])
@@ -192,27 +216,27 @@ def eod_push(
 ) -> bool:
     """
     Daily End-of-Day workflow:
-    1. Check for uncommitted modified/new files and unpushed commits.
-    2. If NO code changes exist, skip push entirely.
-    3. If code changes exist, stage, commit, and push to remote.
+    1. Check for uncommitted meaningful source code/doc files and unpushed commits.
+    2. If NO meaningful code changes exist (e.g. only logs/cache), skip Git commit & push.
+    3. If meaningful code changes exist, stage, commit, and push to remote.
     """
     console.print("\n[bold magenta]🌙 Starting Daily End-of-Day Git Check...[/bold magenta]")
 
-    changed_files = get_changed_files()
+    meaningful_files = get_meaningful_changed_files()
     unpushed_commits = get_unpushed_commits()
 
-    if not changed_files and not unpushed_commits:
-        console.print("[yellow]⚠️  No code changes or unpushed commits found. Skipping Git push.[/yellow]")
+    if not meaningful_files and not unpushed_commits:
+        console.print("[yellow]⚠️  No meaningful code/doc changes or unpushed commits found. Skipping unnecessary Git commit & push.[/yellow]")
         return True
 
-    if changed_files:
-        console.print(f"[cyan]📁 {len(changed_files)} file(s) changed[/cyan]")
+    if meaningful_files:
+        console.print(f"[cyan]📁 {len(meaningful_files)} meaningful file(s) changed[/cyan]")
         if not stage_all():
             return False
 
         message = generate_commit_message(
             tasks_completed=tasks_completed,
-            files_changed=changed_files,
+            files_changed=meaningful_files,
             custom_summary=custom_summary
         )
 
