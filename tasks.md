@@ -6,6 +6,7 @@ This master index organizes the **AI Analytics Dashboard Autonomous Agent Networ
 
 ## 🚨 Section 1: Mandatory Operational Rules & Git Automation
 - 📄 [`tasks/section_1_mandatory_tasks.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/section_1_mandatory_tasks.md)
+  - Mandatory Launcher Scripts ([`scripts/start_all_services.bat`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/start_all_services.bat) / [`scripts/start_all_services.sh`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/start_all_services.sh))
   - Daily Git Start/End of Day Auto-Push & Merge Conflict Resolution
   - Automated README.md Documentation Maintenance Mandate
   - Real End-to-End Autonomous Task Execution Pipeline Rules
@@ -55,8 +56,7 @@ This master index organizes the **AI Analytics Dashboard Autonomous Agent Networ
 
 ---
 
-## 🧪 Section 5: Testing & Quality Gates
-- 📄 [`tasks/section_5_testing_and_quality_gates.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/section_5_testing_and_quality_gates.md)
-  - Unit Test Execution (`pytest tests/unit/`)
-  - Playwright Browser Test Execution (`pytest tests/browser/`)
-  - Zero Hardcoding Directive & Mandatory Quality Gates
+## 🧪 Section 5: Automated Testing & Browser Validation Tasks
+- 📄 [`tasks/section_5_testing_and_quality_gates.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/section_5_testing_and_quality_gates.md) — Overview of Testing & Quality Gates
+- 📄 [`tasks/task_10_end_to_end_parameter_testing.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_10_end_to_end_parameter_testing.md) — Interactive Browser Parameter Combination Testing
+- 📄 [`tasks/task_20_full_e2e_component_suite.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_20_full_e2e_component_suite.md) — Full Playwright Browser E2E Suite (14 Scenarios) & Pytest Unit Suite (51 Tests)
