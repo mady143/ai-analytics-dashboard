@@ -43,6 +43,12 @@ The application is structured into distinct, modular UI Screens and Component Se
 - 📄 [`tasks/task_13_clean_icons_design_system.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_13_clean_icons_design_system.md) — Icon System Cleanup & Standardized Design System
 - 📄 [`tasks/task_14_ai_data_copilot.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_14_ai_data_copilot.md) — Natural Language AI Data Copilot Component & Query Service
 - 📄 [`tasks/task_15_anomaly_alert_panel.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_15_anomaly_alert_panel.md) — Real-Time Anomaly & Risk Alert Panel Component
+- 📄 [`tasks/task_28_memory_and_daily_task_updates.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_28_memory_and_daily_task_updates.md) — Daily Memory Persistence & Conversation State Updating Engine
+
+> ### ⚠️ TASK 28 — MANDATORY: Daily Memory Persistence & Per-Conversation State Sync [ENFORCE DAILY]
+> - **Daily Memory Updater**: Appends every user query and response summary to `memory/conversations/assistant_conversation.jsonl`, updates daily task history in `memory/task_history/YYYY-MM-DD_task_history.jsonl`, and updates `agent_state.json`.
+> - **Non-Blocking Background Sprint Worker**: Automatically triggered whenever `/api/sprints/tasks` is fetched, ensuring tasks created in Plane are picked up immediately by `SprintWatcherAgent` without waiting for manual CLI triggers.
+> - **Files**: [`agents/memory_manager.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/memory_manager.py), [`backend/routers/sprints.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/backend/routers/sprints.py), [`tasks/task_28_memory_and_daily_task_updates.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_28_memory_and_daily_task_updates.md)
 
 > ### ⚠️ TASK 19 — MANDATORY: AI Copilot Date-Agnostic Rule + Dashboard Date-Strict Rule [ALWAYS ENFORCE]
 > - **AI Data Copilot (`/api/analytics/ai-copilot`)** → **MUST NOT use the global date (`oerdte`) when querying data.** It must always query the **full dataset across ALL dates** so it can always return meaningful results regardless of what date is selected in the header.
