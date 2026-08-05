@@ -1,29 +1,49 @@
 # 🚨 Section 1: Mandatory Tasks & Autonomous Execution
 
-This document outlines the mandatory operational requirements and autonomous workflow directives for the AI Analytics Dashboard project.
+This document outlines the mandatory operational requirements, launch scripts, and autonomous workflow directives for the AI Analytics Dashboard project.
 
 ---
 
-## 1. Daily Git Synchronization & Automatic Conflict Resolution
+## 1. Mandatory Services & Agent Fleet Launchers (.bat / .sh)
+The application system provides mandatory platform-specific execution launcher scripts to start all backend servers, frontend UI, background agents, watchdog supervisor, and memory managers in one command:
+
+- 💻 **Windows Batch Execution Script:** [`scripts/start_all_services.bat`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/start_all_services.bat)
+- 🐧 **Linux / macOS Shell Execution Script:** [`scripts/start_all_services.sh`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/start_all_services.sh)
+
+### What the .bat / .sh Script Executes Automatically:
+1. **Dependency Verification:** Checks and installs Python (`pip install -r requirements.txt`) and Node.js dependencies (`npm install` in `frontend/`).
+2. **Browser Binary Setup:** Installs Playwright Chromium binaries (`python -m playwright install chromium`).
+3. **Git Synchronization:** Pulls remote changes (`git pull origin main`).
+4. **FastAPI Backend Server:** Starts Uvicorn API server on `http://localhost:8000`.
+5. **Vite Frontend Dev Server:** Starts React frontend on `http://localhost:5173`.
+6. **Sprint Watcher Agent:** Launches continuous 15s polling loop (`python agents/sprint_watcher_agent.py --interval 15`).
+7. **Watchdog Supervisor:** Starts process self-healing watchdog (`python scripts/agent_watchdog.py`).
+8. **Agent & Memory Fleet:** Starts `builder_agent.py`, `tester_agent.py`, `memory_manager.py`, `plane_agent.py`, and `git_agent.py`.
+
+---
+
+## 2. Daily Git Synchronization & Automatic Conflict Resolution
 - **Morning (Start of Day):** Run `python scripts/start_of_day.py` or `git pull origin main` to pull latest remote changes before work begins.
 - **Automatic Merge Conflict Resolution:** If any git merge or rebase conflicts occur during pull, automatically analyze conflicting files, resolve all conflicts cleanly, stage changes (`git add .`), and complete the commit.
 - **Task Completion & Autonomous Git Push / PR:** Automatically pull remote changes (`git pull origin main`), stage changes (`git add .`), commit with a descriptive message, create pull requests when applicable, and push updated code to remote GitHub (`mmusunur/ai-analytics-dashboard`) upon task completion or at the end of the day.
 
 ### Associated Scripts
+- [`scripts/start_all_services.bat`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/start_all_services.bat)
+- [`scripts/start_all_services.sh`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/start_all_services.sh)
 - [`scripts/start_of_day.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/start_of_day.py)
 - [`scripts/end_of_day.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/end_of_day.py)
 - [`agents/git_agent.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/git_agent.py)
 
 ---
 
-## 2. Automatic README.md Maintenance Mandate
+## 3. Automatic README.md Maintenance Mandate
 - **Mandatory Documentation Directive:**
   - The AI AGENT MUST automatically maintain and update [`README.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/README.md) whenever new features, backend API endpoints, multi-database architecture parameters, or agent processes are added or updated.
   - Keep `README.md` synchronized with the active project structure, API endpoints table, background agent list, and testing instructions.
 
 ---
 
-## 3. Real End-to-End Autonomous Task Execution Pipeline
+## 4. Real End-to-End Autonomous Task Execution Pipeline
 - **Sprint Watcher (`agents/sprint_watcher_agent.py`):**
   - ONLY pick up tasks in `ACTIONABLE_STATES` = `("unstarted", "backlog", "todo", "started", "in_progress")`.
   - SKIP tasks in `SKIP_STATES` = `("completed", "done", "cancelled")`.

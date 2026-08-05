@@ -1,5 +1,9 @@
 # 📌 TASK 9 — Continuous Application Server Uptime (`#application-uptime`)
 
+## 🖥️ Server Launchers & Mandatory Execution Scripts
+- 💻 **Windows Launcher:** [`scripts/start_all_services.bat`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/start_all_services.bat)
+- 🐧 **Linux / macOS Launcher:** [`scripts/start_all_services.sh`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/start_all_services.sh)
+
 ## 🖥️ Server Configurations & Endpoints
 - **Backend API Server:**
   - **Command:** `python -m uvicorn main:app --host 127.0.0.1 --port 8000` (inside `backend/`)
@@ -21,4 +25,4 @@
 - **Behavior:** Runs continuously in the background on port `5173`. Serves the React + Vite dashboard UI with real-time parameter controls, KPI cards, charts, and warehouse data table.
 
 ### Sub-Task 9.3: 🩺 Continuous Uptime Monitoring & Auto-Restart Directive
-- **Rule:** The USER will NOT start servers manually. The system MUST keep both frontend and backend servers continuously active. If either server goes offline or crashes, the agent MUST automatically relaunch it in background mode immediately.
+- **Rule:** The USER will NOT start servers manually. The system MUST keep both frontend and backend servers continuously active. If either server goes offline or crashes, the agent MUST automatically relaunch it using [`scripts/start_all_services.bat`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/start_all_services.bat) / [`scripts/start_all_services.sh`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/start_all_services.sh) or background task commands immediately.
