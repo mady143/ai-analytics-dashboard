@@ -40,9 +40,11 @@ This master index organizes the **AI Analytics Dashboard Autonomous Agent Networ
 - 📄 [`tasks/task_15_anomaly_alert_panel.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_15_anomaly_alert_panel.md) — Real-Time Anomaly & Risk Alerts
 - 📄 [`tasks/task_28_memory_and_daily_task_updates.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_28_memory_and_daily_task_updates.md) — Daily Memory Persistence & State Updating Engine
 
-### 🗄️ Database & Git Services
+### 🗄️ Database & Fleet Services
 - 📄 [`tasks/task_5_database_service.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_5_database_service.md) — Multi-Database SQL Service
 - 📄 [`tasks/task_7_git_automation.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_7_git_automation.md) — Pre-Approved Git Automation
+- 📄 [`tasks/task_8_parallel_background_agents.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_8_parallel_background_agents.md) — Continuous Parallel Background Agent Fleet
+- 📄 [`tasks/task_9_continuous_application_uptime.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_9_continuous_application_uptime.md) — Continuous Server Uptime & Mandatory .bat / .sh Launchers
 
 ---
 
