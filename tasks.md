@@ -5,7 +5,7 @@ This master index organizes the **AI Analytics Dashboard Autonomous Agent Networ
 ---
 
 ## 🚨 Section 1: Mandatory Operational Rules & Git Automation
-- 📄 [`tasks/section_1_mandatory_tasks.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/section_1_mandatory_tasks.md) — Overview of Mandatory Tasks & Execution Rules
+- 📄 [`tasks/section_1_mandatory_tasks.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/section_1_mandatory_tasks.md) — Mandatory Launcher Scripts ([`scripts/start_all_services.bat`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/start_all_services.bat) / [`scripts/start_all_services.sh`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/start_all_services.sh))
 - 📄 [`tasks/task_7_git_automation.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_7_git_automation.md) — Git Start/End of Day Auto-Push, Branch Merging & Automatic Merge Conflict Resolution
 
 ---
@@ -53,7 +53,7 @@ This master index organizes the **AI Analytics Dashboard Autonomous Agent Networ
 
 ---
 
-## 🧪 Section 5: Automated Testing & Browser Validation Tasks
-- 📄 [`tasks/section_5_testing_and_quality_gates.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/section_5_testing_and_quality_gates.md) — Overview of Testing & Quality Gates
+## 🧪 Section 5: Automated Testing & Excel Matrix Tasks
+- 📄 [`tasks/section_5_testing_and_quality_gates.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/section_5_testing_and_quality_gates.md) — Automated Testing, Excel Matrix Updates & Quality Gates
 - 📄 [`tasks/task_10_end_to_end_parameter_testing.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_10_end_to_end_parameter_testing.md) — Interactive Browser Parameter Combination Testing
 - 📄 [`tasks/task_20_full_e2e_component_suite.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_20_full_e2e_component_suite.md) — Full Playwright Browser E2E Suite (14 Scenarios) & Pytest Unit Suite (51 Tests)
