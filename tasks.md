@@ -7,10 +7,11 @@ This master index organizes the **AI Analytics Dashboard Autonomous Agent Networ
 ## 🚨 Section 1: Mandatory Operational Rules & Git Automation
 - 📄 [`tasks/section_1_mandatory_tasks.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/section_1_mandatory_tasks.md)
   - 6-Stage Autonomous Lifecycle Pipeline (Pickup → Understand → Build → Test → Close → Git Push)
+  - 🚫 **Mandatory Zero Unnecessary / Spam Git Commit Directive**
   - Mandatory Services & Launcher Scripts ([`scripts/start_all_services.bat`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/start_all_services.bat) / [`scripts/start_all_services.sh`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/start_all_services.sh))
   - Automatic README.md Maintenance Mandate
   - Mandatory Per-Turn Conversation Memory Update Directive
-- 📄 [`tasks/task_7_git_automation.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_7_git_automation.md) — Git Start/End of Day Auto-Push, Branch Merging & Automatic Merge Conflict Resolution
+- 📄 [`tasks/task_7_git_automation.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_7_git_automation.md) — Pre-Approved Git Automation, Branch Merging, Anti-Spam Commit Filter & Merge Conflict Resolution
 
 ---
 
@@ -44,7 +45,7 @@ This master index organizes the **AI Analytics Dashboard Autonomous Agent Networ
 
 ### 🗄️ Database & Fleet Services
 - 📄 [`tasks/task_5_database_service.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_5_database_service.md) — Multi-Database SQL Service
-- 📄 [`tasks/task_7_git_automation.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_7_git_automation.md) — Pre-Approved Git Automation, Branch Merges & Conflict Resolution
+- 📄 [`tasks/task_7_git_automation.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_7_git_automation.md) — Pre-Approved Git Automation, Branch Merges, Anti-Spam Commit Filter & Conflict Resolution
 - 📄 [`tasks/task_8_parallel_background_agents.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_8_parallel_background_agents.md) — Continuous Parallel Background Agent Fleet
 - 📄 [`tasks/task_9_continuous_application_uptime.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_9_continuous_application_uptime.md) — Continuous Server Uptime & Mandatory .bat / .sh Launchers
 

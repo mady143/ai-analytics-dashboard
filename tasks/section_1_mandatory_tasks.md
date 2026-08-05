@@ -1,6 +1,6 @@
 # 🚨 Section 1: Mandatory Tasks & Autonomous Execution
 
-This document outlines the mandatory operational requirements, launch scripts, README updates, conversation memory directives, and autonomous workflow rules for the AI Analytics Dashboard project.
+This document outlines the mandatory operational requirements, launch scripts, anti-spam git commit directives, README updates, conversation memory rules, and autonomous workflow rules for the AI Analytics Dashboard project.
 
 ---
 
@@ -49,26 +49,32 @@ The agent network executes the complete 6-stage task workflow autonomously:
 - **Files:** [`agents/sprint_watcher_agent.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/sprint_watcher_agent.py), [`agents/plane_agent.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/plane_agent.py)
 - **Behavior:** Updates Plane REST API task state to `Completed` (`state_group = "completed"`).
 
-### Stage 6: Autonomous Git Commit & Push
+### Stage 6: Autonomous Git Commit & Push (With Anti-Spam Guard)
 - **Files:** [`agents/git_agent.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/git_agent.py), [`scripts/end_of_day.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/end_of_day.py)
-- **Behavior:** Stages modified files (`git add .`), commits with descriptive task title (`git commit -m "..."`), and pushes directly to GitHub (`git push origin main`).
+- **Behavior:** Stages modified source files ONLY if meaningful changes exist (`get_meaningful_changed_files()`), skipping useless log/cache spam commits.
 
 ---
 
-## 3. Daily Git Synchronization & Automatic Conflict Resolution
+## 🚫 3. Mandatory Zero Unnecessary / Spam Git Commit Directive
+- **Strict Anti-Spam Policy:**
+  - DO NOT commit when only `.log` files, `.system_generated/` brain logs, caches (`__pycache__`, `.pytest_cache`), or background poll ticks change.
+  - ONLY commit and push when real, functional source code (`frontend/`, `backend/`, `agents/`, `scripts/`) or documentation (`tasks/`, `README.md`, `tasks.md`) has been modified.
+
+---
+
+## 4. Daily Git Synchronization & Automatic Conflict Resolution
 - **Morning (Start of Day):** Run `python scripts/start_of_day.py` or `git pull origin main` to pull latest remote changes before work begins.
 - **Automatic Merge Conflict Resolution:** If any git merge or rebase conflicts occur during pull, automatically analyze conflicting files, resolve all conflicts cleanly, stage changes (`git add .`), and complete the commit.
 
 ---
 
-## 4. Automatic README.md Maintenance Mandate
+## 5. Automatic README.md Maintenance Mandate
 - **Mandatory Documentation Directive:**
   - The AI AGENT MUST automatically maintain and update [`README.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/README.md) whenever new features, backend API endpoints, multi-database architecture parameters, or agent processes are added or updated.
-  - Keep `README.md` synchronized with the active project structure, API endpoints table, background agent list, and testing instructions.
 
 ---
 
-## 🧠 5. Mandatory Per-Turn Conversation Memory Update Directive
+## 🧠 6. Mandatory Per-Turn Conversation Memory Update Directive
 - **Mandatory Memory Sync Rule:**
   - On every user conversation exchange, the agent MUST automatically invoke `update_conversation_memory()` in [`agents/memory_manager.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/memory_manager.py).
   - Appends query and response summaries to `memory/conversations/assistant_conversation.jsonl`, updates daily task logs in `memory/task_history/YYYY-MM-DD_task_history.jsonl`, and updates `memory/agent_state.json`.
