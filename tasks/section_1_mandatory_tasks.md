@@ -10,45 +10,57 @@ The application system provides mandatory platform-specific execution launcher s
 - 💻 **Windows Batch Execution Script:** [`scripts/start_all_services.bat`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/start_all_services.bat)
 - 🐧 **Linux / macOS Shell Execution Script:** [`scripts/start_all_services.sh`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/start_all_services.sh)
 
-### What the .bat / .sh Script Executes Automatically:
-1. **Dependency Verification:** Checks and installs Python (`pip install -r requirements.txt`) and Node.js dependencies (`npm install` in `frontend/`).
-2. **Browser Binary Setup:** Installs Playwright Chromium binaries (`python -m playwright install chromium`).
-3. **Git Synchronization:** Pulls remote changes (`git pull origin main`).
-4. **FastAPI Backend Server:** Starts Uvicorn API server on `http://localhost:8000`.
-5. **Vite Frontend Dev Server:** Starts React frontend on `http://localhost:5173`.
-6. **Sprint Watcher Agent:** Launches continuous 15s polling loop (`python agents/sprint_watcher_agent.py --interval 15`).
-7. **Watchdog Supervisor:** Starts process self-healing watchdog (`python scripts/agent_watchdog.py`).
-8. **Agent & Memory Fleet:** Starts `builder_agent.py`, `tester_agent.py`, `memory_manager.py`, `plane_agent.py`, and `git_agent.py`.
+---
+
+## 🔄 2. End-to-End Autonomous Task Lifecycle Pipeline (Pickup → Understand → Build → Test → Close → Git Push)
+
+The agent network executes the complete 6-stage task workflow autonomously:
+
+```
+┌─────────────────────────┐      ┌─────────────────────────┐      ┌─────────────────────────┐
+│ 1. Sprint Task Pickup   │ ───► │ 2. Title & NLP Parsing  │ ───► │ 3. Real Code Building   │
+│ (sprint_watcher_agent)  │      │ (builder_agent classifier)     │ (React & FastAPI edit)  │
+└─────────────────────────┘      └─────────────────────────┘      └─────────────────────────┘
+             │                                                                 │
+             ▼                                                                 ▼
+┌─────────────────────────┐      ┌─────────────────────────┐      ┌─────────────────────────┐
+│ 6. Autonomous Git Push  │ ◄─── │ 5. Close Task on Plane  │ ◄─── │ 4. Pytest & Playwright  │
+│ (git_agent / EOD push)  │      │ (plane_agent REST API)  │      │ (tester_agent runner)   │
+└─────────────────────────┘      └─────────────────────────┘      └─────────────────────────┘
+```
+
+### Stage 1: Sprint Task Pickup
+- **Files:** [`agents/sprint_watcher_agent.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/sprint_watcher_agent.py), [`backend/routers/sprints.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/backend/routers/sprints.py)
+- **Behavior:** Polls Plane REST API every 15s or triggers via non-blocking background thread whenever `/api/sprints/tasks` is called. Detects tasks in `ACTIONABLE_STATES` (`unstarted`, `todo`, `started`, `in_progress`).
+
+### Stage 2: Task Comprehension & Intent Classification
+- **File:** [`agents/builder_agent.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/builder_agent.py)
+- **Behavior:** Runs `classify_task_intent_and_intent_map()` and LLM task analyzer (`llm_analyze_and_implement_task()`) to understand title, description, typos, and specific requirement statements.
+
+### Stage 3: Real Code Modifications & Feature Implementation
+- **File:** [`agents/builder_agent.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/builder_agent.py)
+- **Behavior:** Dynamically reads target React frontend components (`frontend/src/`) and FastAPI routers (`backend/routers/`), generating and applying code patches.
+
+### Stage 4: Automated Testing & Playwright Verification
+- **Files:** [`agents/tester_agent.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/tester_agent.py), [`tests/unit/`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tests/unit/), [`tests/browser/`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tests/browser/)
+- **Behavior:** Executes 51 pytest unit tests (`pytest tests/unit/`) and 14 Playwright browser E2E tests (`pytest tests/browser/`) to verify quality gates.
+
+### Stage 5: Closing Sprint Task on Plane
+- **Files:** [`agents/sprint_watcher_agent.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/sprint_watcher_agent.py), [`agents/plane_agent.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/plane_agent.py)
+- **Behavior:** Updates Plane REST API task state to `Completed` (`state_group = "completed"`).
+
+### Stage 6: Autonomous Git Commit & Push
+- **Files:** [`agents/git_agent.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/git_agent.py), [`scripts/end_of_day.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/end_of_day.py)
+- **Behavior:** Stages modified files (`git add .`), commits with descriptive task title (`git commit -m "..."`), and pushes directly to GitHub (`git push origin main`).
 
 ---
 
-## 2. Daily Git Synchronization & Automatic Conflict Resolution
+## 3. Daily Git Synchronization & Automatic Conflict Resolution
 - **Morning (Start of Day):** Run `python scripts/start_of_day.py` or `git pull origin main` to pull latest remote changes before work begins.
 - **Automatic Merge Conflict Resolution:** If any git merge or rebase conflicts occur during pull, automatically analyze conflicting files, resolve all conflicts cleanly, stage changes (`git add .`), and complete the commit.
-- **Task Completion & Autonomous Git Push / PR:** Automatically pull remote changes (`git pull origin main`), stage changes (`git add .`), commit with a descriptive message, create pull requests when applicable, and push updated code to remote GitHub (`mmusunur/ai-analytics-dashboard`) upon task completion or at the end of the day.
-
-### Associated Scripts
-- [`scripts/start_all_services.bat`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/start_all_services.bat)
-- [`scripts/start_all_services.sh`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/start_all_services.sh)
-- [`scripts/start_of_day.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/start_of_day.py)
-- [`scripts/end_of_day.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/end_of_day.py)
-- [`agents/git_agent.py`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/agents/git_agent.py)
 
 ---
 
-## 3. Automatic README.md Maintenance Mandate
+## 4. Automatic README.md Maintenance Mandate
 - **Mandatory Documentation Directive:**
   - The AI AGENT MUST automatically maintain and update [`README.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/README.md) whenever new features, backend API endpoints, multi-database architecture parameters, or agent processes are added or updated.
-  - Keep `README.md` synchronized with the active project structure, API endpoints table, background agent list, and testing instructions.
-
----
-
-## 4. Real End-to-End Autonomous Task Execution Pipeline
-- **Sprint Watcher (`agents/sprint_watcher_agent.py`):**
-  - ONLY pick up tasks in `ACTIONABLE_STATES` = `("unstarted", "backlog", "todo", "started", "in_progress")`.
-  - SKIP tasks in `SKIP_STATES` = `("completed", "done", "cancelled")`.
-  - Automatically triggered via non-blocking background thread when `/api/sprints/tasks` is called.
-
-- **Builder Agent (`agents/builder_agent.py`):**
-  - Performs REAL code changes to React frontend components and Python backend services.
-  - Generates code patches using LLM/autonomous intent classifiers, writes modified files, runs pytest, and updates Plane task status to `Completed`.
