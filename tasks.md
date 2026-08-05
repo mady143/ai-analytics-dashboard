@@ -5,7 +5,11 @@ This master index organizes the **AI Analytics Dashboard Autonomous Agent Networ
 ---
 
 ## 🚨 Section 1: Mandatory Operational Rules & Git Automation
-- 📄 [`tasks/section_1_mandatory_tasks.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/section_1_mandatory_tasks.md) — 6-Stage Autonomous Lifecycle Pipeline (Pickup → Understand → Build → Test → Close → Git Push)
+- 📄 [`tasks/section_1_mandatory_tasks.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/section_1_mandatory_tasks.md)
+  - 6-Stage Autonomous Lifecycle Pipeline (Pickup → Understand → Build → Test → Close → Git Push)
+  - Mandatory Services & Launcher Scripts ([`scripts/start_all_services.bat`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/start_all_services.bat) / [`scripts/start_all_services.sh`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/scripts/start_all_services.sh))
+  - Automatic README.md Maintenance Mandate
+  - Mandatory Per-Turn Conversation Memory Update Directive
 - 📄 [`tasks/task_7_git_automation.md`](file:///c:/Users/manik/Downloads/c&s/mani_personal/ai_analytics_dashboard/tasks/task_7_git_automation.md) — Git Start/End of Day Auto-Push, Branch Merging & Automatic Merge Conflict Resolution
 
 ---
