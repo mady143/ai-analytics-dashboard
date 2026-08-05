@@ -1,10 +1,13 @@
 """
 FastAPI Router — Sprint & Agent Task Management
 Provides endpoints to fetch live Plane sprint tasks, active agent execution steps, and sprint cycle metadata.
+Includes automatic non-blocking background task worker triggering for Plane task pickup.
 """
 
 import os
 import sys
+import time
+import threading
 from pathlib import Path
 from typing import Optional
 from fastapi import APIRouter, Query
@@ -15,10 +18,41 @@ sys.path.insert(0, str(ROOT_DIR / "agents"))
 
 router = APIRouter()
 
+_watcher_lock = threading.Lock()
+_last_trigger_time = 0.0
+
+
+def trigger_watcher_in_background():
+    """
+    Spawns a non-blocking background thread to run SprintWatcherAgent
+    whenever there are actionable tasks in Plane.
+    """
+    global _last_trigger_time
+    now = time.time()
+    if now - _last_trigger_time < 8.0:  # Debounce triggers within 8s
+        return
+    _last_trigger_time = now
+
+    def _worker():
+        if not _watcher_lock.acquire(blocking=False):
+            return  # Already running in background
+        try:
+            print("[Sprint Router]: ⚡ Background task picker triggered for active Plane sprint tasks...")
+            from sprint_watcher_agent import SprintWatcherAgent
+            watcher = SprintWatcherAgent(poll_interval_seconds=5)
+            watcher.watch(max_cycles=1)
+        except Exception as e:
+            print(f"[Sprint Router Watcher Error]: {e}")
+        finally:
+            _watcher_lock.release()
+
+    t = threading.Thread(target=_worker, daemon=True)
+    t.start()
+
 
 @router.get("/tasks")
 def get_sprint_tasks():
-    """Fetch live sprint tasks from Plane API or agent state memory."""
+    """Fetch live sprint tasks from Plane API or agent state memory and trigger task picker if pending."""
     try:
         from plane_agent import get_or_create_project, list_tasks, list_sprints
         from memory_manager import load_state
@@ -34,6 +68,8 @@ def get_sprint_tasks():
         todo_list = []
         in_progress_list = []
         completed_list = []
+
+        has_actionable_tasks = False
 
         for task in tasks:
             sg = (task.get("state_group") or "").lower()
@@ -55,8 +91,14 @@ def get_sprint_tasks():
                 completed_list.append(task_obj)
             elif sg in ("started", "in_progress", "in progress"):
                 in_progress_list.append(task_obj)
+                has_actionable_tasks = True
             else:
                 todo_list.append(task_obj)
+                has_actionable_tasks = True
+
+        # If there are open or in-progress tasks, trigger the background Sprint Watcher Agent to process them automatically!
+        if has_actionable_tasks:
+            trigger_watcher_in_background()
 
         total_tasks = len(tasks)
         completed_count = len(completed_list)
